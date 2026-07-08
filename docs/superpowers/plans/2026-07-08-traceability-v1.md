@@ -9,13 +9,13 @@
 **Tech Stack:** TypeScript (strict), pnpm workspace, Node.js 20+, Fastify (server), `@sentry/browser`/`@sentry/react`/`@sentry/electron` (SDK core), better-sqlite3 (v1 storage), React 19 + Vite (app UI), commander (CLI), vitest (tests).
 
 **Spec:** `docs/superpowers/specs/2026-07-08-traceability-v1-design.md`
+**App design source of truth:** `prototype/index.html` (AI-generated Inbox prototype). The `app/` package MUST reproduce this design.
 
 ## Global Constraints
 
 - Node.js >= 20
-- pnpm >= 10.30 (root `packageManager` already pinned to `pnpm@10.30.3`)
+- pnpm >= 10.30 (root `packageManager` already pinned to `pnpm@10.30.3`). pnpm is the ONLY package manager; never run `npm install` or `yarn`.
 - TypeScript strict mode (`strict: true`) in every `tsconfig.json`
-- Package manager: pnpm workspaces only (`pnpm-workspace.yaml`). Never use npm/yarn install.
 - Monorepo packages referenced by workspace protocol (`"@traceability/core": "workspace:*"`).
 - Public package scope: `@traceability/*` (core, react, electron, cli).
 - Every package exposes an `index.ts` barrel; builds via `tsc` (ESM `dist/`); tests via `vitest`.
@@ -25,6 +25,7 @@
 - SDK must NOT couple to business semantics (no `monitor.business.*`).
 - Server ingests only Sentry envelope items of type `error` / `transaction` / `message`; others are dropped.
 - SDK transport posts to `${serverUrl}/api/ingest/envelope/${appId}`.
+- **App UI fidelity:** `app/` must match `prototype/index.html` visually - same CSS variables, same component classes (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`), same dark color scheme. Port the prototype's `<style>` block into `app/src/styles.css` and reuse the class names rather than inventing new inline styles.
 
 ---
 
@@ -101,19 +102,35 @@ traceability/
 │   └── src/
 │       ├── main.tsx
 │       ├── App.tsx
+│       ├── styles.css                 # ported verbatim from prototype/index.html <style>
 │       ├── api/client.ts
 │       ├── ws/client.ts
 │       ├── auth/token.ts
-│       ├── components/Layout.tsx
-│       ├── components/IssueStatusBadge.tsx
+│       ├── components/
+│       │   ├── Layout.tsx             # sidebar + topbar shell matching prototype
+│       │   ├── IssueStatusBadge.tsx
+│       │   ├── Toast.tsx              # .toast context
+│       │   └── ui/                    # primitive components mapping prototype classes
+│       │       ├── Button.tsx         # .btn / .btn-primary / .btn-danger / .btn-sm
+│       │       ├── Panel.tsx          # .panel + .panel-head
+│       │       ├── Badge.tsx          # .badge + .dot
+│       │       ├── Modal.tsx          # .modal-backdrop + .modal + .field
+│       │       └── CommandPalette.tsx # .palette (⌘K)
 │       └── pages/
 │           ├── Login.tsx
-│           ├── Apps.tsx
-│           ├── AppNew.tsx
-│           ├── AppDetail.tsx
-│           ├── Issues.tsx
-│           ├── IssueDetail.tsx
-│           └── FixSession.tsx
+│           ├── Issues.tsx             # metrics + toolbar + .data-table
+│           ├── Apps.tsx               # .app-grid cards
+│           ├── AppDetail.tsx          # .detail-grid info-list + side-panel
+│           ├── IssueDetail.tsx        # .tabs (stack/events/context/breadcrumbs) + side-panel
+│           ├── FixSession.tsx         # .command + .patch-file + .timeline
+│           └── Settings.tsx           # SDK setup code snippet
+├── examples/
+│   ├── web-demo/                      # vanilla Vite app integrating @traceability/core
+│   │   ├── package.json
+│   │   ├── vite.config.ts
+│   │   ├── index.html
+│   │   └── src/main.ts
+│   └── README.md                      # how to run each demo against a local server
 └── server/
     ├── package.json
     ├── tsconfig.json
@@ -2864,31 +2881,37 @@ git commit -m "feat(cli): app + issue subcommands"
 
 ---
 
-## Task 16: `app/` — Vite + router + auth + API client (M3)
+## Task 16: `app/` - scaffold + design system (ported from prototype) + auth + clients (M3)
+
+**Design source of truth:** `prototype/index.html`. Port its `<style>` block into `app/src/styles.css` and reuse the prototype's class names (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`) instead of inline styles. The shell (`.shell`/`.sidebar`/`.topbar`) must match the prototype.
 
 **Files:**
 - Create: `app/index.html`
 - Create: `app/vite.config.ts`
+- Create: `app/src/styles.css` (verbatim port of prototype `<style>` - see Step 3)
 - Create: `app/src/main.tsx`
 - Create: `app/src/App.tsx`
 - Create: `app/src/auth/token.ts`
 - Create: `app/src/api/client.ts`
 - Create: `app/src/ws/client.ts`
+- Create: `app/src/components/ui/primitives.tsx` (Button/Panel/Badge/Modal/Field)
+- Create: `app/src/components/Toast.tsx` (ToastProvider/useToast)
+- Create: `app/src/components/CommandPalette.tsx` (⌘K palette)
 - Create: `app/src/components/Layout.tsx`
 - Create: `app/src/pages/Login.tsx`
 
 **Interfaces:**
-- Produces: a running Vite dev server at `:5173` with a login page that stores the API token; `apiFetch` helper; WS subscription helper.
+- Produces: Vite dev server at `:5173`; `apiFetch`; `onIssueEvent`; UI primitives (`Button`/`Panel`/`Badge`/`Modal`/`Field`); `ToastProvider`/`useToast`; `CommandPalette`; `Layout`. Pages in Tasks 17/18 import these.
 
 - [ ] **Step 1: Create `app/index.html`**
 
 ```html
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Traceability Inbox</title>
+    <title>Traceability</title>
   </head>
   <body>
     <div id="root"></div>
@@ -2914,7 +2937,11 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: Create `app/src/auth/token.ts`**
+- [ ] **Step 3: Create `app/src/styles.css` - port the prototype's `<style>` block verbatim**
+
+Open `prototype/index.html`, copy the entire contents of its `<style>...</style>` element (the `:root` variables and every component class), and paste it into `app/src/styles.css` UNCHANGED. Do not rewrite or "improve" it - the page tasks rely on these exact class names: `:root` vars, `.shell`, `.sidebar`, `.brand`, `.workspace`, `.nav-item`, `.main`, `.topbar`, `.breadcrumbs`, `.kbd`, `.btn`/`.btn-primary`/`.btn-danger`/`.btn-sm`, `.content`, `.page`, `.page-header`/`.page-title`/`.page-subtitle`/`.header-actions`, `.metrics`/`.metric`, `.panel`/`.panel-head`/`.panel-title`/`.panel-meta`, `.toolbar`/`.search`/`.select`, `.data-table`, `.severity`, `.issue-main`/`.issue-title`/`.issue-sub`, `.muted`, `.badge`/`.dot`, `.app-grid`/`.app-card`/`.app-icon`/`.app-stats`, `.detail-grid`, `.issue-heading`/`.issue-id`, `.tabs`/`.tab`/`.tab-pane`, `.code`/`.line`/`.ln`/`.hot`/`.fn`/`.str`, `.info-list`/`.info-row`, `.side-panel`/`.side-section`/`.side-label`/`.side-value`/`.full`, `.timeline`/`.timeline-item`/`.timeline-mark`/`.timeline-title`/`.timeline-time`, `.command`, `.patch-file`/`.patch-stats`/`.plus`/`.minus`, `.empty`, `.modal-backdrop`/`.modal`/`.modal-head`/`.modal-body`/`.modal-foot`/`.field`, `.toast`, `.palette`/`.palette-list`/`.palette-item`/`.palette-key`.
+
+- [ ] **Step 4: Create `app/src/auth/token.ts`**
 
 ```ts
 const KEY = 'traceability.token'
@@ -2938,7 +2965,7 @@ export function clearAuth(): void {
 }
 ```
 
-- [ ] **Step 4: Create `app/src/api/client.ts`**
+- [ ] **Step 5: Create `app/src/api/client.ts`**
 
 ```ts
 import { getToken, getServer } from '../auth/token'
@@ -2969,11 +2996,17 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 }
 ```
 
-- [ ] **Step 5: Create `app/src/ws/client.ts`**
+- [ ] **Step 6: Create `app/src/ws/client.ts`**
 
 ```ts
 import { getToken, getServer } from '../auth/token'
-import type { IssueEvent } from '../../../../server/src/ws/broadcaster'
+
+export interface IssueEvent {
+  kind: 'issue:created' | 'issue:updated' | 'issue:status-changed'
+  appId: string
+  issueId: string
+  payload: unknown
+}
 
 type Handler = (event: IssueEvent) => void
 
@@ -2996,7 +3029,7 @@ export function connectWs(): void {
   }
   socket.onclose = () => {
     socket = null
-    setTimeout(connectWs, 3000) // simple reconnect
+    setTimeout(connectWs, 3000)
   }
 }
 
@@ -3006,49 +3039,278 @@ export function onIssueEvent(h: Handler): () => void {
 }
 ```
 
-NOTE: importing the `IssueEvent` type across the `server/` boundary via relative path is fragile. Instead, define a local type in `app/src/ws/client.ts`:
-
-```ts
-export interface IssueEvent {
-  kind: 'issue:created' | 'issue:updated' | 'issue:status-changed'
-  appId: string
-  issueId: string
-  payload: unknown
-}
-```
-
-Use the local type and remove the server import line.
-
-- [ ] **Step 6: Create `app/src/components/Layout.tsx`**
+- [ ] **Step 7: Create `app/src/components/ui/primitives.tsx`**
 
 ```tsx
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { clearAuth } from '../auth/token'
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  const loc = useLocation()
+type BtnVariant = 'default' | 'primary' | 'danger'
+export function Button({
+  variant = 'default',
+  sm,
+  className = '',
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; sm?: boolean }) {
+  const cls = ['btn']
+  if (variant === 'primary') cls.push('btn-primary')
+  if (variant === 'danger') cls.push('btn-danger')
+  if (sm) cls.push('btn-sm')
+  cls.push(className)
+  return <button className={cls.join(' ')} {...rest} />
+}
+
+export function Panel({
+  title,
+  meta,
+  children,
+  headExtra,
+}: {
+  title?: React.ReactNode
+  meta?: React.ReactNode
+  children: React.ReactNode
+  headExtra?: React.ReactNode
+}) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <nav style={{ width: 200, padding: 16, borderRight: '1px solid #eee' }}>
-        <h3>Traceability</h3>
-        <Link to="/apps" style={{ display: 'block', fontWeight: loc.pathname.startsWith('/apps') ? 'bold' : 'normal' }}>Apps</Link>
-        <Link to="/issues" style={{ display: 'block', fontWeight: loc.pathname.startsWith('/issues') ? 'bold' : 'normal' }}>Issues</Link>
-        <hr />
-        <button onClick={() => { clearAuth(); location.href = '/login' }}>Logout</button>
-      </nav>
-      <main style={{ flex: 1, padding: 24 }}>{children}</main>
+    <div className="panel">
+      {(title || headExtra) && (
+        <div className="panel-head">
+          {title && <div className="panel-title">{title}</div>}
+          {headExtra}
+          {meta && <div className="panel-meta">{meta}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+const BADGE: Record<string, { cls: string; label: string }> = {
+  open: { cls: 'open', label: 'Open' },
+  'fix-manual': { cls: 'fixing', label: 'Fix requested' },
+  fixing: { cls: 'fixing', label: 'Fixing' },
+  fixed: { cls: 'fixed', label: 'Fixed' },
+  ignored: { cls: '', label: 'Ignored' },
+}
+export function Badge({ status, label }: { status: string; label?: string }) {
+  const info = BADGE[status] ?? BADGE.ignored
+  return (
+    <span className={`badge ${info.cls}`}>
+      <span className="dot"></span>
+      {label ?? info.label}
+    </span>
+  )
+}
+
+export function Modal({
+  show,
+  onClose,
+  title,
+  subtitle,
+  children,
+  footer,
+}: {
+  show: boolean
+  onClose: () => void
+  title: string
+  subtitle?: string
+  children: React.ReactNode
+  footer: React.ReactNode
+}) {
+  if (!show) return null
+  return (
+    <div className="modal-backdrop show" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>{title}</h2>
+          {subtitle && <p>{subtitle}</p>}
+        </div>
+        <div className="modal-body">{children}</div>
+        <div className="modal-foot">{footer}</div>
+      </div>
+    </div>
+  )
+}
+
+export function Field({
+  label,
+  ...rest
+}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <input {...rest} />
     </div>
   )
 }
 ```
 
-- [ ] **Step 7: Create `app/src/pages/Login.tsx`**
+- [ ] **Step 8: Create `app/src/components/Toast.tsx`**
+
+```tsx
+import React, { createContext, useContext, useState, useCallback } from 'react'
+
+const ToastCtx = createContext<(msg: string) => void>(() => {})
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [msg, setMsg] = useState('')
+  const [show, setShow] = useState(false)
+  const show_ = useCallback((m: string) => {
+    setMsg(m)
+    setShow(true)
+    setTimeout(() => setShow(false), 2200)
+  }, [])
+  return (
+    <ToastCtx.Provider value={show_}>
+      {children}
+      <div className={`toast ${show ? 'show' : ''}`}>{msg}</div>
+    </ToastCtx.Provider>
+  )
+}
+
+export function useToast() {
+  return useContext(ToastCtx)
+}
+```
+
+- [ ] **Step 9: Create `app/src/components/CommandPalette.tsx`**
+
+```tsx
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+const ACTIONS: Array<{ icon: string; label: string; to: string; key: string }> = [
+  { icon: '◇', label: 'Go to Issues', to: '/issues', key: 'G then I' },
+  { icon: '▦', label: 'Go to Applications', to: '/apps', key: 'G then A' },
+  { icon: '⌁', label: 'Go to SDK setup', to: '/settings', key: 'G then S' },
+]
+
+export function CommandPalette() {
+  const [open, setOpen] = useState(false)
+  const nav = useNavigate()
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setOpen((o) => !o)
+      }
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+  if (!open) return null
+  return (
+    <>
+      <div className="modal-backdrop show" onClick={() => setOpen(false)} />
+      <div className="palette show">
+        <input placeholder="Search pages and actions…" autoFocus />
+        <div className="palette-list">
+          {ACTIONS.map((a) => (
+            <div
+              key={a.to}
+              className="palette-item"
+              onClick={() => {
+                nav(a.to)
+                setOpen(false)
+              }}
+            >
+              <span>{a.icon}</span>
+              <span>{a.label}</span>
+              <span className="kbd palette-key">{a.key}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+```
+
+- [ ] **Step 10: Create `app/src/components/Layout.tsx`** (matches prototype `.shell`/`.sidebar`/`.topbar`)
+
+```tsx
+import React from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { clearAuth } from '../auth/token'
+import { CommandPalette } from './CommandPalette'
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const loc = useLocation()
+  const crumb = loc.pathname.startsWith('/apps')
+    ? 'Applications'
+    : loc.pathname.startsWith('/issues')
+    ? 'Issues'
+    : loc.pathname.startsWith('/fix')
+    ? 'AI repair'
+    : loc.pathname.startsWith('/settings')
+    ? 'SDK setup'
+    : 'Issues'
+  return (
+    <div className="shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brand-mark">T</span>
+          <span>Traceability</span>
+        </div>
+        <div className="workspace">
+          <div className="workspace-avatar">FE</div>
+          <div className="workspace-copy">
+            <div className="workspace-name">Frontend Platform</div>
+            <div className="workspace-role">Engineering</div>
+          </div>
+          <span className="muted">⌄</span>
+        </div>
+        <nav>
+          <div className="nav-label">Workspace</div>
+          <NavLink to="/issues" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <span className="nav-icon">◇</span>Issues
+          </NavLink>
+          <NavLink to="/apps" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <span className="nav-icon">▦</span>Applications
+          </NavLink>
+          <div className="nav-label">Manage</div>
+          <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <span className="nav-icon">⌁</span>SDK setup
+          </NavLink>
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="user">
+            <div className="avatar">LY</div>
+            <div className="user-meta">
+              <div className="user-name">研发</div>
+              <div className="user-email" style={{ cursor: 'pointer' }} onClick={() => { clearAuth(); location.href = '/login' }}>
+                Sign out
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main className="main">
+        <header className="topbar">
+          <div className="breadcrumbs">
+            <span>Frontend Platform</span>
+            <span className="slash">/</span>
+            <b>{crumb}</b>
+          </div>
+          <div className="top-actions">
+            <button className="btn btn-sm">Search or jump to… <span className="kbd">⌘ K</span></button>
+          </div>
+        </header>
+        <div className="content">{children}</div>
+      </main>
+      <CommandPalette />
+    </div>
+  )
+}
+```
+
+- [ ] **Step 11: Create `app/src/pages/Login.tsx`**
 
 ```tsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { setToken, setServer, connectWsToNone } from '../auth/token'
+import { setToken, setServer } from '../auth/token'
+import { Button, Field } from '../components/ui/primitives'
 
 export function Login() {
   const [server, setServerState] = useState('http://localhost:3000')
@@ -3061,17 +3323,25 @@ export function Login() {
     nav('/apps')
   }
   return (
-    <form onSubmit={submit} style={{ maxWidth: 320, margin: '80px auto' }}>
-      <h2>Traceability Login</h2>
-      <input value={server} onChange={(e) => setServerState(e.target.value)} placeholder="server url" style={{ width: '100%' }} />
-      <input value={token} onChange={(e) => setTokenState(e.target.value)} placeholder="api token" type="password" style={{ width: '100%', marginTop: 8 }} />
-      <button type="submit" style={{ marginTop: 8, width: '100%' }}>Login</button>
-    </form>
+    <div className="shell" style={{ placeItems: 'center' }}>
+      <form onSubmit={submit} className="panel" style={{ width: 380, padding: 24 }}>
+        <div className="brand" style={{ marginBottom: 18 }}>
+          <span className="brand-mark">T</span>
+          <span>Traceability</span>
+        </div>
+        <Field label="Server URL" value={server} onChange={(e) => setServerState(e.target.value)} />
+        <div style={{ height: 15 }} />
+        <Field label="API token" type="password" value={token} onChange={(e) => setTokenState(e.target.value)} placeholder="dev-token" />
+        <div style={{ marginTop: 18 }}>
+          <Button variant="primary" type="submit" className="full">Login</Button>
+        </div>
+      </form>
+    </div>
   )
 }
 ```
 
-- [ ] **Step 8: Create `app/src/App.tsx` + `app/src/main.tsx`**
+- [ ] **Step 12: Create `app/src/main.tsx` + `app/src/App.tsx`**
 
 `app/src/main.tsx`:
 ```tsx
@@ -3079,6 +3349,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { App } from './App'
+import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -3089,12 +3360,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 ```
 
-`app/src/App.tsx`:
+`app/src/App.tsx` (pages wired in Tasks 17/18):
 ```tsx
 import React, { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { getToken } from './auth/token'
 import { connectWs } from './ws/client'
+import { ToastProvider } from './components/Toast'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 
@@ -3113,325 +3385,582 @@ export function App() {
     )
   }
   return (
-    <Layout>
-      <Routes>
-        <Route path="/login" element={<Navigate to="/apps" />} />
-        {/* pages added in Task 17/18 */}
-        <Route path="*" element={<div>Page not found</div>} />
-      </Routes>
-    </Layout>
+    <ToastProvider>
+      <Layout>
+        <Routes>
+          <Route path="/login" element={<Navigate to="/apps" />} />
+          {/* pages added in Tasks 17/18 */}
+          <Route path="*" element={<div className="page">Not found</div>} />
+        </Routes>
+      </Layout>
+    </ToastProvider>
   )
 }
 ```
 
-Fix the unused `connectWsToNone` import in Login (it doesn't exist) — remove it from the Login import line:
-```ts
-import { setToken, setServer } from '../auth/token'
-```
-
-- [ ] **Step 9: Typecheck + run dev server**
+- [ ] **Step 13: Typecheck + run dev server**
 
 Run: `cd app && pnpm install && pnpm typecheck && pnpm dev`
-Expected: Vite serves at http://localhost:5173; login page renders.
+Expected: Vite serves at http://localhost:5173; login page renders in the dark theme matching the prototype.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 14: Commit**
 
 ```bash
 git add app
-git commit -m "feat(app): vite + router + auth + api/ws clients + login"
+git commit -m "feat(app): scaffold + design system ported from prototype + auth/clients"
 ```
 
 ---
 
-## Task 17: `app/` — apps pages (M3)
+## Task 17: `app/` - Applications pages (app-grid + create modal + detail) (M3)
+
+**Design reference:** `prototype/index.html` `#page-apps` (`.app-grid`/`.app-card`) and `#page-app-detail` (`.detail-grid`/`.info-list`/`.side-panel`). Use the primitives from Task 16.
 
 **Files:**
 - Create: `app/src/pages/Apps.tsx`
-- Create: `app/src/pages/AppNew.tsx`
 - Create: `app/src/pages/AppDetail.tsx`
 - Modify: `app/src/App.tsx` (add routes)
 
-- [ ] **Step 1: Create `app/src/pages/Apps.tsx`**
+- [ ] **Step 1: Create `app/src/pages/Apps.tsx`** (app-grid cards + create modal)
 
 ```tsx
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { useToast } from '../components/Toast'
+import { Button, Panel, Modal, Field } from '../components/ui/primitives'
 import type { Application } from '@traceability/protocol'
 
 export function Apps() {
   const [apps, setApps] = useState<Application[]>([])
-  const [err, setErr] = useState('')
-  useEffect(() => {
-    apiFetch<Application[]>('/api/apps').then(setApps).catch((e) => setErr(String(e)))
-  }, [])
+  const [showCreate, setShowCreate] = useState(false)
+  const [name, setName] = useState('')
+  const [repoUrl, setRepoUrl] = useState('')
+  const [branch, setBranch] = useState('master')
+  const nav = useNavigate()
+  const toast = useToast()
+
+  const load = () => apiFetch<Application[]>('/api/apps').then(setApps).catch((e) => toast(String(e)))
+  useEffect(() => { load() }, [])
+
+  const create = async () => {
+    if (!name.trim()) { toast('Enter an application name'); return }
+    const app = await apiFetch<Application>('/api/apps', {
+      method: 'POST', body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
+    })
+    setShowCreate(false); setName(''); setRepoUrl(''); setBranch('master')
+    toast('Application created')
+    nav(`/apps/${app.id}`)
+  }
+
   return (
-    <div>
-      <h2>Applications <Link to="/apps/new"><button>+ New</button></Link></h2>
-      {err && <p style={{ color: 'red' }}>{err}</p>}
-      <table style={{ width: '100%' }}>
-        <thead><tr><th>ID</th><th>Name</th><th>Repo</th><th>Branch</th></tr></thead>
-        <tbody>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Applications</h1>
+          <p className="page-subtitle">Manage monitored apps, repositories and ingestion endpoints.</p>
+        </div>
+        <div className="header-actions">
+          <Button variant="primary" onClick={() => setShowCreate(true)}>New application</Button>
+        </div>
+      </div>
+      {apps.length === 0 ? (
+        <div className="empty">No applications yet. Create one to get a DSN.</div>
+      ) : (
+        <div className="app-grid">
           {apps.map((a) => (
-            <tr key={a.id}>
-              <td><Link to={`/apps/${a.id}`}>{a.id.slice(0, 8)}</Link></td>
-              <td>{a.name}</td>
-              <td>{a.repoUrl}</td>
-              <td>{a.defaultBranch}</td>
-            </tr>
+            <article key={a.id} className="app-card" onClick={() => nav(`/apps/${a.id}`)}>
+              <div className="app-top">
+                <div className="app-icon">{a.name.slice(0, 2).toUpperCase()}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="app-name">{a.name}</div>
+                  <div className="app-repo">{a.repoUrl}</div>
+                </div>
+                <span className="badge fixed" style={{ marginLeft: 'auto' }}><span className="dot"></span>Live</span>
+              </div>
+              <div className="app-stats">
+                <div className="app-stat"><b>{a.defaultBranch}</b><span>Default branch</span></div>
+                <div className="app-stat"><b>{a.id.slice(0, 6)}</b><span>App ID</span></div>
+              </div>
+            </article>
           ))}
-        </tbody>
-      </table>
+        </div>
+      )}
+      <Modal
+        show={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Create application"
+        subtitle="Connect a repository and generate its appId and DSN."
+        footer={<>
+          <Button onClick={() => setShowCreate(false)}>Cancel</Button>
+          <Button variant="primary" onClick={create}>Create application</Button>
+        </>}
+      >
+        <Field label="Application name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. customer-portal" />
+        <Field label="Repository URL" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="git@git.example.com:team/repo.git" />
+        <Field label="Default branch" value={branch} onChange={(e) => setBranch(e.target.value)} />
+      </Modal>
     </div>
   )
 }
 ```
 
-- [ ] **Step 2: Create `app/src/pages/AppNew.tsx`**
-
-```tsx
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api/client'
-import type { Application } from '@traceability/protocol'
-
-export function AppNew() {
-  const [name, setName] = useState('')
-  const [repoUrl, setRepoUrl] = useState('')
-  const [branch, setBranch] = useState('main')
-  const nav = useNavigate()
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const app = await apiFetch<Application>('/api/apps', {
-      method: 'POST', body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
-    })
-    nav(`/apps/${app.id}`)
-  }
-  return (
-    <form onSubmit={submit} style={{ maxWidth: 480 }}>
-      <h2>Create Application</h2>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="name" style={{ width: '100%' }} />
-      <input value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="repo url" style={{ width: '100%', marginTop: 8 }} />
-      <input value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="default branch" style={{ width: '100%', marginTop: 8 }} />
-      <button type="submit" style={{ marginTop: 8 }}>Create</button>
-    </form>
-  )
-}
-```
-
-- [ ] **Step 3: Create `app/src/pages/AppDetail.tsx`**
+- [ ] **Step 2: Create `app/src/pages/AppDetail.tsx`** (info-list + side-panel, matches `#page-app-detail`)
 
 ```tsx
 import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { useToast } from '../components/Toast'
+import { Button } from '../components/ui/primitives'
 import type { Application } from '@traceability/protocol'
 
 export function AppDetail() {
   const { id } = useParams<{ id: string }>()
   const [app, setApp] = useState<Application | null>(null)
+  const nav = useNavigate()
+  const toast = useToast()
   useEffect(() => {
-    if (id) apiFetch<Application>(`/api/apps/${id}`).then(setApp)
+    if (id) apiFetch<Application>(`/api/apps/${id}`).then(setApp).catch((e) => toast(String(e)))
   }, [id])
-  if (!app) return <p>Loading…</p>
+  if (!app) return <div className="page"><div className="empty">Loading…</div></div>
+
   const dsn = `${location.origin.replace(/:\d+$/, ':3000')}/api/ingest/envelope/${app.id}`
+
+  const del = async () => {
+    await apiFetch(`/api/apps/${app.id}`, { method: 'DELETE' })
+    toast('Application deleted')
+    nav('/apps')
+  }
+
   return (
-    <div>
-      <h2>{app.name}</h2>
-      <p><b>ID:</b> {app.id}</p>
-      <p><b>Repo:</b> {app.repoUrl}</p>
-      <p><b>Default branch:</b> {app.defaultBranch}</p>
-      <p><b>DSN (ingest URL):</b> <code>{dsn}</code></p>
-      <Link to={`/issues?appId=${app.id}`}><button>View Issues</button></Link>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <Button sm onClick={() => nav('/apps')}>← Applications</Button>
+          <h1 className="page-title" style={{ marginTop: 18 }}>{app.name}</h1>
+          <p className="page-subtitle">{app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}</p>
+        </div>
+        <div className="header-actions">
+          <Button variant="primary" onClick={() => nav(`/issues?appId=${app.id}`)}>View issues</Button>
+        </div>
+      </div>
+      <div className="detail-grid">
+        <div className="panel">
+          <div className="panel-head">
+            <div className="panel-title">SDK connection</div>
+            <span className="badge fixed" style={{ marginLeft: 'auto' }}><span className="dot"></span>Receiving events</span>
+          </div>
+          <div className="info-list">
+            <div className="info-row"><div className="info-key">App ID</div><div className="info-value">{app.id}</div></div>
+            <div className="info-row"><div className="info-key">DSN</div><div className="info-value">{dsn}</div></div>
+            <div className="info-row"><div className="info-key">Repository</div><div className="info-value">{app.repoUrl}</div></div>
+            <div className="info-row"><div className="info-key">Default branch</div><div className="info-value">{app.defaultBranch}</div></div>
+          </div>
+        </div>
+        <aside className="side-panel">
+          <div className="side-section">
+            <div className="side-label">Created</div>
+            <div className="side-value">{new Date(app.createdAt).toLocaleString()}</div>
+          </div>
+          <div className="side-section">
+            <Button variant="danger" className="full" onClick={del}>Delete application</Button>
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }
 ```
 
-- [ ] **Step 4: Wire routes in `app/src/App.tsx`**
+- [ ] **Step 3: Wire routes in `app/src/App.tsx`**
 
-Add imports:
+Add imports near the top:
 ```ts
 import { Apps } from './pages/Apps'
-import { AppNew } from './pages/AppNew'
 import { AppDetail } from './pages/AppDetail'
 ```
-Replace the `<Route path="*" .../>` inside the authenticated Layout block with:
+Replace the placeholder routes block:
 ```tsx
-        <Route path="/apps" element={<Apps />} />
-        <Route path="/apps/new" element={<AppNew />} />
-        <Route path="/apps/:id" element={<AppDetail />} />
-        <Route path="*" element={<Navigate to="/apps" />} />
+          {/* pages added in Tasks 17/18 */}
+          <Route path="*" element={<div className="page">Not found</div>} />
+```
+with:
+```tsx
+          <Route path="/apps" element={<Apps />} />
+          <Route path="/apps/:id" element={<AppDetail />} />
+          <Route path="*" element={<Navigate to="/apps" />} />
 ```
 
-- [ ] **Step 5: Typecheck**
+- [ ] **Step 4: Typecheck + dev run**
 
-Run: `cd app && pnpm typecheck`
-Expected: exits 0.
+Run: `cd app && pnpm typecheck && pnpm dev`
+Expected: `/apps` shows the app-grid with a "New application" button opening the modal; creating an app navigates to its detail page showing the DSN.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add app
-git commit -m "feat(app): apps list/create/detail pages"
+git commit -m "feat(app): applications grid + create modal + detail page"
 ```
 
 ---
 
-## Task 18: `app/` — issues pages + fix session (M3 + M5 fix entry)
+## Task 18: `app/` - Issues + Issue detail (tabs) + Fix session (timeline) + Settings (M3 + M5)
+
+**Design reference:** `prototype/index.html` `#page-issues` (`.metrics`/`.toolbar`/`.data-table`), `#page-issue-detail` (`.issue-heading`/`.tabs`/`.side-panel`), `#page-fix` (`.command`/`.patch-file`/`.timeline`), `#page-settings` (`.code` snippet).
 
 **Files:**
-- Create: `app/src/components/IssueStatusBadge.tsx`
 - Create: `app/src/pages/Issues.tsx`
 - Create: `app/src/pages/IssueDetail.tsx`
 - Create: `app/src/pages/FixSession.tsx`
+- Create: `app/src/pages/Settings.tsx`
 - Modify: `app/src/App.tsx` (add routes)
 
-- [ ] **Step 1: Create `app/src/components/IssueStatusBadge.tsx`**
+- [ ] **Step 1: Create `app/src/pages/Issues.tsx`** (metrics + toolbar + data-table)
 
 ```tsx
-import React from 'react'
-import type { IssueStatus } from '@traceability/protocol'
-
-const COLORS: Record<IssueStatus, string> = {
-  open: '#888',
-  'fix-manual': '#f0ad4e',
-  fixing: '#5bc0de',
-  fixed: '#5cb85c',
-  ignored: '#aaa',
-}
-
-export function IssueStatusBadge({ status }: { status: IssueStatus }) {
-  return <span style={{ color: COLORS[status], fontWeight: 'bold' }}>{status}</span>
-}
-```
-
-- [ ] **Step 2: Create `app/src/pages/Issues.tsx`**
-
-```tsx
-import React, { useEffect, useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
 import { onIssueEvent } from '../ws/client'
-import type { Issue } from '@traceability/protocol'
-import { IssueStatusBadge } from '../components/IssueStatusBadge'
+import { Button } from '../components/ui/primitives'
+import type { Issue, IssueStatus } from '@traceability/protocol'
 
 export function Issues() {
-  const [params] = useSearchParams()
-  const appId = params.get('appId') ?? undefined
+  const [params, setParams] = useSearchParams()
+  const nav = useNavigate()
+  const appId = params.get('appId') ?? ''
+  const status = (params.get('status') ?? 'all') as 'all' | IssueStatus
+  const [q, setQ] = useState('')
   const [issues, setIssues] = useState<Issue[]>([])
+
   const load = () => {
-    const qs = appId ? `?appId=${appId}` : ''
-    apiFetch<{ items: Issue[] }>(`/api/issues${qs}`).then((r) => setIssues(r.items))
+    const qs = new URLSearchParams()
+    if (appId) qs.set('appId', appId)
+    qs.set('limit', '100')
+    apiFetch<{ items: Issue[] }>(`/api/issues?${qs}`).then((r) => setIssues(r.items))
   }
   useEffect(() => { load() }, [appId])
   useEffect(() => onIssueEvent(() => load()), [])
+
+  const filtered = useMemo(() => {
+    return issues.filter((i) => {
+      if (status !== 'all' && i.status !== status) return false
+      if (q && !`${i.title} ${i.id} ${i.metadata.message ?? ''}`.toLowerCase().includes(q.toLowerCase())) return false
+      return true
+    })
+  }, [issues, status, q])
+
+  const open = issues.filter((i) => i.status === 'open').length
+  const fixing = issues.filter((i) => i.status === 'fix-manual' || i.status === 'fixing').length
+  const fixed = issues.filter((i) => i.status === 'fixed').length
+  const events24h = issues.reduce((n, i) => n + i.count, 0)
+
   return (
-    <div>
-      <h2>Issues {appId && <small>({appId.slice(0, 8)})</small>}</h2>
-      <table style={{ width: '100%' }}>
-        <thead><tr><th>Title</th><th>Status</th><th>Count</th><th>Last seen</th></tr></thead>
-        <tbody>
-          {issues.map((i) => (
-            <tr key={i.id}>
-              <td><Link to={`/issues/${i.id}`}>{i.title}</Link></td>
-              <td><IssueStatusBadge status={i.status} /></td>
-              <td>{i.count}</td>
-              <td>{i.lastSeen}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Issues</h1>
+          <p className="page-subtitle">Triage errors across all monitored applications.</p>
+        </div>
+        <div className="header-actions">
+          <Button variant="primary" onClick={() => nav('/apps')}>Manage applications</Button>
+        </div>
+      </div>
+      <div className="metrics">
+        <div className="metric"><div className="metric-label">Open issues</div><div className="metric-value">{open}</div></div>
+        <div className="metric"><div className="metric-label">Events · total</div><div className="metric-value">{events24h}</div></div>
+        <div className="metric"><div className="metric-label">Fixing</div><div className="metric-value">{fixing}</div></div>
+        <div className="metric"><div className="metric-label">Resolved</div><div className="metric-value">{fixed}</div></div>
+      </div>
+      <div className="toolbar">
+        <div className="search">
+          <span>⌕</span>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search issues…" />
+        </div>
+        <select className="select" value={appId} onChange={(e) => setParams(e.target.value ? { appId: e.target.value } : {})}>
+          <option value="">All applications</option>
+        </select>
+        <select className="select" value={status} onChange={(e) => setParams({ ...(appId ? { appId } : {}), status: e.target.value })}>
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="fix-manual">Fix requested</option>
+          <option value="fixing">Fixing</option>
+          <option value="fixed">Fixed</option>
+        </select>
+      </div>
+      <div className="panel">
+        <div className="panel-head">
+          <div className="panel-title">All issues</div>
+          <div className="panel-meta">{filtered.length} issue{filtered.length === 1 ? '' : 's'}</div>
+        </div>
+        <table className="data-table">
+          <thead><tr><th>Issue</th><th>Status</th><th>Events</th><th>Last seen</th></tr></thead>
+          <tbody>
+            {filtered.map((i) => (
+              <tr key={i.id} className="clickable" onClick={() => nav(`/issues/${i.id}`)}>
+                <td>
+                  <div className="issue-main">
+                    <span className={`severity ${i.type === 'error' ? '' : 'warn'}`}></span>
+                    <div>
+                      <div className="issue-title">{i.title}</div>
+                      <div className="issue-sub">{i.id.slice(0, 8)} · {i.appId.slice(0, 8)}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span className={`badge ${i.status === 'open' ? 'open' : i.status === 'fixed' ? 'fixed' : 'fixing'}`}><span className="dot"></span>{i.status === 'open' ? 'Open' : i.status === 'fixed' ? 'Fixed' : 'Fix requested'}</span></td>
+                <td className="muted">{i.count}</td>
+                <td className="muted">{new Date(i.lastSeen).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && <div className="empty">No issues match these filters.</div>}
+      </div>
     </div>
   )
 }
 ```
 
-- [ ] **Step 3: Create `app/src/pages/IssueDetail.tsx`**
+- [ ] **Step 2: Create `app/src/pages/IssueDetail.tsx`** (issue-heading + tabs + side-panel + fix modal)
 
 ```tsx
 import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { useToast } from '../components/Toast'
+import { Button, Modal } from '../components/ui/primitives'
 import type { Issue, Event } from '@traceability/protocol'
-import { IssueStatusBadge } from '../components/IssueStatusBadge'
+
+type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs'
 
 export function IssueDetail() {
   const { id } = useParams<{ id: string }>()
+  const nav = useNavigate()
+  const toast = useToast()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [events, setEvents] = useState<Event[]>([])
+  const [tab, setTab] = useState<Tab>('stack')
+  const [showFix, setShowFix] = useState(false)
+
   const load = () => {
     if (!id) return
-    apiFetch<Issue>(`/api/issues/${id}`).then(setIssue)
-    apiFetch<Event[]>(`/api/issues/${id}/events`).then(setEvents)
+    apiFetch<Issue>(`/api/issues/${id}`).then(setIssue).catch((e) => toast(String(e)))
+    apiFetch<Event[]>(`/api/issues/${id}/events`).then(setEvents).catch(() => {})
   }
   useEffect(() => { load() }, [id])
 
   const startFix = async () => {
     if (!id) return
     await apiFetch(`/api/issues/${id}/fix-request`, { method: 'POST' })
-    load()
+    setShowFix(false)
+    toast('AI repair session started')
+    nav(`/fix/${id}`)
   }
 
-  if (!issue) return <p>Loading…</p>
+  if (!issue) return <div className="page"><div className="empty">Loading…</div></div>
+
   return (
-    <div>
-      <h2>{issue.title}</h2>
-      <p>Status: <IssueStatusBadge status={issue.status} /></p>
-      <p>Count: {issue.count} · First: {issue.firstSeen} · Last: {issue.lastSeen}</p>
-      {issue.metadata.stacktrace && (
-        <pre style={{ background: '#f6f6f6', padding: 12, overflow: 'auto' }}>
-          {issue.metadata.stacktrace}
-        </pre>
-      )}
-      {issue.status === 'open' && <button onClick={startFix}>Start AI Fix</button>}
-      {issue.status !== 'open' && issue.status !== 'fixed' && (
-        <Link to={`/fix/${issue.id}`}><button>View Fix Session</button></Link>
-      )}
-      <h3>Recent Events ({events.length})</h3>
-      {events.map((e) => (
-        <details key={e.id}><summary>{e.receivedAt}</summary><pre>{e.envelope}</pre></details>
-      ))}
+    <div className="page">
+      <div className="issue-heading">
+        <span className={`severity ${issue.type === 'error' ? '' : 'warn'}`}></span>
+        <div style={{ flex: 1 }}>
+          <h1>{issue.title}</h1>
+          <div className="issue-id">{issue.id.slice(0, 8)} · {issue.appId.slice(0, 8)} · {issue.type}</div>
+        </div>
+        <div className="header-actions">
+          <Button variant="primary" onClick={() => setShowFix(true)}>Start AI fix</Button>
+        </div>
+      </div>
+      <div className="detail-grid">
+        <div className="panel">
+          <div className="tabs">
+            {(['stack', 'events', 'context', 'breadcrumbs'] as Tab[]).map((t) => (
+              <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
+                {t === 'stack' ? 'Stack trace' : t === 'events' ? `Events · ${events.length}` : t === 'context' ? 'Context' : 'Breadcrumbs'}
+              </button>
+            ))}
+          </div>
+          <div className={`tab-pane ${tab === 'stack' ? 'active' : ''}`}>
+            <pre className="code">{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
+          </div>
+          <div className={`tab-pane ${tab === 'events' ? 'active' : ''}`}>
+            <div className="info-list">
+              {events.map((e) => (
+                <div className="info-row" key={e.id}>
+                  <div className="info-key">{new Date(e.receivedAt).toLocaleTimeString()}</div>
+                  <div className="info-value">{e.envelope.slice(0, 120)}…</div>
+                </div>
+              ))}
+              {events.length === 0 && <div className="empty">No events.</div>}
+            </div>
+          </div>
+          <div className={`tab-pane ${tab === 'context' ? 'active' : ''}`}>
+            <div className="info-list">
+              <div className="info-row"><div className="info-key">type</div><div className="info-value">{issue.type}</div></div>
+              <div className="info-row"><div className="info-key">fingerprint</div><div className="info-value">{issue.fingerprint}</div></div>
+              <div className="info-row"><div className="info-key">context</div><div className="info-value">{JSON.stringify(issue.metadata.context ?? {})}</div></div>
+            </div>
+          </div>
+          <div className={`tab-pane ${tab === 'breadcrumbs' ? 'active' : ''}`}>
+            <div className="empty">Breadcrumbs are captured inside each event envelope (see Events tab).</div>
+          </div>
+        </div>
+        <aside className="side-panel">
+          <div className="side-section">
+            <div className="side-label">Status</div>
+            <span className={`badge ${issue.status === 'open' ? 'open' : issue.status === 'fixed' ? 'fixed' : 'fixing'}`}><span className="dot"></span>{issue.status}</span>
+            <div className="side-label">First seen</div>
+            <div className="side-value">{new Date(issue.firstSeen).toLocaleString()}</div>
+            <div className="side-label">Last seen</div>
+            <div className="side-value">{new Date(issue.lastSeen).toLocaleString()}</div>
+            <div className="side-label">Total events</div>
+            <div className="side-value">{issue.count} events</div>
+          </div>
+          {issue.status !== 'open' && issue.status !== 'fixed' && (
+            <div className="side-section">
+              <Button variant="primary" className="full" onClick={() => nav(`/fix/${issue.id}`)}>View fix session</Button>
+            </div>
+          )}
+        </aside>
+      </div>
+      <Modal
+        show={showFix}
+        onClose={() => setShowFix(false)}
+        title="Start AI-assisted fix?"
+        subtitle="This changes the issue status to Fix requested."
+        footer={<>
+          <Button onClick={() => setShowFix(false)}>Cancel</Button>
+          <Button variant="primary" onClick={startFix}>Start AI fix</Button>
+        </>}
+      >
+        <p className="muted">Traceability will prepare the issue context for your coding agent. No branch, commit or merge request will be created automatically.</p>
+      </Modal>
     </div>
   )
 }
 ```
 
-- [ ] **Step 4: Create `app/src/pages/FixSession.tsx`**
+- [ ] **Step 3: Create `app/src/pages/FixSession.tsx`** (command + patch + timeline, matches `#page-fix`)
 
 ```tsx
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
-import type { Issue, Patch } from '@traceability/protocol'
-import { IssueStatusBadge } from '../components/IssueStatusBadge'
+import { useToast } from '../components/Toast'
+import { Button } from '../components/ui/primitives'
+import type { Issue } from '@traceability/protocol'
 
 export function FixSession() {
   const { issueId } = useParams<{ issueId: string }>()
+  const nav = useNavigate()
+  const toast = useToast()
   const [issue, setIssue] = useState<Issue | null>(null)
-  const [patch, setPatch] = useState<Patch | null>(null)
+
   const load = () => {
-    if (!issueId) return
-    apiFetch<Issue>(`/api/issues/${issueId}`).then(setIssue)
-    apiFetch<{ items: Patch[] }>(`/api/issues?appId=${''}`).catch(() => {})
-    // fetch latest patch via issue detail is not directly exposed; use the issue status + a getLatestPatch endpoint if added.
-    // v1: patches are reflected via issue.status === 'fixing'. Show CLI command + status only.
+    if (issueId) apiFetch<Issue>(`/api/issues/${issueId}`).then(setIssue).catch((e) => toast(String(e)))
   }
   useEffect(() => { load() }, [issueId])
-  if (!issue) return <p>Loading…</p>
-  const cliCmd = `traceability issue show ${issue.id}`
+  if (!issue) return <div className="page"><div className="empty">Loading…</div></div>
+
+  const cliCmd = `traceability issue show ${issue.id} --json`
+  const markFixed = async () => {
+    await apiFetch(`/api/issues/${issue.id}/mark-fixed`, { method: 'POST' })
+    toast('Issue marked as fixed')
+    load()
+  }
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(cliCmd); toast('CLI command copied') } catch { toast('Select the command to copy') }
+  }
+
+  const done = issue.status === 'fixed'
   return (
-    <div>
-      <h2>Fix Session — {issue.title}</h2>
-      <p>Status: <IssueStatusBadge status={issue.status} /></p>
-      <p>To have your local coding agent work on this issue, run:</p>
-      <pre style={{ background: '#222', color: '#0f0', padding: 12 }}>{cliCmd}</pre>
-      <p>After the agent produces a patch:</p>
-      <pre style={{ background: '#222', color: '#0f0', padding: 12 }}>
-        {`traceability issue attach-patch ${issue.id} --patch ./fix.diff --branch fix-${issue.id.slice(0, 6)}
-traceability issue mark-fixed ${issue.id}`}
-      </pre>
-      {patch && <p>Latest patch: {patch.branch} ({patch.attachedAt})</p>}
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <Button sm onClick={() => nav(`/issues/${issue.id}`)}>← Issue {issue.id.slice(0, 8)}</Button>
+          <h1 className="page-title" style={{ marginTop: 18 }}>AI repair session</h1>
+          <p className="page-subtitle">The server is ready for a coding agent to retrieve issue context.</p>
+        </div>
+        <span className={`badge ${done ? 'fixed' : 'fixing'}`}><span className="dot"></span>{done ? 'Fixed' : 'Fix requested'}</span>
+      </div>
+      <div className="detail-grid">
+        <div>
+          <div className="panel" style={{ marginBottom: 18 }}>
+            <div className="panel-head"><div className="panel-title">Continue in your coding agent</div></div>
+            <div style={{ padding: 18 }}>
+              <p className="muted" style={{ marginTop: 0 }}>Run this command in the application repository. The agent will receive the stack trace, event context and reproduction evidence.</p>
+              <div className="command">
+                <code>{cliCmd}</code>
+                <Button sm onClick={copy}>Copy</Button>
+              </div>
+              <p className="muted" style={{ marginTop: 16 }}>After the agent produces a patch:</p>
+              <div className="command" style={{ display: 'block', whiteSpace: 'pre', overflow: 'auto' }}>
+                <code>{`traceability issue attach-patch ${issue.id} --patch ./fix.diff --branch fix-${issue.id.slice(0, 6)}
+traceability issue mark-fixed ${issue.id}`}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside className="side-panel">
+          <div className="panel-head"><div className="panel-title">Progress</div></div>
+          <div className="timeline">
+            <div className={`timeline-item ${issue.status !== 'open' ? 'done' : ''}`}>
+              <div className="timeline-mark"></div>
+              <div><div className="timeline-title">Fix requested</div><div className="timeline-time">{new Date(issue.lastSeen).toLocaleTimeString()}</div></div>
+            </div>
+            <div className={`timeline-item ${issue.status === 'fixing' || issue.status === 'fixed' ? 'done' : ''}`}>
+              <div className="timeline-mark"></div>
+              <div><div className="timeline-title">Issue retrieved by agent</div><div className="timeline-time">{issue.status === 'fixing' || issue.status === 'fixed' ? 'in progress' : 'Waiting'}</div></div>
+            </div>
+            <div className={`timeline-item ${issue.status === 'fixed' ? 'done' : ''}`}>
+              <div className="timeline-mark"></div>
+              <div><div className="timeline-title">Marked as fixed</div><div className="timeline-time">{done ? 'Done' : 'Waiting'}</div></div>
+            </div>
+          </div>
+          {!done && (
+            <div className="side-section">
+              <Button variant="primary" className="full" onClick={markFixed}>Mark as fixed</Button>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  )
+}
+```
+
+- [ ] **Step 4: Create `app/src/pages/Settings.tsx`** (SDK setup snippet, matches `#page-settings`)
+
+```tsx
+import React from 'react'
+import { Panel } from '../components/ui/primitives'
+
+export function Settings() {
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">SDK setup</h1>
+          <p className="page-subtitle">Connect a web, React, Electron or Module Federation application.</p>
+        </div>
+      </div>
+      <Panel title="Install @traceability/core">
+        <pre className="code">
+{`pnpm add @traceability/core @sentry/browser
+
+import { init } from '@traceability/core'
+
+init({
+  dsn: 'http://localhost:3000',
+  appId: '<appId from the application detail page>',
+  token: '<api token>',
+  environment: 'production',
+  whiteScreen: { stableWindowMs: 500 }
+})`}
+        </pre>
+      </Panel>
     </div>
   )
 }
@@ -3444,25 +3973,31 @@ Add imports:
 import { Issues } from './pages/Issues'
 import { IssueDetail } from './pages/IssueDetail'
 import { FixSession } from './pages/FixSession'
+import { Settings } from './pages/Settings'
 ```
-Add routes inside the authenticated Layout `<Routes>`:
+Replace the `<Route path="/apps/:id" .../>` + wildcard block from Task 17 with:
 ```tsx
-        <Route path="/issues" element={<Issues />} />
-        <Route path="/issues/:id" element={<IssueDetail />} />
-        <Route path="/fix/:issueId" element={<FixSession />} />
+          <Route path="/apps/:id" element={<AppDetail />} />
+          <Route path="/issues" element={<Issues />} />
+          <Route path="/issues/:id" element={<IssueDetail />} />
+          <Route path="/fix/:issueId" element={<FixSession />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/apps" />} />
 ```
 
 - [ ] **Step 6: Typecheck + dev run**
 
 Run: `cd app && pnpm typecheck && pnpm dev`
-Expected: serves; navigate /apps → /issues → issue detail → Start AI Fix.
+Expected: `/issues` shows metrics + filterable data-table; clicking a row opens issue detail with tabs; "Start AI fix" opens the confirmation modal then navigates to the fix session with the CLI command + timeline; `/settings` shows the SDK snippet.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git add app
-git commit -m "feat(app): issues list/detail + fix session pages"
+git commit -m "feat(app): issues + issue detail tabs + fix session timeline + settings"
 ```
+
+---
 
 ---
 
@@ -3898,31 +4433,229 @@ git commit -m "docs: root README + e2e verification"
 
 ---
 
+## Task 21: `examples/` - demo project integrating the SDK (M6)
+
+**Goal:** A runnable demo that integrates `@traceability/core` and exercises every reportable event against a local server, so the SDK and the full ingest→Inbox loop can be verified end-to-end without writing app code.
+
+**Files:**
+- Create: `examples/package.json`
+- Create: `examples/web-demo/package.json`
+- Create: `examples/web-demo/vite.config.ts`
+- Create: `examples/web-demo/index.html`
+- Create: `examples/web-demo/src/main.ts`
+- Create: `examples/README.md`
+
+**Interfaces:**
+- Produces: `examples/web-demo` - a Vite vanilla-TS app that calls `@traceability/core` `init` + triggers error/white-screen/custom-report events. Documented to run against the local server + an appId created in the Inbox.
+
+- [ ] **Step 1: Create `examples/package.json`** (workspace folder is itself a package so pnpm treats it as a root for the demos)
+
+```json
+{
+  "name": "@traceability/examples",
+  "version": "1.0.0",
+  "private": true
+}
+```
+
+- [ ] **Step 2: Add `examples/*` to `pnpm-workspace.yaml`**
+
+Modify `pnpm-workspace.yaml` to:
+```yaml
+packages:
+  - "packages/*"
+  - "app"
+  - "server"
+  - "examples/*"
+```
+
+- [ ] **Step 3: Create `examples/web-demo/package.json`**
+
+```json
+{
+  "name": "@traceability/example-web-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@traceability/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}
+```
+
+- [ ] **Step 4: Create `examples/web-demo/vite.config.ts`**
+
+```ts
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  server: { port: 5174 },
+})
+```
+
+- [ ] **Step 5: Create `examples/web-demo/index.html`**
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Traceability demo</title>
+  </head>
+  <body>
+    <h1>Traceability SDK demo</h1>
+    <p>Open the console. Each button fires an event to the local server.</p>
+    <button id="err">Throw TypeError</button>
+    <button id="promise">Unhandled promise rejection</button>
+    <button id="white">Trigger white screen</button>
+    <button id="custom">Custom report</button>
+    <div id="root"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+```
+
+- [ ] **Step 6: Create `examples/web-demo/src/main.ts`**
+
+```ts
+import { init, report, whiteScreenIntegration } from '@traceability/core'
+
+// Replace these with a real appId (create an app in the Inbox at http://localhost:5173)
+// and the server's API token (TRACEABILITY_API_TOKEN).
+const APP_ID = localStorage.getItem('demo.appId') ?? 'REPLACE_WITH_APP_ID'
+const TOKEN = localStorage.getItem('demo.token') ?? 'dev-token'
+
+init({
+  dsn: 'http://localhost:3000',
+  appId: APP_ID,
+  token: TOKEN,
+  environment: 'demo',
+  whiteScreen: { stableWindowMs: 500, minContentNodes: 3 },
+})
+
+// opt-in white screen integration
+// (init already accepts whiteScreen options; this explicit integration is for demo clarity)
+void whiteScreenIntegration
+
+document.querySelector('#err')!.addEventListener('click', () => {
+  throw new TypeError('demo: Cannot read properties of undefined')
+})
+document.querySelector('#promise')!.addEventListener('click', () => {
+  void Promise.reject(new Error('demo: unhandled rejection'))
+})
+document.querySelector('#white')!.addEventListener('click', () => {
+  document.getElementById('root')!.innerHTML = ''
+})
+document.querySelector('#custom')!.addEventListener('click', () => {
+  report({ type: 'demo-custom-event', payload: { at: Date.now() }, tags: { feature: 'demo' } })
+})
+```
+
+- [ ] **Step 7: Create `examples/README.md`**
+
+````markdown
+# Traceability examples
+
+Runnable demos that integrate `@traceability/core` against a local server.
+
+## web-demo
+
+A vanilla Vite + TypeScript app that fires each reportable event type.
+
+### Prerequisites
+
+1. Start the server (from repo root):
+   ```bash
+   export TRACEABILITY_API_TOKEN=dev-token
+   cd server && pnpm dev
+   ```
+2. Start the Inbox UI and create an application, copy its `appId`:
+   ```bash
+   cd app && pnpm dev
+   ```
+   Open http://localhost:5173, log in (server=http://localhost:3000, token=dev-token), create an app, copy the App ID.
+
+### Run the demo
+
+```bash
+cd examples/web-demo
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:5174. In the browser console set the appId/token if needed:
+
+```js
+localStorage.setItem('demo.appId', '<paste appId>')
+localStorage.setItem('demo.token', 'dev-token')
+location.reload()
+```
+
+Click the buttons. Each fires an event that the server ingests and aggregates into an issue visible in the Inbox.
+
+### Verify the loop
+
+1. Click "Throw TypeError" → the Inbox Issues page shows a new `TypeError: demo...` issue (live via WebSocket).
+2. Open the issue → "Start AI fix" → the Fix Session page shows `traceability issue show <id> --json`.
+3. From a terminal:
+   ```bash
+   cd packages/cli
+   node dist/index.js config set --server http://localhost:3000 --token dev-token
+   node dist/index.js issue show <issueId> --json
+   ```
+````
+
+- [ ] **Step 8: Install + run the demo**
+
+Run: `pnpm install && cd examples/web-demo && pnpm dev`
+Expected: Vite serves at http://localhost:5174; buttons render. With the server running and a real appId set, clicking "Throw TypeError" makes a new issue appear in the Inbox.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add examples pnpm-workspace.yaml
+git commit -m "feat(examples): web-demo integrating @traceability/core"
+```
+
+---
+
 ## Self-Review (completed)
 
 **1. Spec coverage:**
-- §2 architecture (core/server/app/cli/skills) → Tasks 9–19 ✓
-- §3 SDK design principles (generic, appId injection) → Task 9 (`beforeSend` injects appId) ✓
-- §4.1 core (init/transport/report/integrations) → Tasks 9, 10, 11 ✓
-- §4.1.1 whiteScreen → Task 11 ✓
-- §4.1.2 mfGuard (`installGlobalProxy`/`setApp`) → Task 9 (PV guard single-route-lock noted as TODO below) ⚠ see note
-- §4.1.3 corsDiagnostic → Task 10 ✓
-- §4.2 react (ErrorBoundary/hook) → Task 12 ✓
-- §4.3 electron (main/renderer/preload) → Task 13 ✓
-- §4.4 cli (config/app/issue subcommands) → Tasks 14, 15 ✓
-- §4.5 skills (instrumentation/diagnose-issue/add-boundary) → Task 19 ✓
-- §4.6 app pages (login/apps/issues/fix) → Tasks 16, 17, 18 ✓
-- §4.7 server (ingest/apps/issues/patches/ws/auth) → Tasks 4, 5, 6, 7, 8 ✓
-- §6 milestones M0–M6 → mapped across Tasks 1–20 ✓
+- §2 architecture (core/server/app/cli/skills) -> Tasks 9–19 ✓
+- §3 SDK design principles (generic, appId injection) -> Task 9 (`beforeSend` injects appId) ✓
+- §4.1 core (init/transport/report/integrations) -> Tasks 9, 10, 11 ✓
+- §4.1.1 whiteScreen -> Task 11 ✓
+- §4.1.2 mfGuard (`installGlobalProxy`/`setApp`) -> Task 9 ⚠ PV single-report lock noted below
+- §4.1.3 corsDiagnostic -> Task 10 ✓
+- §4.2 react (ErrorBoundary/hook) -> Task 12 ✓
+- §4.3 electron (main/renderer/preload) -> Task 13 ✓
+- §4.4 cli (config/app/issue subcommands) -> Tasks 14, 15 ✓
+- §4.5 skills (instrumentation/diagnose-issue/add-boundary) -> Task 19 ✓
+- §4.6 app pages (login/apps/issues/fix/settings) -> Tasks 16, 17, 18 (now prototype-faithful) ✓
+- §4.7 server (ingest/apps/issues/patches/ws/auth) -> Tasks 4, 5, 6, 7, 8 ✓
+- §6 milestones M0–M6 -> mapped across Tasks 1–21 ✓
+- **Prototype fidelity** (user requirement) -> Task 16 ports `prototype/index.html` `<style>` into `app/src/styles.css`; Tasks 16/17/18 use the prototype's exact class names and reproduce its `#page-*` structures ✓
+- **examples/** (user requirement) -> Task 21 ✓
+- **pnpm** (user requirement) -> Global Constraints + all install commands use pnpm ✓
 
-**Gap — mfGuard PV single-report lock:** Task 9 implements `installGlobalProxy`/`setApp` and appId+appName tagging, but the spec's `__MONITOR_ROUTE_LOCK__` 100ms PV dedup guard is NOT implemented (Sentry handles PV/session automatically; the dedup is a MF-specific concern). This is acceptable for v1 because the Inbox issues are driven by `error`/`message` events, not PV. Recommend a follow-up issue rather than blocking v1.
+**Gap - mfGuard PV single-report lock:** Task 9 implements `installGlobalProxy`/`setApp` and appId+appName tagging, but the spec's `__MONITOR_ROUTE_LOCK__` 100ms PV dedup guard is NOT implemented (Sentry handles PV/session automatically). Acceptable for v1 because Inbox issues are driven by `error`/`message` events, not PV. Recommend a follow-up issue rather than blocking v1.
 
-**2. Placeholder scan:** No "TBD"/"TODO" left in executable steps. Notes about type-mismatch resolution (Task 9 Step 3, Task 13 Step 5) are explicit instructions, not placeholders. ✓
+**2. Placeholder scan:** No "TBD"/"TODO" in executable steps. The styles.css step (Task 16 Step 3) points to the concrete `prototype/index.html` file with an exhaustive class-name checklist - that is a concrete instruction, not a placeholder. ✓
 
 **3. Type consistency:**
 - `Application`/`Issue`/`Event`/`Patch`/`IssueStatus` defined in Task 2 (`@traceability/protocol`), consumed identically in Tasks 6, 8, 15, 16–18. ✓
-- `InitOptions`/`ReportData` defined in Task 9 (`packages/core/src/types.ts`), consumed in Task 12 (react hooks) and Task 13 (electron main). ✓
-- `createAppsRepo`/`createIssuesRepo`/`createBroadcaster` return types threaded through Tasks 6→7→8 via `ReturnType<typeof …>`. ✓
-- `IssueEvent` defined twice (server broadcaster Task 7, app ws Task 16) — flagged in Task 16 Step 5 to use the local copy. ✓
+- `InitOptions`/`ReportData` defined in Task 9, consumed in Tasks 12, 13, 21. ✓
+- `createAppsRepo`/`createIssuesRepo`/`createBroadcaster` return types threaded via `ReturnType<typeof …>`. ✓
+- `IssueEvent` defined locally in `app/src/ws/client.ts` (Task 16 Step 6) matching the server broadcaster (Task 7). ✓
+- Status mapping: server `IssueStatus` (`open`/`fix-manual`/`fixing`/`fixed`/`ignored`) -> prototype badge classes (`open`/`fixing`/`fixed`) via `BADGE` map in `primitives.tsx` (Task 16 Step 7) and inline in Issues/IssueDetail (Task 18). `fix-manual` and `fixing` both render as `fixing`/"Fix requested"/"Fixing" - consistent. ✓
 
-**4. Ambiguity:** `report()` signature is `{ type, payload?, tags? }` consistently across core (Task 9), react (Task 12), skills (Task 19). ✓
+**4. Ambiguity:** `report()` signature `{ type, payload?, tags? }` consistent across core (Task 9), react (Task 12), skills (Task 19), examples (Task 21). ✓
