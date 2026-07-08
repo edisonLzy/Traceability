@@ -1,13 +1,16 @@
 {
   "name": "traceability",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Sentry-based web monitoring + exception-to-fix loop",
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "pnpm -r --filter=./packages/* --filter=./server run build",
+    "build:app": "pnpm --filter ./app build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.30.3"
+  "engines": {
+    "node": ">=20"
+  }
 }
