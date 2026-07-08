@@ -1,0 +1,6 @@
+{
+  "name": "@traceability/skills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Coding-agent skills that teach how to instrument code with @traceability/core"
+}
