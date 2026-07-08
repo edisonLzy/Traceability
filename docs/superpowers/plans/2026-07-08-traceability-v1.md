@@ -9,7 +9,7 @@
 **Tech Stack:** TypeScript (strict), pnpm workspace, Node.js 20+, Fastify (server), `@sentry/browser`/`@sentry/react`/`@sentry/electron` (SDK core), better-sqlite3 (v1 storage), React 19 + Vite (app UI), commander (CLI), vitest (tests).
 
 **Spec:** `docs/superpowers/specs/2026-07-08-traceability-v1-design.md`
-**App design source of truth:** `prototype/index.html` (AI-generated Inbox prototype). The `app/` package MUST reproduce this design.
+**App design source of truth:** `docs/prototype/index.html` (AI-generated Inbox prototype). The `app/` package MUST reproduce this design.
 
 ## Global Constraints
 
@@ -25,7 +25,7 @@
 - SDK must NOT couple to business semantics (no `monitor.business.*`).
 - Server ingests only Sentry envelope items of type `error` / `transaction` / `message`; others are dropped.
 - SDK transport posts to `${serverUrl}/api/ingest/envelope/${appId}`.
-- **App UI fidelity:** `app/` must match `prototype/index.html` visually - same CSS variables, same component classes (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`), same dark color scheme. Port the prototype's `<style>` block into `app/src/styles.css` and reuse the class names rather than inventing new inline styles.
+- **App UI fidelity:** `app/` must match `docs/prototype/index.html` visually - same CSS variables, same component classes (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`), same dark color scheme. Port the prototype's `<style>` block into `app/src/styles.css` and reuse the class names rather than inventing new inline styles.
 
 ---
 
@@ -102,7 +102,7 @@ traceability/
 │   └── src/
 │       ├── main.tsx
 │       ├── App.tsx
-│       ├── styles.css                 # ported verbatim from prototype/index.html <style>
+│       ├── styles.css                 # ported verbatim from docs/prototype/index.html <style>
 │       ├── api/client.ts
 │       ├── ws/client.ts
 │       ├── auth/token.ts
@@ -226,7 +226,9 @@ packages:
 }
 ```
 
-- [ ] **Step 4: Create `.gitignore`**
+- [ ] **Step 4: Ensure `.gitignore` has the build/runtime entries (merge, do not overwrite)**
+
+A `.gitignore` already exists in the repo (Node template + `.claude/settings.local.json`). Do NOT overwrite it. Append any of these entries that are missing (most already exist):
 
 ```gitignore
 node_modules/
@@ -2883,7 +2885,7 @@ git commit -m "feat(cli): app + issue subcommands"
 
 ## Task 16: `app/` - scaffold + design system (ported from prototype) + auth + clients (M3)
 
-**Design source of truth:** `prototype/index.html`. Port its `<style>` block into `app/src/styles.css` and reuse the prototype's class names (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`) instead of inline styles. The shell (`.shell`/`.sidebar`/`.topbar`) must match the prototype.
+**Design source of truth:** `docs/prototype/index.html`. Port its `<style>` block into `app/src/styles.css` and reuse the prototype's class names (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`) instead of inline styles. The shell (`.shell`/`.sidebar`/`.topbar`) must match the prototype.
 
 **Files:**
 - Create: `app/index.html`
@@ -2939,7 +2941,7 @@ export default defineConfig({
 
 - [ ] **Step 3: Create `app/src/styles.css` - port the prototype's `<style>` block verbatim**
 
-Open `prototype/index.html`, copy the entire contents of its `<style>...</style>` element (the `:root` variables and every component class), and paste it into `app/src/styles.css` UNCHANGED. Do not rewrite or "improve" it - the page tasks rely on these exact class names: `:root` vars, `.shell`, `.sidebar`, `.brand`, `.workspace`, `.nav-item`, `.main`, `.topbar`, `.breadcrumbs`, `.kbd`, `.btn`/`.btn-primary`/`.btn-danger`/`.btn-sm`, `.content`, `.page`, `.page-header`/`.page-title`/`.page-subtitle`/`.header-actions`, `.metrics`/`.metric`, `.panel`/`.panel-head`/`.panel-title`/`.panel-meta`, `.toolbar`/`.search`/`.select`, `.data-table`, `.severity`, `.issue-main`/`.issue-title`/`.issue-sub`, `.muted`, `.badge`/`.dot`, `.app-grid`/`.app-card`/`.app-icon`/`.app-stats`, `.detail-grid`, `.issue-heading`/`.issue-id`, `.tabs`/`.tab`/`.tab-pane`, `.code`/`.line`/`.ln`/`.hot`/`.fn`/`.str`, `.info-list`/`.info-row`, `.side-panel`/`.side-section`/`.side-label`/`.side-value`/`.full`, `.timeline`/`.timeline-item`/`.timeline-mark`/`.timeline-title`/`.timeline-time`, `.command`, `.patch-file`/`.patch-stats`/`.plus`/`.minus`, `.empty`, `.modal-backdrop`/`.modal`/`.modal-head`/`.modal-body`/`.modal-foot`/`.field`, `.toast`, `.palette`/`.palette-list`/`.palette-item`/`.palette-key`.
+Open `docs/prototype/index.html`, copy the entire contents of its `<style>...</style>` element (the `:root` variables and every component class), and paste it into `app/src/styles.css` UNCHANGED. Do not rewrite or "improve" it - the page tasks rely on these exact class names: `:root` vars, `.shell`, `.sidebar`, `.brand`, `.workspace`, `.nav-item`, `.main`, `.topbar`, `.breadcrumbs`, `.kbd`, `.btn`/`.btn-primary`/`.btn-danger`/`.btn-sm`, `.content`, `.page`, `.page-header`/`.page-title`/`.page-subtitle`/`.header-actions`, `.metrics`/`.metric`, `.panel`/`.panel-head`/`.panel-title`/`.panel-meta`, `.toolbar`/`.search`/`.select`, `.data-table`, `.severity`, `.issue-main`/`.issue-title`/`.issue-sub`, `.muted`, `.badge`/`.dot`, `.app-grid`/`.app-card`/`.app-icon`/`.app-stats`, `.detail-grid`, `.issue-heading`/`.issue-id`, `.tabs`/`.tab`/`.tab-pane`, `.code`/`.line`/`.ln`/`.hot`/`.fn`/`.str`, `.info-list`/`.info-row`, `.side-panel`/`.side-section`/`.side-label`/`.side-value`/`.full`, `.timeline`/`.timeline-item`/`.timeline-mark`/`.timeline-title`/`.timeline-time`, `.command`, `.patch-file`/`.patch-stats`/`.plus`/`.minus`, `.empty`, `.modal-backdrop`/`.modal`/`.modal-head`/`.modal-body`/`.modal-foot`/`.field`, `.toast`, `.palette`/`.palette-list`/`.palette-item`/`.palette-key`.
 
 - [ ] **Step 4: Create `app/src/auth/token.ts`**
 
@@ -3414,7 +3416,7 @@ git commit -m "feat(app): scaffold + design system ported from prototype + auth/
 
 ## Task 17: `app/` - Applications pages (app-grid + create modal + detail) (M3)
 
-**Design reference:** `prototype/index.html` `#page-apps` (`.app-grid`/`.app-card`) and `#page-app-detail` (`.detail-grid`/`.info-list`/`.side-panel`). Use the primitives from Task 16.
+**Design reference:** `docs/prototype/index.html` `#page-apps` (`.app-grid`/`.app-card`) and `#page-app-detail` (`.detail-grid`/`.info-list`/`.side-panel`). Use the primitives from Task 16.
 
 **Files:**
 - Create: `app/src/pages/Apps.tsx`
@@ -3608,7 +3610,7 @@ git commit -m "feat(app): applications grid + create modal + detail page"
 
 ## Task 18: `app/` - Issues + Issue detail (tabs) + Fix session (timeline) + Settings (M3 + M5)
 
-**Design reference:** `prototype/index.html` `#page-issues` (`.metrics`/`.toolbar`/`.data-table`), `#page-issue-detail` (`.issue-heading`/`.tabs`/`.side-panel`), `#page-fix` (`.command`/`.patch-file`/`.timeline`), `#page-settings` (`.code` snippet).
+**Design reference:** `docs/prototype/index.html` `#page-issues` (`.metrics`/`.toolbar`/`.data-table`), `#page-issue-detail` (`.issue-heading`/`.tabs`/`.side-panel`), `#page-fix` (`.command`/`.patch-file`/`.timeline`), `#page-settings` (`.code` snippet).
 
 **Files:**
 - Create: `app/src/pages/Issues.tsx`
@@ -4643,13 +4645,13 @@ git commit -m "feat(examples): web-demo integrating @traceability/core"
 - §4.6 app pages (login/apps/issues/fix/settings) -> Tasks 16, 17, 18 (now prototype-faithful) ✓
 - §4.7 server (ingest/apps/issues/patches/ws/auth) -> Tasks 4, 5, 6, 7, 8 ✓
 - §6 milestones M0–M6 -> mapped across Tasks 1–21 ✓
-- **Prototype fidelity** (user requirement) -> Task 16 ports `prototype/index.html` `<style>` into `app/src/styles.css`; Tasks 16/17/18 use the prototype's exact class names and reproduce its `#page-*` structures ✓
+- **Prototype fidelity** (user requirement) -> Task 16 ports `docs/prototype/index.html` `<style>` into `app/src/styles.css`; Tasks 16/17/18 use the prototype's exact class names and reproduce its `#page-*` structures ✓
 - **examples/** (user requirement) -> Task 21 ✓
 - **pnpm** (user requirement) -> Global Constraints + all install commands use pnpm ✓
 
 **Gap - mfGuard PV single-report lock:** Task 9 implements `installGlobalProxy`/`setApp` and appId+appName tagging, but the spec's `__MONITOR_ROUTE_LOCK__` 100ms PV dedup guard is NOT implemented (Sentry handles PV/session automatically). Acceptable for v1 because Inbox issues are driven by `error`/`message` events, not PV. Recommend a follow-up issue rather than blocking v1.
 
-**2. Placeholder scan:** No "TBD"/"TODO" in executable steps. The styles.css step (Task 16 Step 3) points to the concrete `prototype/index.html` file with an exhaustive class-name checklist - that is a concrete instruction, not a placeholder. ✓
+**2. Placeholder scan:** No "TBD"/"TODO" in executable steps. The styles.css step (Task 16 Step 3) points to the concrete `docs/prototype/index.html` file with an exhaustive class-name checklist - that is a concrete instruction, not a placeholder. ✓
 
 **3. Type consistency:**
 - `Application`/`Issue`/`Event`/`Patch`/`IssueStatus` defined in Task 2 (`@traceability/protocol`), consumed identically in Tasks 6, 8, 15, 16–18. ✓
