@@ -1,0 +1,52 @@
+import type { Database } from 'better-sqlite3'
+
+export function runMigrations(db: Database): void {
+  db.pragma('journal_mode = WAL')
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS applications (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      repo_url TEXT NOT NULL,
+      default_branch TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS issues (
+      id TEXT PRIMARY KEY,
+      app_id TEXT NOT NULL,
+      fingerprint TEXT NOT NULL,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL,
+      first_seen TEXT NOT NULL,
+      last_seen TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 1,
+      status TEXT NOT NULL DEFAULT 'open',
+      metadata TEXT NOT NULL DEFAULT '{}',
+      FOREIGN KEY (app_id) REFERENCES applications(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_issues_app_id ON issues(app_id);
+    CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_app_fingerprint ON issues(app_id, fingerprint);
+
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      issue_id TEXT NOT NULL,
+      received_at TEXT NOT NULL,
+      envelope TEXT NOT NULL,
+      FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_events_issue_id ON events(issue_id);
+
+    CREATE TABLE IF NOT EXISTS patches (
+      id TEXT PRIMARY KEY,
+      issue_id TEXT NOT NULL,
+      branch TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      attached_at TEXT NOT NULL,
+      FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
+    );
+  `)
+}
