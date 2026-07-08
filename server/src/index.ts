@@ -18,6 +18,18 @@ async function main() {
   const app = Fastify({ logger: true })
   await app.register(websocket)
 
+  // Accept raw envelope bodies as a string for content-types the Sentry SDK
+  // transport sends (application/octet-stream) and any other raw body. Fastify
+  // has no built-in parser for these, so without it the ingest endpoint returns
+  // HTTP 415. The '*' catch-all only applies to content-types not matched by a
+  // more specific parser, so the octet-stream entry above still takes precedence.
+  app.addContentTypeParser('application/octet-stream', { parseAs: 'string' }, (_req, body, done) => {
+    done(null, body)
+  })
+  app.addContentTypeParser('*', { parseAs: 'string' }, (_req, body, done) => {
+    done(null, body)
+  })
+
   app.get('/api/ws', { websocket: true }, (socket, req) => {
     const token = (req.query as { token?: string }).token
     if (token !== config.apiToken) {
