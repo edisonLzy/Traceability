@@ -2,7 +2,7 @@ export function printJson(data: unknown): void {
   console.log(JSON.stringify(data, null, 2))
 }
 
-export function printTable(rows: Array<Record<string, unknown>>, columns: Array<{ key: string; label: string; width?: number }>): void {
+export function printTable(rows: readonly object[], columns: Array<{ key: string; label: string; width?: number }>): void {
   if (rows.length === 0) {
     console.log('(no rows)')
     return
@@ -11,7 +11,8 @@ export function printTable(rows: Array<Record<string, unknown>>, columns: Array<
   console.log(header)
   console.log('-'.repeat(header.length))
   for (const row of rows) {
-    console.log(columns.map((c) => pad(String(row[c.key] ?? ''), c.width ?? 20)).join('  '))
+    const r = row as Record<string, unknown>
+    console.log(columns.map((c) => pad(String(r[c.key] ?? ''), c.width ?? 20)).join('  '))
   }
 }
 
