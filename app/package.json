@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@traceability/protocol": "workspace:*",
+    "@rrweb/replay": "^2.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^6.26.0"

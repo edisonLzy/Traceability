@@ -40,6 +40,27 @@ export function runMigrations(db: Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_events_issue_id ON events(issue_id);
 
+    CREATE TABLE IF NOT EXISTS rrweb_replays (
+      id TEXT PRIMARY KEY,
+      app_id TEXT NOT NULL,
+      issue_id TEXT,
+      sentry_event_id TEXT,
+      received_at TEXT NOT NULL,
+      captured_at TEXT,
+      start_at INTEGER,
+      end_at INTEGER,
+      event_count INTEGER NOT NULL DEFAULT 0,
+      size_bytes INTEGER NOT NULL DEFAULT 0,
+      payload TEXT NOT NULL DEFAULT '[]',
+      metadata TEXT NOT NULL DEFAULT '{}',
+      FOREIGN KEY (app_id) REFERENCES applications(id) ON DELETE CASCADE,
+      FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rrweb_replays_issue_id ON rrweb_replays(issue_id);
+    CREATE INDEX IF NOT EXISTS idx_rrweb_replays_app_id ON rrweb_replays(app_id);
+    CREATE INDEX IF NOT EXISTS idx_rrweb_replays_sentry_event_id ON rrweb_replays(sentry_event_id);
+
     CREATE TABLE IF NOT EXISTS patches (
       id TEXT PRIMARY KEY,
       issue_id TEXT NOT NULL,

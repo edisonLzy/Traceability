@@ -1,4 +1,4 @@
-import { init, report } from '@traceability/core'
+import { captureException, init, report } from '@traceability/core'
 
 // Replace these with a real appId (create an app in the Inbox at http://localhost:5173)
 // and the server's API token (TRACEABILITY_API_TOKEN).
@@ -10,11 +10,12 @@ init({
   appId: 'e4eac53d-846d-4c75-a6a0-402c15c69954',
   token: TOKEN,
   environment: 'demo',
+  replay: { enabled: true, maxDurationMs: 60_000 },
   whiteScreen: { stableWindowMs: 500, minContentNodes: 3 },
 })
 
 document.querySelector('#err')!.addEventListener('click', () => {
-  throw new TypeError('demo: Cannot read properties of undefined')
+  captureException(new TypeError('demo: Cannot read properties of undefined'))
 })
 document.querySelector('#promise')!.addEventListener('click', () => {
   void Promise.reject(new Error('demo: unhandled rejection'))

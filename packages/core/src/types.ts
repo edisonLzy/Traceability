@@ -15,6 +15,15 @@ export interface InitOptions {
     minContentNodes?: number
     enableScreenshot?: boolean
   }
+  replay?: {
+    enabled?: boolean
+    maxDurationMs?: number
+    maxEvents?: number
+    uploadOnError?: boolean
+    maskAllInputs?: boolean
+    blockClass?: string
+    blockSelector?: string
+  }
   mf?: { host: boolean }
   beforeSend?: (event: Event) => Event | null
 }

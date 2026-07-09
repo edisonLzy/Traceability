@@ -34,6 +34,34 @@ export interface Event {
   envelope: string
 }
 
+export interface RrwebReplaySummary {
+  id: string
+  appId: string
+  issueId?: string
+  sentryEventId?: string
+  receivedAt: string
+  capturedAt?: string
+  startAt?: number
+  endAt?: number
+  eventCount: number
+  sizeBytes: number
+  metadata: Record<string, unknown>
+}
+
+export interface RrwebReplay extends RrwebReplaySummary {
+  events: unknown[]
+}
+
+export interface RrwebReplayIngestBody {
+  replayId?: string
+  sentryEventId?: string
+  capturedAt?: string
+  startAt?: number
+  endAt?: number
+  events: unknown[]
+  metadata?: Record<string, unknown>
+}
+
 export interface Patch {
   id: string
   issueId: string

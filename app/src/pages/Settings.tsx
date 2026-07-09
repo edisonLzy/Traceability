@@ -21,6 +21,7 @@ init({
   appId: '<appId from the application detail page>',
   token: '<api token>',
   environment: 'production',
+  replay: { enabled: true, maxDurationMs: 60000 },
   whiteScreen: { stableWindowMs: 500 }
 })`}
         </pre>

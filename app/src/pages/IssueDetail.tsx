@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { RrwebReplayPlayer } from '../components/RrwebReplayPlayer'
 import { useToast } from '../components/Toast'
 import { Button, Modal } from '../components/ui/primitives'
-import type { Issue, Event } from '@traceability/protocol'
+import type { Issue, Event, RrwebReplay, RrwebReplaySummary } from '@traceability/protocol'
 
-type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs'
+type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs' | 'replay'
 
 export function IssueDetail() {
   const { id } = useParams<{ id: string }>()
@@ -13,6 +14,10 @@ export function IssueDetail() {
   const toast = useToast()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [events, setEvents] = useState<Event[]>([])
+  const [replays, setReplays] = useState<RrwebReplaySummary[]>([])
+  const [selectedReplayId, setSelectedReplayId] = useState<string | null>(null)
+  const [activeReplay, setActiveReplay] = useState<RrwebReplay | null>(null)
+  const [replayLoading, setReplayLoading] = useState(false)
   const [tab, setTab] = useState<Tab>('stack')
   const [showFix, setShowFix] = useState(false)
 
@@ -20,8 +25,22 @@ export function IssueDetail() {
     if (!id) return
     apiFetch<Issue>(`/api/issues/${id}`).then(setIssue).catch((e) => toast(String(e)))
     apiFetch<Event[]>(`/api/issues/${id}/events`).then(setEvents).catch(() => {})
+    apiFetch<RrwebReplaySummary[]>(`/api/issues/${id}/replays`).then((items) => {
+      setReplays(items)
+      setSelectedReplayId(items[0]?.id ?? null)
+      setActiveReplay(null)
+    }).catch(() => {})
   }
   useEffect(() => { load() }, [id])
+
+  useEffect(() => {
+    if (tab !== 'replay' || !id || !selectedReplayId) return
+    setReplayLoading(true)
+    apiFetch<RrwebReplay>(`/api/issues/${id}/replays/${selectedReplayId}`)
+      .then(setActiveReplay)
+      .catch((e) => toast(String(e)))
+      .finally(() => setReplayLoading(false))
+  }, [id, selectedReplayId, tab])
 
   const startFix = async () => {
     if (!id) return
@@ -53,9 +72,17 @@ export function IssueDetail() {
       <div className="detail-grid">
         <div className="panel">
           <div className="tabs">
-            {(['stack', 'events', 'context', 'breadcrumbs'] as Tab[]).map((t) => (
+            {(['stack', 'events', 'context', 'breadcrumbs', 'replay'] as Tab[]).map((t) => (
               <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                {t === 'stack' ? 'Stack trace' : t === 'events' ? `Events · ${events.length}` : t === 'context' ? 'Context' : 'Breadcrumbs'}
+                {t === 'stack'
+                  ? 'Stack trace'
+                  : t === 'events'
+                    ? `Events · ${events.length}`
+                    : t === 'context'
+                      ? 'Context'
+                      : t === 'breadcrumbs'
+                        ? 'Breadcrumbs'
+                        : `Replay · ${replays.length}`}
               </button>
             ))}
           </div>
@@ -82,6 +109,39 @@ export function IssueDetail() {
           </div>
           <div className={`tab-pane ${tab === 'breadcrumbs' ? 'active' : ''}`}>
             <div className="empty">Breadcrumbs are captured inside each event envelope (see Events tab).</div>
+          </div>
+          <div className={`tab-pane ${tab === 'replay' ? 'active' : ''}`}>
+            <div className="replay-pane">
+              {replays.length > 0 && (
+                <div className="replay-toolbar">
+                  <select
+                    className="select"
+                    value={selectedReplayId ?? ''}
+                    onChange={(e) => {
+                      setSelectedReplayId(e.target.value)
+                      setActiveReplay(null)
+                    }}
+                  >
+                    {replays.map((replay) => (
+                      <option key={replay.id} value={replay.id}>
+                        {new Date(replay.receivedAt).toLocaleString()} · {replay.eventCount} events
+                      </option>
+                    ))}
+                  </select>
+                  {activeReplay && (
+                    <span className="badge fixed"><span className="dot"></span>{formatBytes(activeReplay.sizeBytes)}</span>
+                  )}
+                </div>
+              )}
+              {replayLoading && <div className="empty">Loading replay…</div>}
+              {!replayLoading && replays.length === 0 && <div className="empty">No replay captured for this issue.</div>}
+              {!replayLoading && activeReplay && activeReplay.events.length === 0 && (
+                <div className="empty">Replay is still uploading.</div>
+              )}
+              {!replayLoading && activeReplay && activeReplay.events.length > 0 && (
+                <RrwebReplayPlayer replay={activeReplay} />
+              )}
+            </div>
           </div>
         </div>
         <aside className="side-panel">
@@ -116,4 +176,10 @@ export function IssueDetail() {
       </Modal>
     </div>
   )
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }

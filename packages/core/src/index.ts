@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/browser'
 import type { ErrorEvent } from '@sentry/browser'
 import { corsDiagnosticIntegration } from './integrations/corsDiagnostic.js'
 import { whiteScreenIntegration } from './integrations/whiteScreen.js'
+import { createReplayId, initRrwebReplay, isRrwebReplayReady, uploadRrwebReplay } from './replay/rrweb.js'
 import { createServerTransport } from './transport/serverTransport.js'
 import type { InitOptions, ReportData } from './types.js'
 
@@ -26,9 +27,14 @@ export function init(opts: InitOptions): void {
       if (currentAppName) {
         event.tags.appName = currentAppName
       }
+      const replayId = prepareReplayForEvent(event)
       // opts.beforeSend is typed against the base Event; the runtime event is
       // an ErrorEvent (a subtype), so the downcast on the return is sound.
-      return opts.beforeSend ? (opts.beforeSend(event) as ErrorEvent | null) : event
+      const next = opts.beforeSend ? (opts.beforeSend(event) as ErrorEvent | null) : event
+      if (next && replayId) {
+        uploadRrwebReplay(replayId, next.event_id)
+      }
+      return next
     },
     integrations: (defaults) => {
       const list = [...defaults, corsDiagnosticIntegration()]
@@ -42,6 +48,7 @@ export function init(opts: InitOptions): void {
   if (opts.user) {
     Sentry.setUser(opts.user as Parameters<typeof Sentry.setUser>[0])
   }
+  initRrwebReplay(opts)
 }
 
 export function setApp(appName: string): void {
@@ -58,7 +65,20 @@ export function installGlobalProxy(): void {
   // prevents consumers from re-init. No additional monkey-patch needed in v1.
 }
 
-export const captureException = Sentry.captureException
+export function captureException(...args: Parameters<typeof Sentry.captureException>): ReturnType<typeof Sentry.captureException> {
+  if (!isRrwebReplayReady()) {
+    return Sentry.captureException(...args)
+  }
+
+  const replayId = createReplayId()
+  const eventId = Sentry.withScope((scope) => {
+    scope.setExtra('rrwebReplayId', replayId)
+    scope.setTag('rrwebReplayId', replayId)
+    return Sentry.captureException(...args)
+  })
+  uploadRrwebReplay(replayId, eventId)
+  return eventId
+}
 export const captureMessage = Sentry.captureMessage
 export const setTag = Sentry.setTag
 export const setContext = Sentry.setContext
@@ -78,3 +98,13 @@ export type { ServerTransportOptions } from './transport/serverTransport.js'
 export { corsDiagnosticIntegration }
 export { whiteScreenIntegration }
 export type { WhiteScreenOptions } from './integrations/whiteScreen.js'
+
+function prepareReplayForEvent(event: ErrorEvent): string | undefined {
+  if (!isRrwebReplayReady()) return undefined
+  if (typeof event.extra?.rrwebReplayId === 'string') return undefined
+
+  const replayId = createReplayId()
+  event.extra = { ...(event.extra ?? {}), rrwebReplayId: replayId }
+  event.tags = { ...(event.tags ?? {}), rrwebReplayId: replayId }
+  return replayId
+}
