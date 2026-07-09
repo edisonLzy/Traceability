@@ -5,6 +5,8 @@ import { connectWs } from './ws/client'
 import { ToastProvider } from './components/Toast'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
+import { Apps } from './pages/Apps'
+import { AppDetail } from './pages/AppDetail'
 
 export function App() {
   const token = getToken()
@@ -25,8 +27,9 @@ export function App() {
       <Layout>
         <Routes>
           <Route path="/login" element={<Navigate to="/apps" />} />
-          {/* pages added in Tasks 17/18 */}
-          <Route path="*" element={<div className="page">Not found</div>} />
+          <Route path="/apps" element={<Apps />} />
+          <Route path="/apps/:id" element={<AppDetail />} />
+          <Route path="*" element={<Navigate to="/apps" />} />
         </Routes>
       </Layout>
     </ToastProvider>
