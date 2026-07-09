@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@sentry/browser": "^8.0.0",
+    "@sentry/core": "^8.0.0",
     "@traceability/protocol": "workspace:*"
   },
   "devDependencies": {
+    "jsdom": "^25.0.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }
