@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import websocket from '@fastify/websocket'
+import cors from '@fastify/cors'
 import { getConfig } from './config.js'
 import { openDb } from './store/db.js'
 import { createAppsRepo } from './store/apps.js'
@@ -17,6 +18,9 @@ async function main() {
 
   const app = Fastify({ logger: true })
   await app.register(websocket)
+  // Allow the Inbox UI (:5173) and demo (:5174) to call the API cross-origin.
+  // Reflect any origin in dev; tighten for production deployment.
+  await app.register(cors, { origin: true, credentials: false })
 
   // Accept raw envelope bodies as a string for content-types the Sentry SDK
   // transport sends (application/octet-stream) and any other raw body. Fastify
