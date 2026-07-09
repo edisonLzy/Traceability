@@ -19,7 +19,12 @@ export function FixSession() {
 
   const cliCmd = `traceability issue show ${issue.id} --json`
   const markFixed = async () => {
-    await apiFetch(`/api/issues/${issue.id}/mark-fixed`, { method: 'POST' })
+    try {
+      await apiFetch(`/api/issues/${issue.id}/mark-fixed`, { method: 'POST' })
+    } catch (e) {
+      toast(String(e))
+      return
+    }
     toast('Issue marked as fixed')
     load()
   }

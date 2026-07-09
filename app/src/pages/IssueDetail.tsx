@@ -25,7 +25,12 @@ export function IssueDetail() {
 
   const startFix = async () => {
     if (!id) return
-    await apiFetch(`/api/issues/${id}/fix-request`, { method: 'POST' })
+    try {
+      await apiFetch(`/api/issues/${id}/fix-request`, { method: 'POST' })
+    } catch (e) {
+      toast(String(e))
+      return
+    }
     setShowFix(false)
     toast('AI repair session started')
     nav(`/fix/${id}`)

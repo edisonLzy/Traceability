@@ -18,7 +18,12 @@ export function AppDetail() {
   const dsn = `${location.origin.replace(/:\d+$/, ':3000')}/api/ingest/envelope/${app.id}`
 
   const del = async () => {
-    await apiFetch(`/api/apps/${app.id}`, { method: 'DELETE' })
+    try {
+      await apiFetch(`/api/apps/${app.id}`, { method: 'DELETE' })
+    } catch (e) {
+      toast(String(e))
+      return
+    }
     toast('Application deleted')
     nav('/apps')
   }

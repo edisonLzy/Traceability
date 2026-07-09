@@ -20,7 +20,7 @@ export function Issues() {
     apiFetch<{ items: Issue[] }>(`/api/issues?${qs}`).then((r) => setIssues(r.items))
   }
   useEffect(() => { load() }, [appId])
-  useEffect(() => onIssueEvent(() => load()), [])
+  useEffect(() => onIssueEvent(() => load()), [appId])
 
   const filtered = useMemo(() => {
     return issues.filter((i) => {

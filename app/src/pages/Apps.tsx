@@ -19,12 +19,17 @@ export function Apps() {
 
   const create = async () => {
     if (!name.trim()) { toast('Enter an application name'); return }
-    const app = await apiFetch<Application>('/api/apps', {
-      method: 'POST', body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
-    })
-    setShowCreate(false); setName(''); setRepoUrl(''); setBranch('master')
-    toast('Application created')
-    nav(`/apps/${app.id}`)
+    try {
+      const app = await apiFetch<Application>('/api/apps', {
+        method: 'POST', body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
+      })
+      setShowCreate(false); setName(''); setRepoUrl(''); setBranch('master')
+      toast('Application created')
+      nav(`/apps/${app.id}`)
+    } catch (e) {
+      toast(String(e))
+      return
+    }
   }
 
   return (
