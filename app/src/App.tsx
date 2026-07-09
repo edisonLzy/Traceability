@@ -7,6 +7,10 @@ import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Apps } from './pages/Apps'
 import { AppDetail } from './pages/AppDetail'
+import { Issues } from './pages/Issues'
+import { IssueDetail } from './pages/IssueDetail'
+import { FixSession } from './pages/FixSession'
+import { Settings } from './pages/Settings'
 
 export function App() {
   const token = getToken()
@@ -29,6 +33,10 @@ export function App() {
           <Route path="/login" element={<Navigate to="/apps" />} />
           <Route path="/apps" element={<Apps />} />
           <Route path="/apps/:id" element={<AppDetail />} />
+          <Route path="/issues" element={<Issues />} />
+          <Route path="/issues/:id" element={<IssueDetail />} />
+          <Route path="/fix/:issueId" element={<FixSession />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/apps" />} />
         </Routes>
       </Layout>
