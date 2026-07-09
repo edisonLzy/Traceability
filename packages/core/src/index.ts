@@ -67,3 +67,7 @@ export function report(data: ReportData): void {
 export { createServerTransport } from './transport/serverTransport.js'
 export type { InitOptions, ReportData } from './types.js'
 export type { ServerTransportOptions } from './transport/serverTransport.js'
+
+export { corsDiagnosticIntegration }
+export { whiteScreenIntegration } from './integrations/whiteScreen.js'
+export type { WhiteScreenOptions } from './integrations/whiteScreen.js'
