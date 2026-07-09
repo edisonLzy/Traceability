@@ -15,9 +15,8 @@ interface ApiDeps {
 }
 
 export function registerApi(app: FastifyInstance, deps: ApiDeps) {
-  // ingest is authenticated by appId+token; protect all /api/* except ingest
+  // protect all /api/* (ingest authenticates via bearer token; WS auth handled at upgrade)
   app.addHook('preHandler', (req, reply, done) => {
-    if (req.url.startsWith('/api/ingest/')) return done()
     if (req.url.startsWith('/api/ws')) return done() // WS auth handled at upgrade
     return createAuthPlugin(deps.apiToken)(req, reply, done)
   })

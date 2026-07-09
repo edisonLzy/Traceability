@@ -33,16 +33,21 @@ export function createServerTransport(opts: ServerTransportOptions): Transport {
         body = typeof serialized === 'string' ? serialized : new TextDecoder().decode(serialized)
       }
 
-      const res = await fetch(opts.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          Authorization: `Bearer ${opts.token}`,
-        },
-        body,
-      })
-      // v1: no retry queue. 4xx client errors are permanent -> drop silently.
-      return { statusCode: res.status }
+      try {
+        const res = await fetch(opts.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            Authorization: `Bearer ${opts.token}`,
+          },
+          body,
+        })
+        // v1: no retry queue. 4xx client errors are permanent -> drop silently.
+        return { statusCode: res.status }
+      } catch {
+        // network failure: drop (v1 contract - no retry queue)
+        return { statusCode: 0 }
+      }
     },
     flush(): Promise<boolean> {
       return Promise.resolve(true)
