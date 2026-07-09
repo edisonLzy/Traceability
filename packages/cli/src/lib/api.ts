@@ -10,7 +10,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     method,
     headers: {
       Authorization: `Bearer ${cfg.token}`,
-      'Content-Type': 'application/json',
+      // Only send Content-Type: application/json when there is a body.
+      // Fastify rejects bodyless POSTs (e.g. fix-request, mark-fixed) with
+      // FST_ERR_CTP_EMPTY_JSON_BODY if the header claims JSON.
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   })
