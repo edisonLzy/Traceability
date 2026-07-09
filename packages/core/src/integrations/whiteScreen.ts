@@ -14,16 +14,14 @@ interface PendingTracker {
   dec(): void
 }
 
-let fetchPending = 0
 function patchFetch(tracker: PendingTracker): void {
   if (typeof window === 'undefined' || (window as any).__WS_FETCH_PATCHED__) return
   ;(window as any).__WS_FETCH_PATCHED__ = true
   const orig = window.fetch.bind(window)
-  tracker.inc()
   window.fetch = ((...args: Parameters<typeof fetch>) => {
+    tracker.inc()
     return orig(...args).finally(() => tracker.dec())
   }) as typeof fetch
-  tracker.dec()
 }
 
 function countVisibleContent(root: Element, minNodes: number): number {
