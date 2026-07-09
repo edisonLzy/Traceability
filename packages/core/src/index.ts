@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/browser'
 import type { ErrorEvent } from '@sentry/browser'
 import { corsDiagnosticIntegration } from './integrations/corsDiagnostic.js'
+import { whiteScreenIntegration } from './integrations/whiteScreen.js'
 import { createServerTransport } from './transport/serverTransport.js'
 import type { InitOptions, ReportData } from './types.js'
 
@@ -29,7 +30,13 @@ export function init(opts: InitOptions): void {
       // an ErrorEvent (a subtype), so the downcast on the return is sound.
       return opts.beforeSend ? (opts.beforeSend(event) as ErrorEvent | null) : event
     },
-    integrations: (defaults) => [...defaults, corsDiagnosticIntegration()],
+    integrations: (defaults) => {
+      const list = [...defaults, corsDiagnosticIntegration()]
+      if (opts.whiteScreen) {
+        list.push(whiteScreenIntegration(opts.whiteScreen))
+      }
+      return list
+    },
   })
 
   if (opts.user) {
@@ -69,5 +76,5 @@ export type { InitOptions, ReportData } from './types.js'
 export type { ServerTransportOptions } from './transport/serverTransport.js'
 
 export { corsDiagnosticIntegration }
-export { whiteScreenIntegration } from './integrations/whiteScreen.js'
+export { whiteScreenIntegration }
 export type { WhiteScreenOptions } from './integrations/whiteScreen.js'
