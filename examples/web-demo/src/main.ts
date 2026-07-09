@@ -7,7 +7,7 @@ const TOKEN = localStorage.getItem('demo.token') ?? 'dev-token'
 
 init({
   dsn: 'http://localhost:3000',
-  appId: APP_ID,
+  appId: 'e4eac53d-846d-4c75-a6a0-402c15c69954',
   token: TOKEN,
   environment: 'demo',
   whiteScreen: { stableWindowMs: 500, minContentNodes: 3 },

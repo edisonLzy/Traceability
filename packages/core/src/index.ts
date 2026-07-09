@@ -15,7 +15,7 @@ export function init(opts: InitOptions): void {
   const ingestUrl = `${opts.dsn.replace(/\/$/, '')}/api/ingest/envelope/${opts.appId}`
 
   Sentry.init({
-    dsn: `https://dummy@local/${opts.appId}`, // unused by our transport, but required by Sentry init
+    dsn: 'https://dummy@local/12345', // unused by our transport, but required by Sentry init (projectId must be numeric)
     release: opts.release,
     environment: opts.environment,
     // Sentry expects a transport factory (transportOptions) => Transport.
