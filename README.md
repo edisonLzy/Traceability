@@ -51,6 +51,12 @@ init({
 report({ type: 'feature-action', payload: { foo: 1 }, tags: { feature: 'demo' } })
 ```
 
+## Performance, source maps and Electron
+
+- The Inbox **Performance** tab groups automatic browser metrics (FCP, LCP, CLS, INP, TTFB and DOMContentLoaded) by application. Send application-defined measurements with `reportPerformance({ name, value, unit })`.
+- Upload release-matched source maps to `POST /api/apps/:appId/sourcemaps`; mapped locations and the original source excerpt appear in an issue's Stack trace tab. [`examples/web-demo`](examples/README.md) includes a minified preview build and upload helper.
+- [`examples/electron-demo`](examples/electron-demo) validates main-process crash/uncaught errors, CPU/memory/network samples, OS/hardware context, renderer loss and IPC exception capture alongside the renderer SDK.
+
 ## The fix loop
 
 1. SDK reports an exception -> server aggregates into an issue -> Inbox shows it.

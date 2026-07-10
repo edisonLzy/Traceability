@@ -6,6 +6,8 @@ import { openDb } from './store/db.js'
 import { createAppsRepo } from './store/apps.js'
 import { createIssuesRepo } from './store/issues.js'
 import { createRrwebReplaysRepo } from './store/replays.js'
+import { createPerformanceRepo } from './store/performance.js'
+import { createSourceMapsRepo } from './store/sourceMaps.js'
 import { createBroadcaster } from './ws/broadcaster.js'
 import { createAuthPlugin } from './auth/token.js'
 import { registerApi } from './api/index.js'
@@ -17,6 +19,8 @@ async function main() {
   const appsRepo = createAppsRepo(db)
   const issuesRepo = createIssuesRepo(db)
   const replaysRepo = createRrwebReplaysRepo(db)
+  const performanceRepo = createPerformanceRepo(db)
+  const sourceMapsRepo = createSourceMapsRepo(db)
 
   const app = Fastify({ logger: true })
   await app.register(websocket)
@@ -45,7 +49,7 @@ async function main() {
     broadcaster.add(socket)
   })
 
-  registerApi(app, { appsRepo, issuesRepo, replaysRepo, broadcaster, apiToken: config.apiToken })
+  registerApi(app, { appsRepo, issuesRepo, replaysRepo, performanceRepo, sourceMapsRepo, broadcaster, apiToken: config.apiToken })
 
   await app.listen({ port: config.port, host: '0.0.0.0' })
   app.log.info(`traceability server on http://0.0.0.0:${config.port}`)

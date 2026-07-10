@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
-import type { Issue, Event, Patch, IssueStatus } from '@traceability/protocol'
+import type { Issue, Event, Patch, IssueStatus, SourceLocation } from '@traceability/protocol'
 import type { SentryEventPayload } from '@traceability/protocol'
 import { extractIssueFingerprint, payloadToIssueFields } from '../ingest/envelope.js'
 
@@ -53,9 +53,9 @@ export function createIssuesRepo(db: Database) {
      * Upsert an issue from an ingested event payload. Returns the issue + whether it was newly created
      * (used to drive WS "issue:created" vs "issue:updated").
      */
-    ingestEvent(appId: string, payload: SentryEventPayload): { issue: Issue; created: boolean } {
+    ingestEvent(appId: string, payload: SentryEventPayload, resolvedFrames: SourceLocation[] = []): { issue: Issue; created: boolean } {
       const fingerprint = extractIssueFingerprint(payload, appId)
-      const fields = payloadToIssueFields(payload)
+      const fields = payloadToIssueFields(payload, resolvedFrames)
       const now = new Date().toISOString()
 
       const existing = db

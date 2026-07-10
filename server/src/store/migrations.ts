@@ -40,6 +40,32 @@ export function runMigrations(db: Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_events_issue_id ON events(issue_id);
 
+    CREATE TABLE IF NOT EXISTS performance_samples (
+      id TEXT PRIMARY KEY,
+      app_id TEXT NOT NULL,
+      metric TEXT NOT NULL,
+      value REAL NOT NULL,
+      unit TEXT NOT NULL DEFAULT 'millisecond',
+      measured_at TEXT NOT NULL,
+      metadata TEXT NOT NULL DEFAULT '{}',
+      FOREIGN KEY (app_id) REFERENCES applications(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_performance_samples_app_time ON performance_samples(app_id, measured_at DESC);
+
+    CREATE TABLE IF NOT EXISTS source_maps (
+      id TEXT PRIMARY KEY,
+      app_id TEXT NOT NULL,
+      release TEXT NOT NULL DEFAULT '',
+      file TEXT NOT NULL,
+      source_map TEXT NOT NULL,
+      uploaded_at TEXT NOT NULL,
+      FOREIGN KEY (app_id) REFERENCES applications(id) ON DELETE CASCADE,
+      UNIQUE(app_id, release, file)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_source_maps_lookup ON source_maps(app_id, release, file);
+
     CREATE TABLE IF NOT EXISTS rrweb_replays (
       id TEXT PRIMARY KEY,
       app_id TEXT NOT NULL,

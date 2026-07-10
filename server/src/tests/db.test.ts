@@ -11,6 +11,8 @@ describe('openDb', () => {
     expect(names).toContain('applications')
     expect(names).toContain('issues')
     expect(names).toContain('events')
+    expect(names).toContain('performance_samples')
+    expect(names).toContain('source_maps')
     expect(names).toContain('rrweb_replays')
     expect(names).toContain('patches')
     db.close()

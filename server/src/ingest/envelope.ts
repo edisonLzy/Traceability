@@ -4,6 +4,7 @@ import type {
   EnvelopeItem,
   SentryEventPayload,
   Issue,
+  SourceLocation,
 } from '@traceability/protocol'
 
 /**
@@ -68,7 +69,7 @@ export function extractIssueFingerprint(payload: SentryEventPayload, appId: stri
   return `${base}::${payload.type ?? 'unknown'}::${payload.event_id ?? 'no-id'}`
 }
 
-export function payloadToIssueFields(payload: SentryEventPayload): {
+export function payloadToIssueFields(payload: SentryEventPayload, resolvedFrames: SourceLocation[] = []): {
   title: string
   type: 'error' | 'transaction' | 'message' | 'custom'
   metadata: Issue['metadata']
@@ -82,6 +83,7 @@ export function payloadToIssueFields(payload: SentryEventPayload): {
         stacktrace: JSON.stringify(exc.stacktrace ?? null),
         message: exc.value,
         context: payload.extra,
+        ...(resolvedFrames.length > 0 ? { frames: resolvedFrames, source: resolvedFrames[resolvedFrames.length - 1] } : {}),
       },
     }
   }

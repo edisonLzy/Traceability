@@ -1,4 +1,5 @@
 import type { Event } from '@sentry/browser'
+import type { PerformanceMetric } from '@traceability/protocol'
 
 export interface InitOptions {
   /** Full URL of the server ingest endpoint, e.g. http://localhost:3000/api/ingest/envelope */
@@ -25,6 +26,8 @@ export interface InitOptions {
     blockSelector?: string
   }
   mf?: { host: boolean }
+  /** Collect browser navigation and Web Vitals-style metrics. Enabled by default. */
+  performance?: { enabled?: boolean }
   beforeSend?: (event: Event) => Event | null
 }
 
@@ -33,3 +36,5 @@ export interface ReportData {
   payload?: Record<string, unknown>
   tags?: Record<string, string>
 }
+
+export type { PerformanceMetric }

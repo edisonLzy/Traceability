@@ -9,6 +9,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     ? 'Applications'
     : loc.pathname.startsWith('/issues')
     ? 'Issues'
+    : loc.pathname.startsWith('/performance')
+    ? 'Performance'
     : loc.pathname.startsWith('/fix')
     ? 'AI repair'
     : loc.pathname.startsWith('/settings')
@@ -36,6 +38,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </NavLink>
           <NavLink to="/apps" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon">▦</span>Applications
+          </NavLink>
+          <NavLink to="/performance" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <span className="nav-icon">◴</span>Performance
           </NavLink>
           <div className="nav-label">Manage</div>
           <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>

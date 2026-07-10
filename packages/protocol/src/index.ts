@@ -24,7 +24,59 @@ export interface Issue {
     stacktrace?: string
     message?: string
     context?: Record<string, unknown>
+    /** Source-map resolved location for the frame where the error originated. */
+    source?: SourceLocation
+    /** Resolved stack frames, ordered as they appeared in the event. */
+    frames?: SourceLocation[]
   }
+}
+
+export interface SourceLocation {
+  file: string
+  line: number
+  column: number
+  function?: string
+  /** The bundled file and position that were resolved through a source map. */
+  generated?: { file: string; line: number; column: number }
+  /** A small, display-ready excerpt when sourcesContent was embedded in the map. */
+  context?: { startLine: number; lines: string[]; errorLine: number }
+}
+
+export interface SourceMapUpload {
+  release?: string
+  /** URL path or emitted asset path of the minified JavaScript file. */
+  file: string
+  sourceMap: Record<string, unknown>
+}
+
+export type PerformanceMetricName = 'FCP' | 'LCP' | 'CLS' | 'INP' | 'TTFB' | 'DOMContentLoaded' | string
+
+export interface PerformanceMetric {
+  name: PerformanceMetricName
+  value: number
+  unit?: 'millisecond' | 'score' | 'byte' | 'percent' | 'count'
+  timestamp?: string
+  context?: Record<string, unknown>
+}
+
+export interface PerformanceMetricSummary {
+  count: number
+  average: number
+  p75: number
+  lastSeen: string
+  unit: string
+}
+
+export interface PerformanceAppSummary {
+  appId: string
+  appName: string
+  samples: number
+  metrics: Record<string, PerformanceMetricSummary>
+}
+
+export interface PerformanceSummary {
+  since: string
+  apps: PerformanceAppSummary[]
 }
 
 export interface Event {

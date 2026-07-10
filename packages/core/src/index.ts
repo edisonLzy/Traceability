@@ -4,16 +4,20 @@ import { corsDiagnosticIntegration } from './integrations/corsDiagnostic.js'
 import { whiteScreenIntegration } from './integrations/whiteScreen.js'
 import { createReplayId, initRrwebReplay, isRrwebReplayReady, uploadRrwebReplay } from './replay/rrweb.js'
 import { createServerTransport } from './transport/serverTransport.js'
+import { installPerformanceMonitoring } from './performance.js'
 import type { InitOptions, ReportData } from './types.js'
+import type { PerformanceMetric } from './types.js'
 
 let initialized = false
 let currentAppName: string | undefined
+let sendPerformanceMetric: ((metric: PerformanceMetric) => void) | undefined
 
 export function init(opts: InitOptions): void {
   if (initialized) return
   initialized = true
 
   const ingestUrl = `${opts.dsn.replace(/\/$/, '')}/api/ingest/envelope/${opts.appId}`
+  const performanceUrl = `${opts.dsn.replace(/\/$/, '')}/api/ingest/performance/${opts.appId}`
 
   Sentry.init({
     dsn: 'https://dummy@local/12345', // unused by our transport, but required by Sentry init (projectId must be numeric)
@@ -49,6 +53,17 @@ export function init(opts: InitOptions): void {
     Sentry.setUser(opts.user as Parameters<typeof Sentry.setUser>[0])
   }
   initRrwebReplay(opts)
+  sendPerformanceMetric = (metric) => {
+    void fetch(performanceUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${opts.token}` },
+      body: JSON.stringify(metric),
+      keepalive: true,
+    }).catch(() => undefined)
+  }
+  if (opts.performance?.enabled !== false) {
+    installPerformanceMonitoring((metric) => sendPerformanceMetric?.(metric))
+  }
 }
 
 export function setApp(appName: string): void {
@@ -91,8 +106,13 @@ export function report(data: ReportData): void {
   })
 }
 
+/** Send an application-defined performance measurement to the Performance panel. */
+export function reportPerformance(metric: PerformanceMetric): void {
+  sendPerformanceMetric?.(metric)
+}
+
 export { createServerTransport } from './transport/serverTransport.js'
-export type { InitOptions, ReportData } from './types.js'
+export type { InitOptions, ReportData, PerformanceMetric } from './types.js'
 export type { ServerTransportOptions } from './transport/serverTransport.js'
 
 export { corsDiagnosticIntegration }

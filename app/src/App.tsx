@@ -11,6 +11,7 @@ import { Issues } from './pages/Issues'
 import { IssueDetail } from './pages/IssueDetail'
 import { FixSession } from './pages/FixSession'
 import { Settings } from './pages/Settings'
+import { Performance } from './pages/Performance'
 
 export function App() {
   const token = getToken()
@@ -35,6 +36,7 @@ export function App() {
           <Route path="/apps/:id" element={<AppDetail />} />
           <Route path="/issues" element={<Issues />} />
           <Route path="/issues/:id" element={<IssueDetail />} />
+          <Route path="/performance" element={<Performance />} />
           <Route path="/fix/:issueId" element={<FixSession />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/apps" />} />

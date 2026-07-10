@@ -2,17 +2,20 @@ import type { FastifyInstance } from 'fastify'
 import type { createIssuesRepo } from '../store/issues.js'
 import type { createRrwebReplaysRepo } from '../store/replays.js'
 import type { createBroadcaster } from '../ws/broadcaster.js'
+import type { createSourceMapsRepo } from '../store/sourceMaps.js'
 import { parseEnvelope, filterSupportedItems } from '../ingest/envelope.js'
 
 type IssuesRepo = ReturnType<typeof createIssuesRepo>
 type ReplaysRepo = ReturnType<typeof createRrwebReplaysRepo>
 type Broadcaster = ReturnType<typeof createBroadcaster>
+type SourceMapsRepo = ReturnType<typeof createSourceMapsRepo>
 
 export function registerIngestRoute(
   app: FastifyInstance,
   repo: IssuesRepo,
   replaysRepo: ReplaysRepo,
   broadcaster: Broadcaster,
+  sourceMapsRepo: SourceMapsRepo,
 ) {
   app.post<{ Params: { appId: string } }>('/api/ingest/envelope/:appId', async (req, reply) => {
     const raw = req.body as string
@@ -27,7 +30,9 @@ export function registerIngestRoute(
     }
     const supported = filterSupportedItems(envelope)
     for (const { payload } of supported) {
-      const { issue, created } = repo.ingestEvent(req.params.appId, payload)
+      const frames = payload.exception?.values?.[0]?.stacktrace?.frames ?? []
+      const resolvedFrames = sourceMapsRepo.resolveFrames(req.params.appId, payload.release, frames)
+      const { issue, created } = repo.ingestEvent(req.params.appId, payload, resolvedFrames)
       repo.appendEvent(issue.id, raw)
       const replayId = getRrwebReplayId(payload.extra)
       if (replayId) {

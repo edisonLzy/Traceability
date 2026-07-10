@@ -12,18 +12,19 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@fastify/cors": "^9.0.0",
+    "@fastify/multipart": "^8.0.0",
+    "@fastify/websocket": "^10.0.0",
     "@sentry/core": "^8.0.0",
     "@traceability/protocol": "workspace:*",
     "better-sqlite3": "^11.0.0",
     "fastify": "^4.28.0",
-    "@fastify/websocket": "^10.0.0",
-    "@fastify/multipart": "^8.0.0",
-    "@fastify/cors": "^9.0.0"
+    "source-map-js": "^1.2.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
-    "typescript": "^5.5.0",
     "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }
 }

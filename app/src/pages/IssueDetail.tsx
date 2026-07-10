@@ -87,6 +87,7 @@ export function IssueDetail() {
             ))}
           </div>
           <div className={`tab-pane ${tab === 'stack' ? 'active' : ''}`}>
+            {issue.metadata.source && <SourceLocation location={issue.metadata.source} />}
             <pre className="code">{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
           </div>
           <div className={`tab-pane ${tab === 'events' ? 'active' : ''}`}>
@@ -174,6 +175,29 @@ export function IssueDetail() {
       >
         <p className="muted">Traceability will prepare the issue context for your coding agent. No branch, commit or merge request will be created automatically.</p>
       </Modal>
+    </div>
+  )
+}
+
+function SourceLocation({ location }: { location: NonNullable<Issue['metadata']['source']> }) {
+  return (
+    <div className="source-location">
+      <div className="source-location-head">
+        <div>
+          <div className="source-location-label">Source map resolved location</div>
+          <div className="source-location-path">{location.file}:{location.line}:{location.column}</div>
+        </div>
+        {location.function && <span className="badge fixed">{location.function}</span>}
+      </div>
+      {location.context && (
+        <pre className="code source-context">
+          {location.context.lines.map((line, index) => {
+            const lineNumber = location.context!.startLine + index
+            return <span className={`line ${lineNumber === location.context!.errorLine ? 'hot' : ''}`} key={lineNumber}><span className="ln">{lineNumber}</span>{line}</span>
+          })}
+        </pre>
+      )}
+      {location.generated && <div className="source-location-generated">Generated: {location.generated.file}:{location.generated.line}:{location.generated.column}</div>}
     </div>
   )
 }

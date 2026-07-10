@@ -38,6 +38,7 @@ export function AppDetail() {
         </div>
         <div className="header-actions">
           <Button variant="primary" onClick={() => nav(`/issues?appId=${app.id}`)}>View issues</Button>
+          <Button onClick={() => nav(`/performance?appId=${app.id}`)}>View performance</Button>
         </div>
       </div>
       <div className="detail-grid">
