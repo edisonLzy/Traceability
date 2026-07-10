@@ -37,6 +37,33 @@ location.reload()
 
 Click the buttons. Each fires an event that the server ingests and aggregates into an issue visible in the Inbox.
 
+### Verify source-map resolution with a production-like preview
+
+The preview build is minified and emits source maps. Upload those maps before you run the preview server so the Inbox can turn the minified stack frame back into the TypeScript location.
+
+```bash
+cd examples/web-demo
+export TRACEABILITY_DEMO_APP_ID='<paste appId>'
+export TRACEABILITY_DEMO_TOKEN='dev-token'
+pnpm preview:prepare
+pnpm preview
+```
+
+Open http://localhost:4174, click **Throw production source-map error**, then open the resulting issue. Its Stack trace tab shows `src/previewFailure.ts` and the highlighted original line. Source maps are keyed by app, release and emitted asset path; the demo upload script is also suitable as a small CI deployment step.
+
+## electron-demo
+
+An Electron main/renderer demo covering the Electron-specific monitor contract: main-process uncaught errors and crash reporting, CPU/memory/network samples, OS/hardware/client versions, `render-process-gone`, and monitored IPC exceptions. Renderer exceptions and rejections reuse the Web SDK.
+
+```bash
+cd examples/electron-demo
+export TRACEABILITY_DEMO_APP_ID='<paste appId>'
+export TRACEABILITY_DEMO_TOKEN='dev-token'
+pnpm dev
+```
+
+Use the eight controls in the window and inspect the same application in the Inbox. `pnpm crash:main` invokes the startup uncaught-exception path for a non-interactive crash-flow check; the regular demo button leaves the window open while producing the same monitor event.
+
 ### Verify the loop
 
 1. Click "Throw TypeError" -> the Inbox Issues page shows a new `TypeError: demo...` issue (live via WebSocket).
