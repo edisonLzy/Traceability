@@ -153,3 +153,6 @@ server/data/*.db-shm
 
 # macOS
 .DS_Store
+
+# nested server/server data dir (mistakenly created, use server/data instead)
+server/server/
