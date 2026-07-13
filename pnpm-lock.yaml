@@ -198,6 +198,19 @@ importers:
         specifier: ^4.0.0
         version: 4.23.0
 
+  packages/client:
+    dependencies:
+      '@traceability/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      axios:
+        specifier: ^1.18.1
+        version: 1.18.1
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@25.0.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))
+
   packages/core:
     dependencies:
       '@rrweb/record':

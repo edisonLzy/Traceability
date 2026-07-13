@@ -1,5 +1,14 @@
 // ===== Server data model (spec §4.7) =====
 
+/** Standard HTTP response envelope returned by the Traceability server. */
+export interface ApiResponse<T = unknown> {
+  code: number;
+  message?: string;
+  data: T;
+  timestamp: string;
+  traceId?: string;
+}
+
 export type IssueStatus = "open" | "fix-manual" | "fixing" | "fixed" | "ignored";
 
 export interface Application {
@@ -8,6 +17,18 @@ export interface Application {
   repoUrl: string;
   defaultBranch: string;
   createdAt: string;
+}
+
+export interface CreateAppInput {
+  name: string;
+  repoUrl: string;
+  defaultBranch: string;
+}
+
+export interface UpdateAppInput {
+  name?: string;
+  repoUrl?: string;
+  defaultBranch?: string;
 }
 
 export interface Issue {
@@ -29,6 +50,23 @@ export interface Issue {
     /** Resolved stack frames, ordered as they appeared in the event. */
     frames?: SourceLocation[];
   };
+}
+
+export interface ListIssuesParams {
+  appId?: string;
+  status?: IssueStatus;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ListIssuesResponse {
+  items: Issue[];
+  nextCursor: string | null;
+}
+
+export interface AttachPatchInput {
+  branch: string;
+  patch: string;
 }
 
 export interface SourceLocation {
@@ -61,9 +99,20 @@ export type PerformanceMetricName =
 export interface PerformanceMetric {
   name: PerformanceMetricName;
   value: number;
-  unit?: "millisecond" | "score" | "byte" | "percent" | "count";
+  unit?: string;
   timestamp?: string;
   context?: Record<string, unknown>;
+}
+
+export interface RecordPerformanceInput {
+  metrics?: PerformanceMetric[];
+  name?: PerformanceMetricName;
+  value?: number;
+}
+
+export interface GetPerformanceSummaryParams {
+  appId?: string;
+  hours?: number;
 }
 
 export interface PerformanceMetricSummary {
