@@ -1,14 +1,6 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { clearAuth } from '@renderer/store/auth'
+import { NavLink } from 'react-router-dom'
 
 export function Sidebar() {
-  const navigate = useNavigate()
-
-  const signOut = async () => {
-    await clearAuth()
-    navigate('/login', { replace: true })
-  }
-
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -44,7 +36,7 @@ export function Sidebar() {
           <div className="avatar">LY</div>
           <div className="user-meta">
             <div className="user-name">研发</div>
-            <button type="button" className="user-email sign-out" onClick={() => void signOut()}>Sign out</button>
+            <div className="user-email">dev@local</div>
           </div>
         </div>
       </div>

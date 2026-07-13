@@ -27,7 +27,6 @@ export default defineConfig({
       alias: {
         '@renderer': resolve(import.meta.dirname, 'src/renderer'),
         '@shared': resolve(import.meta.dirname, 'src/shared'),
-        '@built-in': resolve(import.meta.dirname, 'src/built-in'),
       },
     },
   },

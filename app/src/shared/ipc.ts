@@ -1,14 +1,3 @@
-export interface ConnectionCredentials {
-  serverUrl: string
-  token: string
-}
-
-export interface ConnectionStatus {
-  configured: boolean
-  serverUrl: string | null
-  tokenPersistent: boolean
-}
-
 export interface AvailableModel {
   providerId: string
   providerName: string

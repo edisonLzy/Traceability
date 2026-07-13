@@ -3,17 +3,12 @@
   "compilerOptions": {
     "noEmit": true,
     "moduleResolution": "Bundler",
-    "types": ["node", "electron"]
+    "types": ["node", "electron", "electron-vite/node"]
   },
   "include": [
     "electron.vite.config.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/shared/**/*.ts",
-    "src/built-in/extension-core/common/**/*.ts",
-    "src/built-in/extension-core/main/**/*.ts",
-    "src/built-in/*/common/**/*.ts",
-    "src/built-in/*/main.ts",
-    "src/built-in/main-extensions.ts"
+    "src/shared/**/*.ts"
   ]
 }

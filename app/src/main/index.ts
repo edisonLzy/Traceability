@@ -4,12 +4,10 @@ import { z } from 'zod'
 import { AgentPool } from './agent/agent-pool.js'
 import { ModelRegistry } from './agent/model-registry.js'
 import { SessionStore } from './agent/session-store.js'
-import { ConnectionService } from './connection-service.js'
 import { LocalDatabase } from './db/database.js'
 
 let mainWindow: BrowserWindow | null = null
 let database: LocalDatabase | null = null
-let connectionService: ConnectionService | null = null
 let agentPool: AgentPool | null = null
 
 async function createWindow(): Promise<void> {
@@ -38,24 +36,12 @@ async function createWindow(): Promise<void> {
   }
 }
 
-function requireConnectionService(): ConnectionService {
-  if (!connectionService) throw new Error('Connection service is unavailable before application readiness')
-  return connectionService
-}
-
 function requireAgentPool(): AgentPool {
   if (!agentPool) throw new Error('Agent runtime is unavailable before application readiness')
   return agentPool
 }
 
 function registerIpc(): void {
-  ipcMain.handle('connection:bootstrap', () => requireConnectionService().getCredentials())
-  ipcMain.handle('connection:status', () => requireConnectionService().getStatus())
-  ipcMain.handle('connection:save', (_event, input: { serverUrl: string; token: string }) => {
-    return requireConnectionService().save(input)
-  })
-  ipcMain.handle('connection:clear', () => requireConnectionService().clear())
-
   ipcMain.handle('sessions:list', (_event, appId: unknown) => requireAgentPool().listSessions(z.string().parse(appId)))
   ipcMain.handle('sessions:create', (_event, appId: unknown) => requireAgentPool().createSession(z.string().parse(appId)))
   ipcMain.handle('sessions:get', (_event, sessionId: unknown) => requireAgentPool().getSession(z.string().parse(sessionId)))
@@ -90,8 +76,7 @@ function registerIpc(): void {
 
 app.whenReady().then(async () => {
   database = new LocalDatabase(join(app.getPath('userData'), 'traceability-agent.sqlite'))
-  connectionService = new ConnectionService(database)
-  agentPool = new AgentPool(new SessionStore(database), new ModelRegistry(), connectionService, () => mainWindow)
+  agentPool = new AgentPool(new SessionStore(database), new ModelRegistry(), () => mainWindow)
   await agentPool.initialize()
   registerIpc()
   await createWindow()

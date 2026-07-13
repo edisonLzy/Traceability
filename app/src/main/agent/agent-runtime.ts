@@ -9,7 +9,7 @@ import type {
   AgentSessionDetail,
   ModelRef,
 } from '../../shared/ipc.js'
-import { createMonitorTools, MonitorClient } from '../../built-in/monitor/main.js'
+import { createMonitorTools, MonitorClient } from './monitor.js'
 import { ModelRegistry } from './model-registry.js'
 import { SessionStore } from './session-store.js'
 

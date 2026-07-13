@@ -1,4 +1,4 @@
-import { getToken, getServer } from '@renderer/store/auth'
+import { SERVER_URL } from '@renderer/lib/server'
 
 export interface IssueEvent {
   kind: 'issue:created' | 'issue:updated' | 'issue:status-changed'
@@ -13,10 +13,8 @@ let socket: WebSocket | null = null
 const handlers = new Set<Handler>()
 
 export function connectWs(): void {
-  const token = getToken()
-  const server = getServer()
-  if (!token || !server) return
-  const wsUrl = server.replace(/^http/, 'ws').replace(/\/$/, '') + `/api/ws?token=${encodeURIComponent(token)}`
+  if (!SERVER_URL) return
+  const wsUrl = SERVER_URL.replace(/^http/, 'ws') + '/api/ws'
   socket = new WebSocket(wsUrl)
   socket.onmessage = (e) => {
     try {

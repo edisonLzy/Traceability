@@ -9,7 +9,6 @@ import { createRrwebReplaysRepo } from './store/replays.js'
 import { createPerformanceRepo } from './store/performance.js'
 import { createSourceMapsRepo } from './store/sourceMaps.js'
 import { createBroadcaster } from './ws/broadcaster.js'
-import { createAuthPlugin } from './auth/token.js'
 import { registerApi } from './api/index.js'
 
 async function main() {
@@ -40,16 +39,11 @@ async function main() {
     done(null, body)
   })
 
-  app.get('/api/ws', { websocket: true }, (socket, req) => {
-    const token = (req.query as { token?: string }).token
-    if (token !== config.apiToken) {
-      socket.close(4001, 'unauthorized')
-      return
-    }
+  app.get('/api/ws', { websocket: true }, (socket) => {
     broadcaster.add(socket)
   })
 
-  registerApi(app, { appsRepo, issuesRepo, replaysRepo, performanceRepo, sourceMapsRepo, broadcaster, apiToken: config.apiToken })
+  registerApi(app, { appsRepo, issuesRepo, replaysRepo, performanceRepo, sourceMapsRepo, broadcaster })
 
   await app.listen({ port: config.port, host: '0.0.0.0' })
   app.log.info(`traceability server on http://0.0.0.0:${config.port}`)

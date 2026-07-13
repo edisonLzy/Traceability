@@ -4,20 +4,12 @@ import type {
   AgentSessionDetail,
   AgentSessionSummary,
   AvailableModel,
-  ConnectionCredentials,
-  ConnectionStatus,
   ModelRef,
 } from './shared/ipc'
 
 declare global {
   interface Window {
     traceability: {
-      connection: {
-        bootstrap(): Promise<ConnectionCredentials | null>
-        getStatus(): Promise<ConnectionStatus>
-        save(input: ConnectionCredentials): Promise<ConnectionStatus>
-        clear(): Promise<void>
-      }
       sessions: {
         list(appId: string): Promise<AgentSessionSummary[]>
         create(appId: string): Promise<AgentSessionSummary>

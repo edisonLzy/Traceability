@@ -5,7 +5,6 @@ import type {
   AgentSessionDetail,
   AgentSessionSummary,
   AvailableModel,
-  ConnectionCredentials,
   ModelRef,
 } from '../shared/ipc.js'
 
@@ -16,12 +15,6 @@ function listen<T>(channel: string, listener: (payload: T) => void): () => void 
 }
 
 const api = {
-  connection: {
-    bootstrap: () => ipcRenderer.invoke('connection:bootstrap') as Promise<ConnectionCredentials | null>,
-    getStatus: () => ipcRenderer.invoke('connection:status'),
-    save: (input: ConnectionCredentials) => ipcRenderer.invoke('connection:save', input),
-    clear: () => ipcRenderer.invoke('connection:clear'),
-  },
   sessions: {
     list: (appId: string) => ipcRenderer.invoke('sessions:list', appId) as Promise<AgentSessionSummary[]>,
     create: (appId: string) => ipcRenderer.invoke('sessions:create', appId) as Promise<AgentSessionSummary>,

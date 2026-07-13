@@ -3,7 +3,6 @@ import { Type } from '@earendil-works/pi-ai'
 import type { TSchema } from '@earendil-works/pi-ai'
 import axios, { type AxiosInstance } from 'axios'
 import { z } from 'zod'
-import type { ConnectionCredentials } from '../../shared/ipc.js'
 
 export type MonitorToolMethod =
   | 'listIssues'
@@ -16,11 +15,11 @@ export type MonitorToolMethod =
 /**
  * Self-contained monitor data access for the agent.
  *
- * The agent runs in the main process and holds the server credentials via
- * {@link ConnectionService}, so it fetches monitoring data directly -- no IPC
- * detour through the renderer. The session's `appId` is pinned at construction;
- * every response is zod-validated and checked for `appId` ownership so an LLM
- * cannot smuggle another application's data through a tool call.
+ * The agent runs in the main process and fetches monitoring data directly from
+ * the server (address from `VITE_SERVER_URL`) -- no IPC detour through the
+ * renderer. The session's `appId` is pinned at construction; every response is
+ * zod-validated and checked for `appId` ownership so an LLM cannot smuggle
+ * another application's data through a tool call.
  */
 export class MonitorClient {
   constructor(
@@ -156,20 +155,13 @@ export function createMonitorTools(client: MonitorClient): AgentTool[] {
 }
 
 /**
- * Builds an axios instance that resolves credentials per request from the
- * connection service. The server URL is mutable (the user can re-point it from
- * the login screen), so it cannot be baked in at construction time.
+ * Builds an axios instance pointed at the monitoring server. The server address
+ * is a build-time constant from `VITE_SERVER_URL` (no auth in the MVP), so it is
+ * baked in at construction. If unset, `baseURL` is `''` and tool calls fail fast.
  */
-export function createMonitorHttp(getCredentials: () => ConnectionCredentials | null): AxiosInstance {
-  const http = axios.create()
-  http.interceptors.request.use((config) => {
-    const creds = getCredentials()
-    if (!creds) throw new Error('Traceability is not connected to a monitoring server')
-    config.baseURL = creds.serverUrl
-    config.headers.set('Authorization', `Bearer ${creds.token}`)
-    return config
-  })
-  return http
+export function createMonitorHttp(): AxiosInstance {
+  const serverUrl = (import.meta.env.VITE_SERVER_URL ?? '').replace(/\/$/, '')
+  return axios.create({ baseURL: serverUrl })
 }
 
 function belongsTo(appId: string): (candidate: { appId: string }) => boolean {

@@ -7,11 +7,10 @@ import type {
   AvailableModel,
   ModelRef,
 } from '../../shared/ipc.js'
-import { createMonitorHttp } from '../../built-in/monitor/main.js'
+import { createMonitorHttp } from './monitor.js'
 import { AgentRuntime } from './agent-runtime.js'
 import { ModelRegistry } from './model-registry.js'
 import { SessionStore } from './session-store.js'
-import type { ConnectionService } from '../connection-service.js'
 
 export class AgentPool {
   private readonly runtimes = new Map<string, AgentRuntime>()
@@ -20,10 +19,9 @@ export class AgentPool {
   constructor(
     private readonly sessions: SessionStore,
     private readonly models: ModelRegistry,
-    connectionService: ConnectionService,
     private readonly getWindow: () => BrowserWindow | null,
   ) {
-    this.monitorHttp = createMonitorHttp(() => connectionService.getCredentials())
+    this.monitorHttp = createMonitorHttp()
   }
 
   async initialize(): Promise<void> {

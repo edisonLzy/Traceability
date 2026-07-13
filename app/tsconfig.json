@@ -7,16 +7,12 @@
     "baseUrl": ".",
     "paths": {
       "@renderer/*": ["src/renderer/*"],
-      "@shared/*": ["src/shared/*"],
-      "@built-in/*": ["src/built-in/*"]
+      "@shared/*": ["src/shared/*"]
     }
   },
   "include": ["src", "electron.vite.config.ts"],
   "exclude": [
     "src/main/**",
-    "src/preload/**",
-    "src/built-in/extension-core/main/**",
-    "src/built-in/*/main.ts",
-    "src/built-in/main-extensions.ts"
+    "src/preload/**"
   ]
 }

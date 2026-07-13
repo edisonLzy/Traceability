@@ -22,7 +22,6 @@ pnpm install
 pnpm -r run build
 
 # 1. start server
-export TRACEABILITY_API_TOKEN=dev-token
 cd server && pnpm dev &          # http://localhost:3000
 
 # 2. create an app
@@ -30,10 +29,11 @@ cd ../packages/cli && node dist/index.js config set --server http://localhost:30
 node dist/index.js app create --name demo --repo-url git@x:demo.git --branch main --json
 # copy the appId
 
-# 3. start the Inbox UI
-cd ../../app && pnpm dev &        # http://localhost:5173
-# login with server=http://localhost:3000 token=dev-token
+# 3. start the desktop app (set VITE_SERVER_URL to point at the server)
+cd ../../app && echo 'VITE_SERVER_URL=http://localhost:3000' > .env && pnpm dev
 ```
+
+Auth is intentionally disabled for the MVP: the server accepts all requests with no token, and the desktop app reads its backend address from `VITE_SERVER_URL`. The CLI and SDK still accept a `token` argument, which the server ignores.
 
 ## Integrating the SDK
 
