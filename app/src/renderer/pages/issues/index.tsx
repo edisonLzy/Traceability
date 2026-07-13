@@ -1,21 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { onIssueEvent } from '@renderer/lib/ws'
-import { useIssues, useInvalidateIssues } from '@renderer/hooks/use-issues'
+import { useIssues, useInvalidateIssues } from '@renderer/pages/issues/hooks/use-issues'
 import { Button } from '@renderer/components/ui/button'
 import { Badge } from '@renderer/components/ui/badge'
 import { Card, CardHeader, CardMeta, CardTitle } from '@renderer/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@renderer/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@renderer/components/ui/select'
-import {
-  emptyClass,
-  metricClass,
-  metricsGridClass,
-  pageClass,
-  pageHeaderClass,
-  pageTitleClass,
-  pageSubtitleClass,
-} from '@renderer/components/ui/styles'
 import { cn } from '@renderer/lib/utils'
 import type { IssueStatus } from '@traceability/protocol'
 
@@ -56,21 +47,21 @@ export function IssuesPage() {
   const events24h = issues.reduce((n, i) => n + i.count, 0)
 
   return (
-    <div className={pageClass}>
-      <div className={pageHeaderClass}>
+    <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
+      <div className="mb-7 flex items-start justify-between gap-3.5">
         <div>
-          <h1 className={pageTitleClass}>Issues</h1>
-          <p className={pageSubtitleClass}>Triage errors across all monitored applications.</p>
+          <h1 className="m-0 text-2xl leading-tight font-semibold tracking-[-0.7px] tablet:text-[28px]">Issues</h1>
+          <p className="mt-1.5 text-subtle">Triage errors across all monitored applications.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="primary" onClick={() => nav('/apps')}>Manage applications</Button>
         </div>
       </div>
-      <div className={metricsGridClass}>
-        <div className={metricClass}><div className="text-xs text-subtle">Open issues</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{open}</div></div>
-        <div className={metricClass}><div className="text-xs text-subtle">Events · total</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{events24h}</div></div>
-        <div className={metricClass}><div className="text-xs text-subtle">Fixing</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixing}</div></div>
-        <div className={metricClass}><div className="text-xs text-subtle">Resolved</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixed}</div></div>
+      <div className="mb-6 grid grid-cols-1 overflow-hidden rounded-xl border border-hairline bg-surface-1 tablet:grid-cols-2 desktop:grid-cols-4">
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Open issues</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{open}</div></div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Events · total</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{events24h}</div></div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Fixing</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixing}</div></div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Resolved</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixed}</div></div>
       </div>
       <div className="mb-3.5 flex flex-wrap items-center gap-2">
         <div className="relative max-w-none basis-full flex-1 tablet:max-w-100">
@@ -142,7 +133,7 @@ export function IssuesPage() {
             ))}
           </TableBody>
         </Table>
-        {filtered.length === 0 && <div className={emptyClass}>{isLoading ? 'Loading issues…' : 'No issues match these filters.'}</div>}
+        {filtered.length === 0 && <div className="px-5 py-13.5 text-center text-subtle">{isLoading ? 'Loading issues…' : 'No issues match these filters.'}</div>}
       </Card>
     </div>
   )

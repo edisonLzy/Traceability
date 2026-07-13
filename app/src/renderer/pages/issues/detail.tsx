@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useIssue, useIssueEvents, useIssueReplays, useReplay } from '@renderer/hooks/use-issue'
-import { RrwebReplayPlayer } from '@renderer/components/RrwebReplayPlayer'
+import { useIssue, useIssueEvents, useIssueReplays, useReplay } from '@renderer/pages/issues/hooks/use-issue'
+import { RrwebReplayPlayer } from '@renderer/pages/issues/components/RrwebReplayPlayer'
+import { SourceLocation } from '@renderer/pages/issues/components/SourceLocation'
 import { Button } from '@renderer/components/ui/button'
 import { Badge } from '@renderer/components/ui/badge'
 import { Card } from '@renderer/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@renderer/components/ui/select'
-import { codeClass, emptyClass, pageClass } from '@renderer/components/ui/styles'
 import { cn } from '@renderer/lib/utils'
-import type { Issue, RrwebReplay } from '@traceability/protocol'
+import type { RrwebReplay } from '@traceability/protocol'
 
 type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs' | 'replay'
 
@@ -42,7 +42,7 @@ export function IssueDetailPage() {
   const activeReplay: RrwebReplay | null = replayQuery.data ?? null
   const replayLoading = tab === 'replay' && Boolean(selectedReplayId) && replayQuery.isLoading
 
-  if (!issue) return <div className={pageClass}><div className={emptyClass}>Loading…</div></div>
+  if (!issue) return <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7"><div className="px-5 py-13.5 text-center text-subtle">Loading…</div></div>
 
   const investigate = () => {
     window.dispatchEvent(new CustomEvent('traceability:agent-context', {
@@ -56,7 +56,7 @@ export function IssueDetailPage() {
   )
 
   return (
-    <div className={pageClass}>
+    <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
       <div className="mb-5 flex items-start gap-3">
         <span className={cn('mt-2.5 size-2.5 shrink-0 rounded-full', issue.type === 'error' ? 'bg-danger' : 'bg-warning')} />
         <div className="flex-1">
@@ -79,7 +79,7 @@ export function IssueDetailPage() {
             </TabsList>
             <TabsContent value="stack">
               {issue.metadata.source && <SourceLocation location={issue.metadata.source} />}
-              <pre className={codeClass}>{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
+              <pre className="m-0 overflow-auto bg-[#090a0b] px-5 py-4.5 font-mono text-xs leading-7 text-[#c7cbd3]">{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
             </TabsContent>
             <TabsContent value="events">
               <div className="px-4.5 py-2">
@@ -89,7 +89,7 @@ export function IssueDetailPage() {
                     <div className="break-all font-medium text-muted">{e.envelope.slice(0, 120)}…</div>
                   </div>
                 ))}
-                {events.length === 0 && <div className={emptyClass}>No events.</div>}
+                {events.length === 0 && <div className="px-5 py-13.5 text-center text-subtle">No events.</div>}
               </div>
             </TabsContent>
             <TabsContent value="context">
@@ -100,7 +100,7 @@ export function IssueDetailPage() {
               </div>
             </TabsContent>
             <TabsContent value="breadcrumbs">
-              <div className={emptyClass}>Breadcrumbs are captured inside each event envelope (see Events tab).</div>
+              <div className="px-5 py-13.5 text-center text-subtle">Breadcrumbs are captured inside each event envelope (see Events tab).</div>
             </TabsContent>
             <TabsContent value="replay">
               <div className="px-4.5 pt-3.5 pb-4.5">
@@ -127,10 +127,10 @@ export function IssueDetailPage() {
                     )}
                   </div>
                 )}
-                {replayLoading && <div className={emptyClass}>Loading replay…</div>}
-                {!replayLoading && replays.length === 0 && <div className={emptyClass}>No replay captured for this issue.</div>}
+                {replayLoading && <div className="px-5 py-13.5 text-center text-subtle">Loading replay…</div>}
+                {!replayLoading && replays.length === 0 && <div className="px-5 py-13.5 text-center text-subtle">No replay captured for this issue.</div>}
                 {!replayLoading && activeReplay && activeReplay.events.length === 0 && (
-                  <div className={emptyClass}>Replay is still uploading.</div>
+                  <div className="px-5 py-13.5 text-center text-subtle">Replay is still uploading.</div>
                 )}
                 {!replayLoading && activeReplay && activeReplay.events.length > 0 && (
                   <RrwebReplayPlayer replay={activeReplay} />
@@ -154,34 +154,6 @@ export function IssueDetailPage() {
           </div>
         </aside>
       </div>
-    </div>
-  )
-}
-
-function SourceLocation({ location }: { location: NonNullable<Issue['metadata']['source']> }) {
-  return (
-    <div className="border-b border-hairline bg-surface-2">
-      <div className="flex items-start justify-between gap-3 px-4.5 py-3.5">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.06em] text-tertiary">Source map resolved location</div>
-          <div className="mt-1 break-all font-mono text-xs text-[#bfc7ff]">{location.file}:{location.line}:{location.column}</div>
-        </div>
-        {location.function && <Badge variant="fixed">{location.function}</Badge>}
-      </div>
-      {location.context && (
-        <pre className={cn(codeClass, 'max-h-50 border-y border-hairline')}>
-          {location.context.lines.map((line, index) => {
-            const lineNumber = location.context!.startLine + index
-            return (
-              <span className={cn('block', lineNumber === location.context!.errorLine && '-mx-5 bg-primary/15 px-5 text-white')} key={lineNumber}>
-                <span className="inline-block w-7.5 select-none text-[#474b52]">{lineNumber}</span>
-                {line}
-              </span>
-            )
-          })}
-        </pre>
-      )}
-      {location.generated && <div className="px-4.5 py-2 font-mono text-[11px] text-tertiary">Generated: {location.generated.file}:{location.generated.line}:{location.generated.column}</div>}
     </div>
   )
 }

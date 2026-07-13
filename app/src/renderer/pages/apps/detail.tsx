@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useApp, useDeleteApp } from '@renderer/hooks/use-apps'
+import { useApp } from '@renderer/pages/apps/hooks/use-app'
+import { useDeleteApp } from '@renderer/pages/apps/hooks/use-delete-app'
 import { Button } from '@renderer/components/ui/button'
 import { Badge } from '@renderer/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@renderer/components/ui/card'
-import { emptyClass, pageClass, pageHeaderClass, pageTitleClass, pageSubtitleClass } from '@renderer/components/ui/styles'
 import { cn } from '@renderer/lib/utils'
 
 export function AppDetailPage() {
@@ -12,7 +12,7 @@ export function AppDetailPage() {
   const { data: app } = useApp(id)
   const deleteAppMutation = useDeleteApp()
   const nav = useNavigate()
-  if (!app) return <div className={pageClass}><div className={emptyClass}>Loading…</div></div>
+  if (!app) return <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7"><div className="px-5 py-13.5 text-center text-subtle">Loading…</div></div>
 
   const dsn = `${location.origin.replace(/:\d+$/, ':3000')}/api/ingest/envelope/${app.id}`
 
@@ -28,12 +28,12 @@ export function AppDetailPage() {
   }
 
   return (
-    <div className={pageClass}>
-      <div className={pageHeaderClass}>
+    <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
+      <div className="mb-7 flex items-start justify-between gap-3.5">
         <div>
           <Button size="sm" onClick={() => nav('/apps')}>← Applications</Button>
-          <h1 className={cn(pageTitleClass, 'mt-4.5')}>{app.name}</h1>
-          <p className={pageSubtitleClass}>{app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}</p>
+          <h1 className={cn("m-0 text-2xl leading-tight font-semibold tracking-[-0.7px] tablet:text-[28px]", 'mt-4.5')}>{app.name}</h1>
+          <p className="mt-1.5 text-subtle">{app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="primary" onClick={() => nav(`/issues?appId=${app.id}`)}>View issues</Button>
