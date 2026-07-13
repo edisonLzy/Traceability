@@ -1,6 +1,6 @@
-import * as React from 'react'
-import { cn } from '@renderer/lib/utils'
-import { Input } from '@renderer/components/ui/input'
+import { Input } from "@renderer/components/ui/input";
+import { cn } from "@renderer/lib/utils";
+import * as React from "react";
 
 export function Field({
   label,
@@ -12,5 +12,5 @@ export function Field({
       <label className="mb-1.5 block text-xs text-muted">{label}</label>
       <Input className={className} {...props} />
     </div>
-  )
+  );
 }

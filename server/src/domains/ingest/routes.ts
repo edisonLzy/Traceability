@@ -1,16 +1,17 @@
-import { Router } from 'express'
-import express from 'express'
-import type { IngestService } from './service.js'
+import { Router } from "express";
+import express from "express";
+
+import type { IngestService } from "./service.js";
 
 interface IngestRouterDeps {
-  ingestService: IngestService
+  ingestService: IngestService;
 }
 
 export function createIngestRouter(deps: IngestRouterDeps): Router {
-  const router = Router()
-  const { ingestService } = deps
+  const router = Router();
+  const { ingestService } = deps;
 
-  router.use(express.text({ type: ['application/octet-stream', 'text/plain'], limit: '2mb' }))
+  router.use(express.text({ type: ["application/octet-stream", "text/plain"], limit: "2mb" }));
 
   /**
    * @openapi
@@ -21,9 +22,9 @@ export function createIngestRouter(deps: IngestRouterDeps): Router {
    *     requestBody: { required: true, content: { application/octet-stream: { schema: { type: string } } } }
    *     responses: { 202: { description: accepted }, 400: { description: invalid envelope } }
    */
-  router.post('/api/ingest/envelope/:appId', (req, res) => {
-    res.success(ingestService.ingestEnvelope(req.params.appId, req.body), 202)
-  })
+  router.post("/api/ingest/envelope/:appId", (req, res) => {
+    res.success(ingestService.ingestEnvelope(req.params.appId, req.body), 202);
+  });
 
-  return router
+  return router;
 }

@@ -12,6 +12,7 @@ When the user says "诊断 / 修复 / 排查 issue <id>" or "investigate issue <
 ```bash
 traceability issue show <id> --json
 ```
+
 Read `metadata.stacktrace`, `metadata.message`, `metadata.context`, and `tags.appName`.
 
 ## 2. Locate the code

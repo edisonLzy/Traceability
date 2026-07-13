@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Sentry-based web monitoring + exception-to-fix loop",
-  "packageManager": "pnpm@10.30.3",
+  "type": "module",
   "scripts": {
     "build": "pnpm -r --filter=./packages/* --filter=./server run build && pnpm --filter ./app build",
     "build:app": "pnpm --filter ./app build",
@@ -13,12 +13,6 @@
     "prepare": "husky",
     "lint": "oxlint --fix",
     "format": "oxfmt --write"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3", "electron", "esbuild"]
   },
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
@@ -30,5 +24,16 @@
     "oxlint": "^1.61.0",
     "tsx": "catalog:",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "electron",
+      "esbuild"
+    ]
   }
 }

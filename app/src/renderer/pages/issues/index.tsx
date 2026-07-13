@@ -1,67 +1,102 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { onIssueEvent } from '@renderer/lib/ws'
-import { useIssues, useInvalidateIssues } from '@renderer/pages/issues/hooks/use-issues'
-import { Button } from '@renderer/components/ui/button'
-import { Badge } from '@renderer/components/ui/badge'
-import { Card, CardHeader, CardMeta, CardTitle } from '@renderer/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@renderer/components/ui/table'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@renderer/components/ui/select'
-import { cn } from '@renderer/lib/utils'
-import type { IssueStatus } from '@traceability/protocol'
+import { Badge } from "@renderer/components/ui/badge";
+import { Button } from "@renderer/components/ui/button";
+import { Card, CardHeader, CardMeta, CardTitle } from "@renderer/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@renderer/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@renderer/components/ui/table";
+import { cn } from "@renderer/lib/utils";
+import { onIssueEvent } from "@renderer/lib/ws";
+import { useIssues, useInvalidateIssues } from "@renderer/pages/issues/hooks/use-issues";
+import type { IssueStatus } from "@traceability/protocol";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const STATUS_ITEMS: Record<string, string> = {
-  all: 'All statuses',
-  open: 'Open',
-  'fix-manual': 'Fix requested',
-  fixing: 'Fixing',
-  fixed: 'Fixed',
-}
+  all: "All statuses",
+  open: "Open",
+  "fix-manual": "Fix requested",
+  fixing: "Fixing",
+  fixed: "Fixed",
+};
 
 export function IssuesPage() {
-  const [params, setParams] = useSearchParams()
-  const nav = useNavigate()
-  const appId = params.get('appId') ?? ''
-  const status = (params.get('status') ?? 'all') as 'all' | IssueStatus
-  const [q, setQ] = useState('')
+  const [params, setParams] = useSearchParams();
+  const nav = useNavigate();
+  const appId = params.get("appId") ?? "";
+  const status = (params.get("status") ?? "all") as "all" | IssueStatus;
+  const [q, setQ] = useState("");
 
-  const invalidateIssues = useInvalidateIssues()
-  const { data, isLoading } = useIssues({ appId, limit: 100 })
-  const issues = data?.items ?? []
+  const invalidateIssues = useInvalidateIssues();
+  const { data, isLoading } = useIssues({ appId, limit: 100 });
+  const issues = data?.items ?? [];
 
   useEffect(() => {
-    return onIssueEvent(() => { void invalidateIssues() })
-  }, [invalidateIssues])
+    return onIssueEvent(() => {
+      void invalidateIssues();
+    });
+  }, [invalidateIssues]);
 
   const filtered = useMemo(() => {
     return issues.filter((i) => {
-      if (status !== 'all' && i.status !== status) return false
-      if (q && !`${i.title} ${i.id} ${i.metadata.message ?? ''}`.toLowerCase().includes(q.toLowerCase())) return false
-      return true
-    })
-  }, [issues, status, q])
+      if (status !== "all" && i.status !== status) return false;
+      if (
+        q &&
+        !`${i.title} ${i.id} ${i.metadata.message ?? ""}`.toLowerCase().includes(q.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  }, [issues, status, q]);
 
-  const open = issues.filter((i) => i.status === 'open').length
-  const fixing = issues.filter((i) => i.status === 'fix-manual' || i.status === 'fixing').length
-  const fixed = issues.filter((i) => i.status === 'fixed').length
-  const events24h = issues.reduce((n, i) => n + i.count, 0)
+  const open = issues.filter((i) => i.status === "open").length;
+  const fixing = issues.filter((i) => i.status === "fix-manual" || i.status === "fixing").length;
+  const fixed = issues.filter((i) => i.status === "fixed").length;
+  const events24h = issues.reduce((n, i) => n + i.count, 0);
 
   return (
     <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
       <div className="mb-7 flex items-start justify-between gap-3.5">
         <div>
-          <h1 className="m-0 text-2xl leading-tight font-semibold tracking-[-0.7px] tablet:text-[28px]">Issues</h1>
+          <h1 className="m-0 text-2xl leading-tight font-semibold tracking-[-0.7px] tablet:text-[28px]">
+            Issues
+          </h1>
           <p className="mt-1.5 text-subtle">Triage errors across all monitored applications.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="primary" onClick={() => nav('/apps')}>Manage applications</Button>
+          <Button variant="primary" onClick={() => nav("/apps")}>
+            Manage applications
+          </Button>
         </div>
       </div>
       <div className="mb-6 grid grid-cols-1 overflow-hidden rounded-xl border border-hairline bg-surface-1 tablet:grid-cols-2 desktop:grid-cols-4">
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Open issues</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{open}</div></div>
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Events · total</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{events24h}</div></div>
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Fixing</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixing}</div></div>
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r"><div className="text-xs text-subtle">Resolved</div><div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixed}</div></div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
+          <div className="text-xs text-subtle">Open issues</div>
+          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{open}</div>
+        </div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
+          <div className="text-xs text-subtle">Events · total</div>
+          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{events24h}</div>
+        </div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
+          <div className="text-xs text-subtle">Fixing</div>
+          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixing}</div>
+        </div>
+        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
+          <div className="text-xs text-subtle">Resolved</div>
+          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{fixed}</div>
+        </div>
       </div>
       <div className="mb-3.5 flex flex-wrap items-center gap-2">
         <div className="relative max-w-none basis-full flex-1 tablet:max-w-100">
@@ -76,22 +111,30 @@ export function IssuesPage() {
         <Select
           value={appId || null}
           onValueChange={(v) => setParams(v ? { appId: v } : {})}
-          items={{ '': 'All applications' }}
+          items={{ "": "All applications" }}
         >
-          <SelectTrigger className="w-auto"><SelectValue placeholder="All applications" /></SelectTrigger>
+          <SelectTrigger className="w-auto">
+            <SelectValue placeholder="All applications" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="">All applications</SelectItem>
           </SelectContent>
         </Select>
         <Select
           value={status}
-          onValueChange={(v) => setParams({ ...(appId ? { appId } : {}), status: String(v ?? 'all') })}
+          onValueChange={(v) =>
+            setParams({ ...(appId ? { appId } : {}), status: String(v ?? "all") })
+          }
           items={STATUS_ITEMS}
         >
-          <SelectTrigger className="w-auto"><SelectValue placeholder="All statuses" /></SelectTrigger>
+          <SelectTrigger className="w-auto">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
           <SelectContent>
             {Object.entries(STATUS_ITEMS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -99,7 +142,9 @@ export function IssuesPage() {
       <Card>
         <CardHeader>
           <CardTitle>All issues</CardTitle>
-          <CardMeta>{filtered.length} issue{filtered.length === 1 ? '' : 's'}</CardMeta>
+          <CardMeta>
+            {filtered.length} issue{filtered.length === 1 ? "" : "s"}
+          </CardMeta>
         </CardHeader>
         <Table>
           <TableHeader>
@@ -112,29 +157,54 @@ export function IssuesPage() {
           </TableHeader>
           <TableBody>
             {filtered.map((i) => (
-              <TableRow key={i.id} className="cursor-pointer" onClick={() => nav(`/issues/${i.id}`)}>
+              <TableRow
+                key={i.id}
+                className="cursor-pointer"
+                onClick={() => nav(`/issues/${i.id}`)}
+              >
                 <TableCell>
                   <div className="flex items-start gap-3">
-                    <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', i.type === 'error' ? 'bg-danger' : 'bg-warning')} />
+                    <span
+                      className={cn(
+                        "mt-1.5 size-2 shrink-0 rounded-full",
+                        i.type === "error" ? "bg-danger" : "bg-warning",
+                      )}
+                    />
                     <div>
                       <div className="font-medium text-muted hover:text-ink">{i.title}</div>
-                      <div className="mt-0.5 font-mono text-[11px] text-tertiary">{i.id.slice(0, 8)} · {i.appId.slice(0, 8)}</div>
+                      <div className="mt-0.5 font-mono text-[11px] text-tertiary">
+                        {i.id.slice(0, 8)} · {i.appId.slice(0, 8)}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={i.status === 'open' ? 'open' : i.status === 'fixed' ? 'fixed' : 'fixing'}>
-                    {i.status === 'open' ? 'Open' : i.status === 'fixed' ? 'Fixed' : 'Fix requested'}
+                  <Badge
+                    variant={
+                      i.status === "open" ? "open" : i.status === "fixed" ? "fixed" : "fixing"
+                    }
+                  >
+                    {i.status === "open"
+                      ? "Open"
+                      : i.status === "fixed"
+                        ? "Fixed"
+                        : "Fix requested"}
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden text-subtle tablet:table-cell">{i.count}</TableCell>
-                <TableCell className="hidden text-subtle tablet:table-cell">{new Date(i.lastSeen).toLocaleString()}</TableCell>
+                <TableCell className="hidden text-subtle tablet:table-cell">
+                  {new Date(i.lastSeen).toLocaleString()}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        {filtered.length === 0 && <div className="px-5 py-13.5 text-center text-subtle">{isLoading ? 'Loading issues…' : 'No issues match these filters.'}</div>}
+        {filtered.length === 0 && (
+          <div className="px-5 py-13.5 text-center text-subtle">
+            {isLoading ? "Loading issues…" : "No issues match these filters."}
+          </div>
+        )}
       </Card>
     </div>
-  )
+  );
 }

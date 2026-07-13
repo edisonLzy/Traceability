@@ -1,7 +1,7 @@
-import type { Database } from 'better-sqlite3'
+import type { Database } from "better-sqlite3";
 
 export function runMigrations(db: Database): void {
-  db.pragma('journal_mode = WAL')
+  db.pragma("journal_mode = WAL");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS applications (
@@ -95,5 +95,5 @@ export function runMigrations(db: Database): void {
       attached_at TEXT NOT NULL,
       FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
     );
-  `)
+  `);
 }

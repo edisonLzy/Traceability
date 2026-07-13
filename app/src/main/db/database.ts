@@ -1,6 +1,6 @@
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 const MIGRATIONS: Array<{ id: number; sql: string }> = [
   {
@@ -73,64 +73,74 @@ const MIGRATIONS: Array<{ id: number; sql: string }> = [
       );
     `,
   },
-]
+];
 
 export class LocalDatabase {
-  readonly raw: DatabaseSync
+  readonly raw: DatabaseSync;
 
   constructor(path: string) {
-    mkdirSync(dirname(path), { recursive: true })
-    this.raw = new DatabaseSync(path)
-    this.raw.exec('PRAGMA journal_mode = WAL')
-    this.raw.exec('PRAGMA foreign_keys = ON')
-    this.raw.exec('PRAGMA busy_timeout = 5000')
-    this.migrate()
+    mkdirSync(dirname(path), { recursive: true });
+    this.raw = new DatabaseSync(path);
+    this.raw.exec("PRAGMA journal_mode = WAL");
+    this.raw.exec("PRAGMA foreign_keys = ON");
+    this.raw.exec("PRAGMA busy_timeout = 5000");
+    this.migrate();
   }
 
   close(): void {
-    this.raw.close()
+    this.raw.close();
   }
 
   getSetting(key: string): string | null {
-    const row = this.raw.prepare('SELECT value FROM desktop_settings WHERE key = ?').get(key) as { value: string } | undefined
-    return row?.value ?? null
+    const row = this.raw.prepare("SELECT value FROM desktop_settings WHERE key = ?").get(key) as
+      | { value: string }
+      | undefined;
+    return row?.value ?? null;
   }
 
   setSetting(key: string, value: string): void {
-    this.raw.prepare(`
+    this.raw
+      .prepare(`
       INSERT INTO desktop_settings (key, value, updated_at) VALUES (?, ?, ?)
       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-    `).run(key, value, Date.now())
+    `)
+      .run(key, value, Date.now());
   }
 
   deleteSetting(key: string): void {
-    this.raw.prepare('DELETE FROM desktop_settings WHERE key = ?').run(key)
+    this.raw.prepare("DELETE FROM desktop_settings WHERE key = ?").run(key);
   }
 
   transaction<T>(operation: () => T): T {
-    this.raw.exec('BEGIN IMMEDIATE')
+    this.raw.exec("BEGIN IMMEDIATE");
     try {
-      const result = operation()
-      this.raw.exec('COMMIT')
-      return result
+      const result = operation();
+      this.raw.exec("COMMIT");
+      return result;
     } catch (error) {
-      this.raw.exec('ROLLBACK')
-      throw error
+      this.raw.exec("ROLLBACK");
+      throw error;
     }
   }
 
   private migrate(): void {
-    this.raw.exec('CREATE TABLE IF NOT EXISTS schema_migrations (id INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)')
+    this.raw.exec(
+      "CREATE TABLE IF NOT EXISTS schema_migrations (id INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)",
+    );
     const applied = new Set(
-      (this.raw.prepare('SELECT id FROM schema_migrations').all() as Array<{ id: number }>).map((row) => row.id),
-    )
+      (this.raw.prepare("SELECT id FROM schema_migrations").all() as Array<{ id: number }>).map(
+        (row) => row.id,
+      ),
+    );
 
     for (const migration of MIGRATIONS) {
-      if (applied.has(migration.id)) continue
+      if (applied.has(migration.id)) continue;
       this.transaction(() => {
-        this.raw.exec(migration.sql)
-        this.raw.prepare('INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)').run(migration.id, Date.now())
-      })
+        this.raw.exec(migration.sql);
+        this.raw
+          .prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)")
+          .run(migration.id, Date.now());
+      });
     }
   }
 }

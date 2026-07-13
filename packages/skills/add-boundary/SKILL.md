@@ -10,7 +10,7 @@ When the user says "给 X 组件加错误边界" or "add an error boundary to X"
 ## 1. Import
 
 ```tsx
-import { MonitorErrorBoundary } from '@traceability/react'
+import { MonitorErrorBoundary } from "@traceability/react";
 ```
 
 ## 2. Wrap the target component

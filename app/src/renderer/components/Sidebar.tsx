@@ -1,8 +1,8 @@
-import { NavLink } from 'react-router-dom'
-import { cn } from '@renderer/lib/utils'
+import { cn } from "@renderer/lib/utils";
+import { NavLink } from "react-router-dom";
 
 const navItemClass =
-  'flex h-9 w-auto items-center gap-2.5 rounded-md px-2 text-left text-subtle transition-colors hover:bg-surface-1 hover:text-muted tablet:w-full'
+  "flex h-9 w-auto items-center gap-2.5 rounded-md px-2 text-left text-subtle transition-colors hover:bg-surface-1 hover:text-muted tablet:w-full";
 
 export function Sidebar() {
   return (
@@ -29,19 +29,19 @@ export function Sidebar() {
         </div>
         <NavLink
           to="/issues"
-          className={({ isActive }) => cn(navItemClass, isActive && 'bg-surface-2 text-ink')}
+          className={({ isActive }) => cn(navItemClass, isActive && "bg-surface-2 text-ink")}
         >
           <span className="w-4.5 text-center text-xs">◇</span>Issues
         </NavLink>
         <NavLink
           to="/apps"
-          className={({ isActive }) => cn(navItemClass, isActive && 'bg-surface-2 text-ink')}
+          className={({ isActive }) => cn(navItemClass, isActive && "bg-surface-2 text-ink")}
         >
           <span className="w-4.5 text-center text-xs">▦</span>Applications
         </NavLink>
         <NavLink
           to="/performance"
-          className={({ isActive }) => cn(navItemClass, isActive && 'bg-surface-2 text-ink')}
+          className={({ isActive }) => cn(navItemClass, isActive && "bg-surface-2 text-ink")}
         >
           <span className="w-4.5 text-center text-xs">◴</span>Performance
         </NavLink>
@@ -50,7 +50,7 @@ export function Sidebar() {
         </div>
         <NavLink
           to="/settings"
-          className={({ isActive }) => cn(navItemClass, isActive && 'bg-surface-2 text-ink')}
+          className={({ isActive }) => cn(navItemClass, isActive && "bg-surface-2 text-ink")}
         >
           <span className="w-4.5 text-center text-xs">⌁</span>SDK setup
         </NavLink>
@@ -69,5 +69,5 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
-  )
+  );
 }

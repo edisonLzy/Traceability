@@ -5,26 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Traceability Electron demo</title>
     <style>
-      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #101114; color: #f4f5f7; }
-      body { margin: 0; padding: 32px; } h1 { margin: 0 0 8px; } p { color: #a8adb8; max-width: 760px; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 24px; }
-      button { min-height: 86px; padding: 14px; text-align: left; color: inherit; background: #1b1d22; border: 1px solid #343843; border-radius: 10px; cursor: pointer; }
-      button:hover { border-color: #7382f5; background: #20232b; } button b { display: block; margin-bottom: 5px; } button span { color: #a8adb8; font-size: 12px; }
-      pre { margin-top: 22px; padding: 16px; overflow: auto; background: #17191e; border: 1px solid #2e313a; border-radius: 10px; color: #b9c4ff; min-height: 90px; }
+      :root {
+        color-scheme: dark;
+        font-family: Inter, system-ui, sans-serif;
+        background: #101114;
+        color: #f4f5f7;
+      }
+      body {
+        margin: 0;
+        padding: 32px;
+      }
+      h1 {
+        margin: 0 0 8px;
+      }
+      p {
+        color: #a8adb8;
+        max-width: 760px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+      button {
+        min-height: 86px;
+        padding: 14px;
+        text-align: left;
+        color: inherit;
+        background: #1b1d22;
+        border: 1px solid #343843;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #7382f5;
+        background: #20232b;
+      }
+      button b {
+        display: block;
+        margin-bottom: 5px;
+      }
+      button span {
+        color: #a8adb8;
+        font-size: 12px;
+      }
+      pre {
+        margin-top: 22px;
+        padding: 16px;
+        overflow: auto;
+        background: #17191e;
+        border: 1px solid #2e313a;
+        border-radius: 10px;
+        color: #b9c4ff;
+        min-height: 90px;
+      }
     </style>
   </head>
   <body>
     <h1>Traceability Electron SDK demo</h1>
-    <p>Each control emits a real monitor event. Configure <code>TRACEABILITY_DEMO_APP_ID</code> and <code>TRACEABILITY_DEMO_TOKEN</code> before launching.</p>
+    <p>
+      Each control emits a real monitor event. Configure <code>TRACEABILITY_DEMO_APP_ID</code> and
+      <code>TRACEABILITY_DEMO_TOKEN</code> before launching.
+    </p>
     <div class="grid">
-      <button id="renderer-error"><b>Renderer exception</b><span>Captures a renderer-process JavaScript error.</span></button>
-      <button id="renderer-promise"><b>Renderer unhandled rejection</b><span>Exercises the browser error integration.</span></button>
-      <button id="ipc-ok"><b>IPC success</b><span>Calls a monitored IPC handler normally.</span></button>
-      <button id="ipc-error"><b>IPC handler exception</b><span>Captures the main-process IPC error and the renderer rejection.</span></button>
-      <button id="resources"><b>System resource sample</b><span>Reports CPU, memory, network state, OS and hardware context.</span></button>
-      <button id="environment"><b>Show client environment</b><span>Reads Electron, Chromium, Node, OS and hardware metadata.</span></button>
-      <button id="main-crash"><b>Main-process uncaught exception</b><span>Exercises the main crash/uncaught-exception capture path.</span></button>
-      <button id="renderer-gone"><b>Renderer process gone</b><span>Reports the renderer-loss signal without terminating the demo.</span></button>
+      <button id="renderer-error">
+        <b>Renderer exception</b><span>Captures a renderer-process JavaScript error.</span>
+      </button>
+      <button id="renderer-promise">
+        <b>Renderer unhandled rejection</b><span>Exercises the browser error integration.</span>
+      </button>
+      <button id="ipc-ok">
+        <b>IPC success</b><span>Calls a monitored IPC handler normally.</span>
+      </button>
+      <button id="ipc-error">
+        <b>IPC handler exception</b
+        ><span>Captures the main-process IPC error and the renderer rejection.</span>
+      </button>
+      <button id="resources">
+        <b>System resource sample</b
+        ><span>Reports CPU, memory, network state, OS and hardware context.</span>
+      </button>
+      <button id="environment">
+        <b>Show client environment</b
+        ><span>Reads Electron, Chromium, Node, OS and hardware metadata.</span>
+      </button>
+      <button id="main-crash">
+        <b>Main-process uncaught exception</b
+        ><span>Exercises the main crash/uncaught-exception capture path.</span>
+      </button>
+      <button id="renderer-gone">
+        <b>Renderer process gone</b
+        ><span>Reports the renderer-loss signal without terminating the demo.</span>
+      </button>
     </div>
     <pre id="output">Ready.</pre>
     <script type="module" src="/src/renderer.ts"></script>

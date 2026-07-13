@@ -1,6 +1,6 @@
-import { Router } from 'express'
+import { Router } from "express";
 
-export const healthRouter: Router = Router()
+export const healthRouter: Router = Router();
 
 /**
  * @openapi
@@ -12,6 +12,6 @@ export const healthRouter: Router = Router()
  *       200:
  *         description: ok
  */
-healthRouter.get('/health', (_req, res) => {
-  res.success('ok')
-})
+healthRouter.get("/health", (_req, res) => {
+  res.success("ok");
+});

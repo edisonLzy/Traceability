@@ -164,12 +164,14 @@ traceability/
 ## Task 1: Scaffold pnpm workspace + shared TS config (M0)
 
 **Files:**
+
 - Create: `package.json` (root, overwrite existing empty one)
 - Create: `pnpm-workspace.yaml`
 - Create: `tsconfig.base.json`
 - Create: `.gitignore`
 
 **Interfaces:**
+
 - Produces: workspace root that recognizes `packages/*`, `app`, `server`.
 
 - [ ] **Step 1: Overwrite root `package.json`**
@@ -261,11 +263,13 @@ git commit -m "chore: scaffold pnpm workspace + shared tsconfig"
 The spec's "envelope v7 protocol type" and "data model type" are shared by core/server/app/cli. Rather than scatter them, create one tiny `packages/protocol` package.
 
 **Files:**
+
 - Create: `packages/protocol/package.json`
 - Create: `packages/protocol/tsconfig.json`
 - Create: `packages/protocol/src/index.ts`
 
 **Interfaces:**
+
 - Produces: `@traceability/protocol` exporting `IssueStatus`, `Application`, `Issue`, `Event`, `Patch`, `EnvelopeItem`, `ParsedEnvelope`. Consumed by `server`, `app`, `cli`.
 
 - [ ] **Step 1: Create `packages/protocol/package.json`**
@@ -309,93 +313,95 @@ The spec's "envelope v7 protocol type" and "data model type" are shared by core/
 ```ts
 // ===== Server data model (spec §4.7) =====
 
-export type IssueStatus = 'open' | 'fix-manual' | 'fixing' | 'fixed' | 'ignored'
+export type IssueStatus = "open" | "fix-manual" | "fixing" | "fixed" | "ignored";
 
 export interface Application {
-  id: string
-  name: string
-  repoUrl: string
-  defaultBranch: string
-  createdAt: string
+  id: string;
+  name: string;
+  repoUrl: string;
+  defaultBranch: string;
+  createdAt: string;
 }
 
 export interface Issue {
-  id: string
-  appId: string
-  fingerprint: string
-  title: string
-  type: 'error' | 'transaction' | 'message' | 'custom'
-  firstSeen: string
-  lastSeen: string
-  count: number
-  status: IssueStatus
+  id: string;
+  appId: string;
+  fingerprint: string;
+  title: string;
+  type: "error" | "transaction" | "message" | "custom";
+  firstSeen: string;
+  lastSeen: string;
+  count: number;
+  status: IssueStatus;
   metadata: {
-    stacktrace?: string
-    message?: string
-    context?: Record<string, unknown>
-  }
+    stacktrace?: string;
+    message?: string;
+    context?: Record<string, unknown>;
+  };
 }
 
 export interface Event {
-  id: string
-  issueId: string
-  receivedAt: string
-  envelope: string
+  id: string;
+  issueId: string;
+  receivedAt: string;
+  envelope: string;
 }
 
 export interface Patch {
-  id: string
-  issueId: string
-  branch: string
-  filePath: string
-  attachedAt: string
+  id: string;
+  issueId: string;
+  branch: string;
+  filePath: string;
+  attachedAt: string;
 }
 
 // ===== Sentry envelope v7 (subset) =====
 
-export type EnvelopeItemType = 'event' | 'transaction' | 'client_report' | 'session' | 'attachment'
+export type EnvelopeItemType = "event" | "transaction" | "client_report" | "session" | "attachment";
 
 export interface EnvelopeHeader {
-  sdk?: { name: string; version: string }
-  sent_at?: string
-  dsn?: string
-  [k: string]: unknown
+  sdk?: { name: string; version: string };
+  sent_at?: string;
+  dsn?: string;
+  [k: string]: unknown;
 }
 
 export interface EnvelopeItemHeader {
-  type: EnvelopeItemType
+  type: EnvelopeItemType;
   // item payload type discriminator; narrows via `type` above
-  [k: string]: unknown
+  [k: string]: unknown;
 }
 
-export type EnvelopeItem = [EnvelopeItemHeader, unknown]
+export type EnvelopeItem = [EnvelopeItemHeader, unknown];
 
 export interface ParsedEnvelope {
-  header: EnvelopeHeader
-  items: EnvelopeItem[]
+  header: EnvelopeHeader;
+  items: EnvelopeItem[];
 }
 
 // Item payload shapes we actually read (v1: event/transaction/message only)
 export interface SentryEventPayload {
-  event_id?: string
-  type?: 'error' | 'transaction' | 'message' | 'default' | 'custom'
-  message?: string
-  level?: string
-  timestamp?: number | string
-  platform?: string
-  tags?: Array<[string, string]> | Record<string, string>
+  event_id?: string;
+  type?: "error" | "transaction" | "message" | "default" | "custom";
+  message?: string;
+  level?: string;
+  timestamp?: number | string;
+  platform?: string;
+  tags?: Array<[string, string]> | Record<string, string>;
   exception?: {
     values?: Array<{
-      type?: string
-      value?: string
-      stacktrace?: { frames?: Array<{ filename?: string; function?: string; lineno?: number; colno?: number }> }
-    }>
-  }
-  transaction?: string
-  release?: string
-  environment?: string
-  contexts?: Record<string, unknown>
-  extra?: Record<string, unknown>
+      type?: string;
+      value?: string;
+      stacktrace?: {
+        frames?: Array<{ filename?: string; function?: string; lineno?: number; colno?: number }>;
+      };
+    }>;
+  };
+  transaction?: string;
+  release?: string;
+  environment?: string;
+  contexts?: Record<string, unknown>;
+  extra?: Record<string, unknown>;
 }
 ```
 
@@ -418,6 +424,7 @@ git commit -m "feat(protocol): shared types for envelope + server data model"
 Each gets a `package.json` + `tsconfig.json` + empty `src/index.ts` so `pnpm install` resolves the workspace graph. Detailed code comes in later tasks.
 
 **Files:**
+
 - Create: `packages/core/{package.json,tsconfig.json,src/index.ts}`
 - Create: `packages/react/{package.json,tsconfig.json,src/index.ts}`
 - Create: `packages/electron/{package.json,tsconfig.json,src/index.ts}`
@@ -427,6 +434,7 @@ Each gets a `package.json` + `tsconfig.json` + empty `src/index.ts` so `pnpm ins
 - Create: `app/{package.json,tsconfig.json,src/index.ts}`
 
 **Interfaces:**
+
 - Produces: all workspace packages resolvable by name.
 
 - [ ] **Step 1: Create `packages/core/package.json`**
@@ -473,7 +481,7 @@ Each gets a `package.json` + `tsconfig.json` + empty `src/index.ts` so `pnpm ins
 - [ ] **Step 3: Create `packages/core/src/index.ts`**
 
 ```ts
-export const __CORE_STUB__ = true
+export const __CORE_STUB__ = true;
 ```
 
 - [ ] **Step 4: Create `packages/react/package.json`**
@@ -521,7 +529,7 @@ export const __CORE_STUB__ = true
 - [ ] **Step 6: Create `packages/react/src/index.ts`**
 
 ```ts
-export const __REACT_STUB__ = true
+export const __REACT_STUB__ = true;
 ```
 
 - [ ] **Step 7: Create `packages/electron/package.json`**
@@ -569,7 +577,7 @@ export const __REACT_STUB__ = true
 - [ ] **Step 9: Create `packages/electron/src/index.ts`**
 
 ```ts
-export const __ELECTRON_STUB__ = true
+export const __ELECTRON_STUB__ = true;
 ```
 
 - [ ] **Step 10: Create `packages/cli/package.json`**
@@ -617,7 +625,7 @@ export const __ELECTRON_STUB__ = true
 - [ ] **Step 12: Create `packages/cli/src/index.ts`**
 
 ```ts
-export const __CLI_STUB__ = true
+export const __CLI_STUB__ = true;
 ```
 
 - [ ] **Step 13: Create `packages/skills/package.json`**
@@ -680,7 +688,7 @@ export const __CLI_STUB__ = true
 - [ ] **Step 16: Create `server/src/index.ts`**
 
 ```ts
-export const __SERVER_STUB__ = true
+export const __SERVER_STUB__ = true;
 ```
 
 - [ ] **Step 17: Create `server/data/.gitkeep`** (empty file)
@@ -731,7 +739,7 @@ export const __SERVER_STUB__ = true
 - [ ] **Step 20: Create `app/src/index.ts`**
 
 ```ts
-export const __APP_STUB__ = true
+export const __APP_STUB__ = true;
 ```
 
 - [ ] **Step 21: Install all workspace deps**
@@ -751,57 +759,59 @@ git commit -m "chore: scaffold all workspace packages with stubs"
 ## Task 4: Server — DB layer + migrations (M1)
 
 **Files:**
+
 - Create: `server/src/config.ts`
 - Create: `server/src/store/db.ts`
 - Create: `server/src/store/migrations.ts`
 - Create: `server/vitest.config.ts`
 
 **Interfaces:**
+
 - Produces: `openDb()` returning a `BetterSQLite3.Database` with schema migrated; `getConfig()` returning `{ port, apiToken, dbPath }`.
 - Consumes: nothing (foundation).
 
 - [ ] **Step 1: Create `server/vitest.config.ts`**
 
 ```ts
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['src/tests/**/*.test.ts'],
+    environment: "node",
+    include: ["src/tests/**/*.test.ts"],
   },
-})
+});
 ```
 
 - [ ] **Step 2: Create `server/src/config.ts`**
 
 ```ts
 export interface ServerConfig {
-  port: number
-  apiToken: string
-  dbPath: string
+  port: number;
+  apiToken: string;
+  dbPath: string;
 }
 
 export function getConfig(): ServerConfig {
-  const apiToken = process.env.TRACEABILITY_API_TOKEN
+  const apiToken = process.env.TRACEABILITY_API_TOKEN;
   if (!apiToken) {
-    throw new Error('TRACEABILITY_API_TOKEN env var is required')
+    throw new Error("TRACEABILITY_API_TOKEN env var is required");
   }
   return {
     port: Number(process.env.PORT ?? 3000),
     apiToken,
-    dbPath: process.env.TRACEABILITY_DB_PATH ?? 'server/data/traceability.db',
-  }
+    dbPath: process.env.TRACEABILITY_DB_PATH ?? "server/data/traceability.db",
+  };
 }
 ```
 
 - [ ] **Step 3: Create `server/src/store/migrations.ts`**
 
 ```ts
-import type { Database } from 'better-sqlite3'
+import type { Database } from "better-sqlite3";
 
 export function runMigrations(db: Database): void {
-  db.pragma('journal_mode = WAL')
+  db.pragma("journal_mode = WAL");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS applications (
@@ -848,61 +858,61 @@ export function runMigrations(db: Database): void {
       attached_at TEXT NOT NULL,
       FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
     );
-  `)
+  `);
 }
 ```
 
 - [ ] **Step 4: Create `server/src/store/db.ts`**
 
 ```ts
-import Database from 'better-sqlite3'
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
-import { runMigrations } from './migrations.js'
+import Database from "better-sqlite3";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { runMigrations } from "./migrations.js";
 
 export function openDb(dbPath: string): Database.Database {
-  if (dbPath !== ':memory:') {
-    mkdirSync(dirname(dbPath), { recursive: true })
+  if (dbPath !== ":memory:") {
+    mkdirSync(dirname(dbPath), { recursive: true });
   }
-  const db = new Database(dbPath)
-  runMigrations(db)
-  return db
+  const db = new Database(dbPath);
+  runMigrations(db);
+  return db;
 }
 ```
 
 - [ ] **Step 5: Write failing test `server/src/tests/db.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { openDb } from '../store/db.js'
+import { describe, it, expect } from "vitest";
+import { openDb } from "../store/db.js";
 
-describe('openDb', () => {
-  it('creates all tables on a fresh in-memory db', () => {
-    const db = openDb(':memory:')
+describe("openDb", () => {
+  it("creates all tables on a fresh in-memory db", () => {
+    const db = openDb(":memory:");
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-      .all() as Array<{ name: string }>
-    const names = tables.map((t) => t.name)
-    expect(names).toContain('applications')
-    expect(names).toContain('issues')
-    expect(names).toContain('events')
-    expect(names).toContain('patches')
-    db.close()
-  })
+      .all() as Array<{ name: string }>;
+    const names = tables.map((t) => t.name);
+    expect(names).toContain("applications");
+    expect(names).toContain("issues");
+    expect(names).toContain("events");
+    expect(names).toContain("patches");
+    db.close();
+  });
 
-  it('enforces unique (app_id, fingerprint) on issues', () => {
-    const db = openDb(':memory:')
+  it("enforces unique (app_id, fingerprint) on issues", () => {
+    const db = openDb(":memory:");
     const insert = db.prepare(
       `INSERT INTO issues (id, app_id, fingerprint, title, type, first_seen, last_seen)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    )
-    insert.run('i1', 'app1', 'fp1', 't', 'error', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+    );
+    insert.run("i1", "app1", "fp1", "t", "error", "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z");
     expect(() =>
-      insert.run('i2', 'app1', 'fp1', 't', 'error', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
-    ).toThrowError(/UNIQUE/i)
-    db.close()
-  })
-})
+      insert.run("i2", "app1", "fp1", "t", "error", "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"),
+    ).toThrowError(/UNIQUE/i);
+    db.close();
+  });
+});
 ```
 
 - [ ] **Step 6: Run test to verify it fails**
@@ -932,10 +942,12 @@ git commit -m "feat(server): sqlite db layer + migrations"
 ## Task 5: Server — envelope parser (M1)
 
 **Files:**
+
 - Create: `server/src/ingest/envelope.ts`
 - Create: `server/src/tests/envelope.test.ts`
 
 **Interfaces:**
+
 - Produces: `parseEnvelope(body: Buffer | string): ParsedEnvelope`, `extractIssueFingerprint(payload: SentryEventPayload, appId: string): string`, `payloadToIssueFields(payload): { title, type, metadata }`. Consumed by ingest endpoint (Task 6).
 - Consumes: `@traceability/protocol` types.
 
@@ -947,7 +959,7 @@ import type {
   EnvelopeHeader,
   EnvelopeItem,
   SentryEventPayload,
-} from '@traceability/protocol'
+} from "@traceability/protocol";
 
 /**
  * Sentry envelope v7 wire format: a newline-delimited JSON array.
@@ -955,157 +967,170 @@ import type {
  * [itemHeader, itemPayload, itemHeader, itemPayload, ...].
  */
 export function parseEnvelope(body: Buffer | string): ParsedEnvelope {
-  const text = typeof body === 'string' ? body : body.toString('utf8')
-  const lines = text.split('\n').filter((l) => l.length > 0)
+  const text = typeof body === "string" ? body : body.toString("utf8");
+  const lines = text.split("\n").filter((l) => l.length > 0);
   if (lines.length < 1) {
-    throw new Error('empty envelope')
+    throw new Error("empty envelope");
   }
-  const header = JSON.parse(lines[0]!) as EnvelopeHeader
-  const items: EnvelopeItem[] = []
+  const header = JSON.parse(lines[0]!) as EnvelopeHeader;
+  const items: EnvelopeItem[] = [];
   for (let i = 1; i + 1 < lines.length; i += 2) {
-    const itemHeader = JSON.parse(lines[i]!) as EnvelopeItem[0]
-    const itemPayload = JSON.parse(lines[i + 1]!)
-    items.push([itemHeader, itemPayload])
+    const itemHeader = JSON.parse(lines[i]!) as EnvelopeItem[0];
+    const itemPayload = JSON.parse(lines[i + 1]!);
+    items.push([itemHeader, itemPayload]);
   }
-  return { header, items }
+  return { header, items };
 }
 
 /**
  * Filter to v1-supported item types: only event/transaction/message payloads.
  */
 export function filterSupportedItems(envelope: ParsedEnvelope): Array<{
-  header: EnvelopeItem[0]
-  payload: SentryEventPayload
+  header: EnvelopeItem[0];
+  payload: SentryEventPayload;
 }> {
-  const supported: Array<{ header: EnvelopeItem[0]; payload: SentryEventPayload }> = []
+  const supported: Array<{ header: EnvelopeItem[0]; payload: SentryEventPayload }> = [];
   for (const [header, payload] of envelope.items) {
-    if (header.type === 'event' || header.type === 'transaction') {
-      supported.push({ header, payload: payload as SentryEventPayload })
-    } else if (header.type === 'client_report' && isMessagePayload(payload)) {
+    if (header.type === "event" || header.type === "transaction") {
+      supported.push({ header, payload: payload as SentryEventPayload });
+    } else if (header.type === "client_report" && isMessagePayload(payload)) {
       // client_report is not a message; skip. Kept branch explicit for clarity.
-      continue
+      continue;
     }
   }
-  return supported
+  return supported;
 }
 
 function isMessagePayload(p: unknown): p is SentryEventPayload {
-  return typeof p === 'object' && p !== null
+  return typeof p === "object" && p !== null;
 }
 
 /**
  * Stable fingerprint: appName tag + exception type+value, or message, or transaction name.
  */
 export function extractIssueFingerprint(payload: SentryEventPayload, appId: string): string {
-  const base = appId
-  const exc = payload.exception?.values?.[0]
+  const base = appId;
+  const exc = payload.exception?.values?.[0];
   if (exc) {
-    return `${base}::error::${exc.type ?? 'unknown'}::${exc.value ?? ''}`
+    return `${base}::error::${exc.type ?? "unknown"}::${exc.value ?? ""}`;
   }
   if (payload.transaction) {
-    return `${base}::transaction::${payload.transaction}`
+    return `${base}::transaction::${payload.transaction}`;
   }
   if (payload.message) {
-    return `${base}::message::${payload.message.slice(0, 200)}`
+    return `${base}::message::${payload.message.slice(0, 200)}`;
   }
-  return `${base}::${payload.type ?? 'unknown'}::${payload.event_id ?? 'no-id'}`
+  return `${base}::${payload.type ?? "unknown"}::${payload.event_id ?? "no-id"}`;
 }
 
 export function payloadToIssueFields(payload: SentryEventPayload): {
-  title: string
-  type: 'error' | 'transaction' | 'message' | 'custom'
-  metadata: Issue['metadata']
+  title: string;
+  type: "error" | "transaction" | "message" | "custom";
+  metadata: Issue["metadata"];
 } {
-  const exc = payload.exception?.values?.[0]
+  const exc = payload.exception?.values?.[0];
   if (exc) {
     return {
-      title: `${exc.type ?? 'Error'}: ${exc.value ?? ''}`.slice(0, 500),
-      type: 'error',
+      title: `${exc.type ?? "Error"}: ${exc.value ?? ""}`.slice(0, 500),
+      type: "error",
       metadata: {
         stacktrace: JSON.stringify(exc.stacktrace ?? null),
         message: exc.value,
         context: payload.extra,
       },
-    }
+    };
   }
   if (payload.transaction) {
     return {
       title: `transaction: ${payload.transaction}`.slice(0, 500),
-      type: 'transaction',
+      type: "transaction",
       metadata: { context: payload.contexts },
-    }
+    };
   }
   if (payload.message) {
     return {
       title: payload.message.slice(0, 500),
-      type: 'message',
+      type: "message",
       metadata: { message: payload.message, context: payload.extra },
-    }
+    };
   }
   return {
-    title: `${payload.type ?? 'event'} ${payload.event_id ?? ''}`.slice(0, 500),
-    type: 'custom',
+    title: `${payload.type ?? "event"} ${payload.event_id ?? ""}`.slice(0, 500),
+    type: "custom",
     metadata: { context: payload.extra },
-  }
+  };
 }
 
 // local import for the return type only
-import type { Issue } from '@traceability/protocol'
+import type { Issue } from "@traceability/protocol";
 ```
 
 - [ ] **Step 2: Write failing test `server/src/tests/envelope.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { parseEnvelope, filterSupportedItems, extractIssueFingerprint, payloadToIssueFields } from '../ingest/envelope.js'
+import { describe, it, expect } from "vitest";
+import {
+  parseEnvelope,
+  filterSupportedItems,
+  extractIssueFingerprint,
+  payloadToIssueFields,
+} from "../ingest/envelope.js";
 
 const sampleEnvelope = [
-  JSON.stringify({ sent_at: '2026-01-01T00:00:00Z', dsn: 'https://x@ingest/1' }),
-  JSON.stringify({ type: 'event' }),
+  JSON.stringify({ sent_at: "2026-01-01T00:00:00Z", dsn: "https://x@ingest/1" }),
+  JSON.stringify({ type: "event" }),
   JSON.stringify({
-    event_id: 'abc',
-    type: 'error',
-    message: 'boom',
-    exception: { values: [{ type: 'TypeError', value: 'boom', stacktrace: { frames: [{ filename: 'a.js', lineno: 10 }] } }] },
+    event_id: "abc",
+    type: "error",
+    message: "boom",
+    exception: {
+      values: [
+        {
+          type: "TypeError",
+          value: "boom",
+          stacktrace: { frames: [{ filename: "a.js", lineno: 10 }] },
+        },
+      ],
+    },
   }),
-].join('\n')
+].join("\n");
 
-describe('parseEnvelope', () => {
-  it('parses header + items', () => {
-    const env = parseEnvelope(sampleEnvelope)
-    expect(env.header.dsn).toBe('https://x@ingest/1')
-    expect(env.items).toHaveLength(1)
-    expect(env.items[0]![0].type).toBe('event')
-  })
-})
+describe("parseEnvelope", () => {
+  it("parses header + items", () => {
+    const env = parseEnvelope(sampleEnvelope);
+    expect(env.header.dsn).toBe("https://x@ingest/1");
+    expect(env.items).toHaveLength(1);
+    expect(env.items[0]![0].type).toBe("event");
+  });
+});
 
-describe('filterSupportedItems', () => {
-  it('keeps event/transaction, drops others', () => {
-    const env = parseEnvelope(sampleEnvelope)
-    const supported = filterSupportedItems(env)
-    expect(supported).toHaveLength(1)
-    expect(supported[0]!.payload.event_id).toBe('abc')
-  })
-})
+describe("filterSupportedItems", () => {
+  it("keeps event/transaction, drops others", () => {
+    const env = parseEnvelope(sampleEnvelope);
+    const supported = filterSupportedItems(env);
+    expect(supported).toHaveLength(1);
+    expect(supported[0]!.payload.event_id).toBe("abc");
+  });
+});
 
-describe('extractIssueFingerprint', () => {
-  it('uses appId + exception type/value', () => {
-    const env = parseEnvelope(sampleEnvelope)
-    const { payload } = filterSupportedItems(env)[0]!
-    expect(extractIssueFingerprint(payload, 'app1')).toBe('app1::error::TypeError::boom')
-  })
-})
+describe("extractIssueFingerprint", () => {
+  it("uses appId + exception type/value", () => {
+    const env = parseEnvelope(sampleEnvelope);
+    const { payload } = filterSupportedItems(env)[0]!;
+    expect(extractIssueFingerprint(payload, "app1")).toBe("app1::error::TypeError::boom");
+  });
+});
 
-describe('payloadToIssueFields', () => {
-  it('derives error title + metadata', () => {
-    const env = parseEnvelope(sampleEnvelope)
-    const { payload } = filterSupportedItems(env)[0]!
-    const fields = payloadToIssueFields(payload)
-    expect(fields.title).toBe('TypeError: boom')
-    expect(fields.type).toBe('error')
-    expect(fields.metadata.message).toBe('boom')
-  })
-})
+describe("payloadToIssueFields", () => {
+  it("derives error title + metadata", () => {
+    const env = parseEnvelope(sampleEnvelope);
+    const { payload } = filterSupportedItems(env)[0]!;
+    const fields = payloadToIssueFields(payload);
+    expect(fields.title).toBe("TypeError: boom");
+    expect(fields.type).toBe("error");
+    expect(fields.metadata.message).toBe("boom");
+  });
+});
 ```
 
 - [ ] **Step 3: Run test to verify it fails**
@@ -1116,20 +1141,20 @@ Expected: FAIL — module not found (TS not yet built to `.js`).
 NOTE: vitest with TS source files resolves `.ts` directly via `vite-node`. Update import paths to drop `.js` if vitest complains. If so, change all `from '../x.js'` to `from '../x'` in test files only. Keep server src imports as `.js` (ESM convention for built output). Add to `server/vitest.config.ts`:
 
 ```ts
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['src/tests/**/*.test.ts'],
+    environment: "node",
+    include: ["src/tests/**/*.test.ts"],
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: [".ts", ".js"],
   },
   esbuild: {
-    target: 'es2022',
+    target: "es2022",
   },
-})
+});
 ```
 
 - [ ] **Step 4: Run tests to verify pass**
@@ -1149,31 +1174,33 @@ git commit -m "feat(server): envelope v7 parser + fingerprint/title extraction"
 ## Task 6: Server — apps + issues store repositories (M1)
 
 **Files:**
+
 - Create: `server/src/store/apps.ts`
 - Create: `server/src/store/issues.ts`
 - Create: `server/src/tests/issues.test.ts`
 
 **Interfaces:**
+
 - Produces: `createAppsRepo(db)`, `createIssuesRepo(db)` returning typed CRUD helpers used by API routes (Task 7) and ingest (Task 8).
 - Consumes: `@traceability/protocol`, `better-sqlite3`, envelope helpers (Task 5).
 
 - [ ] **Step 1: Create `server/src/store/apps.ts`**
 
 ```ts
-import type { Database } from 'better-sqlite3'
-import { randomUUID } from 'node:crypto'
-import type { Application } from '@traceability/protocol'
+import type { Database } from "better-sqlite3";
+import { randomUUID } from "node:crypto";
+import type { Application } from "@traceability/protocol";
 
 interface CreateAppInput {
-  name: string
-  repoUrl: string
-  defaultBranch: string
+  name: string;
+  repoUrl: string;
+  defaultBranch: string;
 }
 
 interface UpdateAppInput {
-  name?: string
-  repoUrl?: string
-  defaultBranch?: string
+  name?: string;
+  repoUrl?: string;
+  defaultBranch?: string;
 }
 
 export function createAppsRepo(db: Database) {
@@ -1183,16 +1210,20 @@ export function createAppsRepo(db: Database) {
     repoUrl: r.repo_url as string,
     defaultBranch: r.default_branch as string,
     createdAt: r.created_at as string,
-  })
+  });
 
   return {
     list(): Application[] {
-      const rows = db.prepare('SELECT * FROM applications ORDER BY created_at DESC').all() as Array<Record<string, unknown>>
-      return rows.map(rowToApp)
+      const rows = db.prepare("SELECT * FROM applications ORDER BY created_at DESC").all() as Array<
+        Record<string, unknown>
+      >;
+      return rows.map(rowToApp);
     },
     get(id: string): Application | undefined {
-      const row = db.prepare('SELECT * FROM applications WHERE id = ?').get(id) as Record<string, unknown> | undefined
-      return row ? rowToApp(row) : undefined
+      const row = db.prepare("SELECT * FROM applications WHERE id = ?").get(id) as
+        | Record<string, unknown>
+        | undefined;
+      return row ? rowToApp(row) : undefined;
     },
     create(input: CreateAppInput): Application {
       const app: Application = {
@@ -1201,42 +1232,42 @@ export function createAppsRepo(db: Database) {
         repoUrl: input.repoUrl,
         defaultBranch: input.defaultBranch,
         createdAt: new Date().toISOString(),
-      }
+      };
       db.prepare(
-        'INSERT INTO applications (id, name, repo_url, default_branch, created_at) VALUES (?, ?, ?, ?, ?)',
-      ).run(app.id, app.name, app.repoUrl, app.defaultBranch, app.createdAt)
-      return app
+        "INSERT INTO applications (id, name, repo_url, default_branch, created_at) VALUES (?, ?, ?, ?, ?)",
+      ).run(app.id, app.name, app.repoUrl, app.defaultBranch, app.createdAt);
+      return app;
     },
     update(id: string, input: UpdateAppInput): Application | undefined {
-      const existing = this.get(id)
-      if (!existing) return undefined
+      const existing = this.get(id);
+      if (!existing) return undefined;
       const updated: Application = {
         ...existing,
         name: input.name ?? existing.name,
         repoUrl: input.repoUrl ?? existing.repoUrl,
         defaultBranch: input.defaultBranch ?? existing.defaultBranch,
-      }
-      db.prepare('UPDATE applications SET name = ?, repo_url = ?, default_branch = ? WHERE id = ?').run(
-        updated.name, updated.repoUrl, updated.defaultBranch, id,
-      )
-      return updated
+      };
+      db.prepare(
+        "UPDATE applications SET name = ?, repo_url = ?, default_branch = ? WHERE id = ?",
+      ).run(updated.name, updated.repoUrl, updated.defaultBranch, id);
+      return updated;
     },
     remove(id: string): boolean {
-      const res = db.prepare('DELETE FROM applications WHERE id = ?').run(id)
-      return res.changes > 0
+      const res = db.prepare("DELETE FROM applications WHERE id = ?").run(id);
+      return res.changes > 0;
     },
-  }
+  };
 }
 ```
 
 - [ ] **Step 2: Create `server/src/store/issues.ts`**
 
 ```ts
-import type { Database } from 'better-sqlite3'
-import { randomUUID } from 'node:crypto'
-import type { Issue, Event, Patch, IssueStatus } from '@traceability/protocol'
-import type { SentryEventPayload } from '@traceability/protocol'
-import { extractIssueFingerprint, payloadToIssueFields } from '../ingest/envelope.js'
+import type { Database } from "better-sqlite3";
+import { randomUUID } from "node:crypto";
+import type { Issue, Event, Patch, IssueStatus } from "@traceability/protocol";
+import type { SentryEventPayload } from "@traceability/protocol";
+import { extractIssueFingerprint, payloadToIssueFields } from "../ingest/envelope.js";
 
 export function createIssuesRepo(db: Database) {
   const rowToIssue = (r: Record<string, unknown>): Issue => ({
@@ -1244,43 +1275,48 @@ export function createIssuesRepo(db: Database) {
     appId: r.app_id as string,
     fingerprint: r.fingerprint as string,
     title: r.title as string,
-    type: r.type as Issue['type'],
+    type: r.type as Issue["type"],
     firstSeen: r.first_seen as string,
     lastSeen: r.last_seen as string,
     count: r.count as number,
     status: r.status as IssueStatus,
-    metadata: JSON.parse(r.metadata as string) as Issue['metadata'],
-  })
+    metadata: JSON.parse(r.metadata as string) as Issue["metadata"],
+  });
 
   return {
-    list(opts: { appId?: string; status?: IssueStatus; limit?: number; cursor?: string }): { items: Issue[]; nextCursor: string | null } {
-      const limit = Math.min(opts.limit ?? 50, 200)
-      const where: string[] = []
-      const params: unknown[] = []
+    list(opts: { appId?: string; status?: IssueStatus; limit?: number; cursor?: string }): {
+      items: Issue[];
+      nextCursor: string | null;
+    } {
+      const limit = Math.min(opts.limit ?? 50, 200);
+      const where: string[] = [];
+      const params: unknown[] = [];
       if (opts.appId) {
-        where.push('app_id = ?')
-        params.push(opts.appId)
+        where.push("app_id = ?");
+        params.push(opts.appId);
       }
       if (opts.status) {
-        where.push('status = ?')
-        params.push(opts.status)
+        where.push("status = ?");
+        params.push(opts.status);
       }
       if (opts.cursor) {
-        where.push('last_seen < ?')
-        params.push(opts.cursor)
+        where.push("last_seen < ?");
+        params.push(opts.cursor);
       }
-      const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : ''
+      const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
       const rows = db
         .prepare(`SELECT * FROM issues ${whereClause} ORDER BY last_seen DESC LIMIT ?`)
-        .all(...params, limit + 1) as Array<Record<string, unknown>>
-      const items = rows.slice(0, limit).map(rowToIssue)
-      const nextCursor = rows.length > limit ? (rows[limit - 1]!.last_seen as string) : null
-      return { items, nextCursor }
+        .all(...params, limit + 1) as Array<Record<string, unknown>>;
+      const items = rows.slice(0, limit).map(rowToIssue);
+      const nextCursor = rows.length > limit ? (rows[limit - 1]!.last_seen as string) : null;
+      return { items, nextCursor };
     },
 
     get(id: string): Issue | undefined {
-      const row = db.prepare('SELECT * FROM issues WHERE id = ?').get(id) as Record<string, unknown> | undefined
-      return row ? rowToIssue(row) : undefined
+      const row = db.prepare("SELECT * FROM issues WHERE id = ?").get(id) as
+        | Record<string, unknown>
+        | undefined;
+      return row ? rowToIssue(row) : undefined;
     },
 
     /**
@@ -1288,19 +1324,19 @@ export function createIssuesRepo(db: Database) {
      * (used to drive WS "issue:created" vs "issue:updated").
      */
     ingestEvent(appId: string, payload: SentryEventPayload): { issue: Issue; created: boolean } {
-      const fingerprint = extractIssueFingerprint(payload, appId)
-      const fields = payloadToIssueFields(payload)
-      const now = new Date().toISOString()
+      const fingerprint = extractIssueFingerprint(payload, appId);
+      const fields = payloadToIssueFields(payload);
+      const now = new Date().toISOString();
 
       const existing = db
-        .prepare('SELECT * FROM issues WHERE app_id = ? AND fingerprint = ?')
-        .get(appId, fingerprint) as Record<string, unknown> | undefined
+        .prepare("SELECT * FROM issues WHERE app_id = ? AND fingerprint = ?")
+        .get(appId, fingerprint) as Record<string, unknown> | undefined;
 
       if (existing) {
         db.prepare(
           `UPDATE issues SET last_seen = ?, count = count + 1, metadata = ? WHERE id = ?`,
-        ).run(now, JSON.stringify(fields.metadata), existing.id)
-        return { issue: this.get(existing.id as string)!, created: false }
+        ).run(now, JSON.stringify(fields.metadata), existing.id);
+        return { issue: this.get(existing.id as string)!, created: false };
       }
 
       const issue: Issue = {
@@ -1312,17 +1348,25 @@ export function createIssuesRepo(db: Database) {
         firstSeen: now,
         lastSeen: now,
         count: 1,
-        status: 'open',
+        status: "open",
         metadata: fields.metadata,
-      }
+      };
       db.prepare(
         `INSERT INTO issues (id, app_id, fingerprint, title, type, first_seen, last_seen, count, status, metadata)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
-        issue.id, issue.appId, issue.fingerprint, issue.title, issue.type,
-        issue.firstSeen, issue.lastSeen, issue.count, issue.status, JSON.stringify(issue.metadata),
-      )
-      return { issue, created: true }
+        issue.id,
+        issue.appId,
+        issue.fingerprint,
+        issue.title,
+        issue.type,
+        issue.firstSeen,
+        issue.lastSeen,
+        issue.count,
+        issue.status,
+        JSON.stringify(issue.metadata),
+      );
+      return { issue, created: true };
     },
 
     appendEvent(issueId: string, envelope: string): Event {
@@ -1331,28 +1375,28 @@ export function createIssuesRepo(db: Database) {
         issueId,
         receivedAt: new Date().toISOString(),
         envelope,
-      }
+      };
       db.prepare(
-        'INSERT INTO events (id, issue_id, received_at, envelope) VALUES (?, ?, ?, ?)',
-      ).run(event.id, event.issueId, event.receivedAt, event.envelope)
-      return event
+        "INSERT INTO events (id, issue_id, received_at, envelope) VALUES (?, ?, ?, ?)",
+      ).run(event.id, event.issueId, event.receivedAt, event.envelope);
+      return event;
     },
 
     listEvents(issueId: string, limit = 50): Event[] {
       const rows = db
-        .prepare('SELECT * FROM events WHERE issue_id = ? ORDER BY received_at DESC LIMIT ?')
-        .all(issueId, limit) as Array<Record<string, unknown>>
+        .prepare("SELECT * FROM events WHERE issue_id = ? ORDER BY received_at DESC LIMIT ?")
+        .all(issueId, limit) as Array<Record<string, unknown>>;
       return rows.map((r) => ({
         id: r.id as string,
         issueId: r.issue_id as string,
         receivedAt: r.received_at as string,
         envelope: r.envelope as string,
-      }))
+      }));
     },
 
     setStatus(id: string, status: IssueStatus): Issue | undefined {
-      db.prepare('UPDATE issues SET status = ? WHERE id = ?').run(status, id)
-      return this.get(id)
+      db.prepare("UPDATE issues SET status = ? WHERE id = ?").run(status, id);
+      return this.get(id);
     },
 
     attachPatch(issueId: string, branch: string, filePath: string): Patch {
@@ -1362,89 +1406,93 @@ export function createIssuesRepo(db: Database) {
         branch,
         filePath,
         attachedAt: new Date().toISOString(),
-      }
+      };
       db.prepare(
-        'INSERT INTO patches (id, issue_id, branch, file_path, attached_at) VALUES (?, ?, ?, ?, ?)',
-      ).run(patch.id, patch.issueId, patch.branch, patch.filePath, patch.attachedAt)
-      db.prepare("UPDATE issues SET status = 'fixing' WHERE id = ?").run(issueId)
-      return patch
+        "INSERT INTO patches (id, issue_id, branch, file_path, attached_at) VALUES (?, ?, ?, ?, ?)",
+      ).run(patch.id, patch.issueId, patch.branch, patch.filePath, patch.attachedAt);
+      db.prepare("UPDATE issues SET status = 'fixing' WHERE id = ?").run(issueId);
+      return patch;
     },
 
     getLatestPatch(issueId: string): Patch | undefined {
       const row = db
-        .prepare('SELECT * FROM patches WHERE issue_id = ? ORDER BY attached_at DESC LIMIT 1')
-        .get(issueId) as Record<string, unknown> | undefined
-      if (!row) return undefined
+        .prepare("SELECT * FROM patches WHERE issue_id = ? ORDER BY attached_at DESC LIMIT 1")
+        .get(issueId) as Record<string, unknown> | undefined;
+      if (!row) return undefined;
       return {
         id: row.id as string,
         issueId: row.issue_id as string,
         branch: row.branch as string,
         filePath: row.file_path as string,
         attachedAt: row.attached_at as string,
-      }
+      };
     },
-  }
+  };
 }
 ```
 
 - [ ] **Step 3: Write failing test `server/src/tests/issues.test.ts`**
 
 ```ts
-import { describe, it, expect, beforeEach } from 'vitest'
-import { openDb } from '../store/db.js'
-import { createAppsRepo } from '../store/apps.js'
-import { createIssuesRepo } from '../store/issues.js'
-import type { Database } from 'better-sqlite3'
-import type { SentryEventPayload } from '@traceability/protocol'
+import { describe, it, expect, beforeEach } from "vitest";
+import { openDb } from "../store/db.js";
+import { createAppsRepo } from "../store/apps.js";
+import { createIssuesRepo } from "../store/issues.js";
+import type { Database } from "better-sqlite3";
+import type { SentryEventPayload } from "@traceability/protocol";
 
-let db: Database
+let db: Database;
 beforeEach(() => {
-  db = openDb(':memory:')
-})
+  db = openDb(":memory:");
+});
 
-describe('issues repo ingestEvent', () => {
-  it('creates a new issue on first occurrence', () => {
-    const apps = createAppsRepo(db)
-    const issues = createIssuesRepo(db)
-    const app = apps.create({ name: 'A', repoUrl: 'git@x:a.git', defaultBranch: 'main' })
+describe("issues repo ingestEvent", () => {
+  it("creates a new issue on first occurrence", () => {
+    const apps = createAppsRepo(db);
+    const issues = createIssuesRepo(db);
+    const app = apps.create({ name: "A", repoUrl: "git@x:a.git", defaultBranch: "main" });
     const payload: SentryEventPayload = {
-      event_id: 'e1',
-      type: 'error',
-      exception: { values: [{ type: 'TypeError', value: 'x' }] },
-    }
-    const { issue, created } = issues.ingestEvent(app.id, payload)
-    expect(created).toBe(true)
-    expect(issue.count).toBe(1)
-    expect(issue.status).toBe('open')
-  })
+      event_id: "e1",
+      type: "error",
+      exception: { values: [{ type: "TypeError", value: "x" }] },
+    };
+    const { issue, created } = issues.ingestEvent(app.id, payload);
+    expect(created).toBe(true);
+    expect(issue.count).toBe(1);
+    expect(issue.status).toBe("open");
+  });
 
-  it('increments count on duplicate fingerprint, no new row', () => {
-    const apps = createAppsRepo(db)
-    const issues = createIssuesRepo(db)
-    const app = apps.create({ name: 'A', repoUrl: 'git@x:a.git', defaultBranch: 'main' })
+  it("increments count on duplicate fingerprint, no new row", () => {
+    const apps = createAppsRepo(db);
+    const issues = createIssuesRepo(db);
+    const app = apps.create({ name: "A", repoUrl: "git@x:a.git", defaultBranch: "main" });
     const payload: SentryEventPayload = {
-      type: 'error',
-      exception: { values: [{ type: 'TypeError', value: 'x' }] },
-    }
-    const first = issues.ingestEvent(app.id, payload)
-    const second = issues.ingestEvent(app.id, payload)
-    expect(second.created).toBe(false)
-    expect(second.issue.id).toBe(first.issue.id)
-    expect(second.issue.count).toBe(2)
-  })
+      type: "error",
+      exception: { values: [{ type: "TypeError", value: "x" }] },
+    };
+    const first = issues.ingestEvent(app.id, payload);
+    const second = issues.ingestEvent(app.id, payload);
+    expect(second.created).toBe(false);
+    expect(second.issue.id).toBe(first.issue.id);
+    expect(second.issue.count).toBe(2);
+  });
 
-  it('setStatus + attachPatch flow', () => {
-    const apps = createAppsRepo(db)
-    const issues = createIssuesRepo(db)
-    const app = apps.create({ name: 'A', repoUrl: 'git@x:a.git', defaultBranch: 'main' })
-    const { issue } = issues.ingestEvent(app.id, { type: 'error', message: 'm', exception: { values: [{ type: 'E', value: 'm' }] } })
-    issues.setStatus(issue.id, 'fix-manual')
-    expect(issues.get(issue.id)!.status).toBe('fix-manual')
-    issues.attachPatch(issue.id, 'fix-branch', 'patches/fix.diff')
-    expect(issues.get(issue.id)!.status).toBe('fixing')
-    expect(issues.getLatestPatch(issue.id)!.branch).toBe('fix-branch')
-  })
-})
+  it("setStatus + attachPatch flow", () => {
+    const apps = createAppsRepo(db);
+    const issues = createIssuesRepo(db);
+    const app = apps.create({ name: "A", repoUrl: "git@x:a.git", defaultBranch: "main" });
+    const { issue } = issues.ingestEvent(app.id, {
+      type: "error",
+      message: "m",
+      exception: { values: [{ type: "E", value: "m" }] },
+    });
+    issues.setStatus(issue.id, "fix-manual");
+    expect(issues.get(issue.id)!.status).toBe("fix-manual");
+    issues.attachPatch(issue.id, "fix-branch", "patches/fix.diff");
+    expect(issues.get(issue.id)!.status).toBe("fixing");
+    expect(issues.getLatestPatch(issue.id)!.branch).toBe("fix-branch");
+  });
+});
 ```
 
 - [ ] **Step 4: Run tests to verify pass**
@@ -1464,69 +1512,71 @@ git commit -m "feat(server): apps + issues repositories"
 ## Task 7: Server — auth + WebSocket broadcaster (M1)
 
 **Files:**
+
 - Create: `server/src/auth/token.ts`
 - Create: `server/src/ws/broadcaster.ts`
 
 **Interfaces:**
+
 - Produces: `createAuthPlugin(expectedToken)` (Fastify preHandler), `createBroadcaster()` (in-memory pub/sub for issue events). Consumed by API (Task 8).
 - Consumes: `fastify`.
 
 - [ ] **Step 1: Create `server/src/auth/token.ts`**
 
 ```ts
-import type { FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyReply, FastifyRequest } from "fastify";
 
 export function createAuthPlugin(expectedToken: string) {
   return function authHook(req: FastifyRequest, reply: FastifyReply, done: () => void) {
     // Bearer token from Authorization header, or `?token=` query (for WS upgrade)
-    const header = req.headers.authorization
-    let token: string | undefined
-    if (header?.startsWith('Bearer ')) {
-      token = header.slice(7)
-    } else if (typeof req.query === 'object' && req.query !== null && 'token' in req.query) {
-      token = String((req.query as Record<string, unknown>).token)
+    const header = req.headers.authorization;
+    let token: string | undefined;
+    if (header?.startsWith("Bearer ")) {
+      token = header.slice(7);
+    } else if (typeof req.query === "object" && req.query !== null && "token" in req.query) {
+      token = String((req.query as Record<string, unknown>).token);
     }
     if (token !== expectedToken) {
-      reply.code(401).send({ error: 'unauthorized' })
-      return
+      reply.code(401).send({ error: "unauthorized" });
+      return;
     }
-    done()
-  }
+    done();
+  };
 }
 ```
 
 - [ ] **Step 2: Create `server/src/ws/broadcaster.ts`**
 
 ```ts
-import type { WebSocket } from '@fastify/websocket'
+import type { WebSocket } from "@fastify/websocket";
 
 export interface IssueEvent {
-  kind: 'issue:created' | 'issue:updated' | 'issue:status-changed'
-  appId: string
-  issueId: string
-  payload: unknown
+  kind: "issue:created" | "issue:updated" | "issue:status-changed";
+  appId: string;
+  issueId: string;
+  payload: unknown;
 }
 
 export function createBroadcaster() {
-  const subscribers = new Set<WebSocket>()
+  const subscribers = new Set<WebSocket>();
 
   return {
     add(ws: WebSocket) {
-      subscribers.add(ws)
-      ws.on('close', () => subscribers.delete(ws))
+      subscribers.add(ws);
+      ws.on("close", () => subscribers.delete(ws));
     },
     broadcast(event: IssueEvent) {
-      const msg = JSON.stringify(event)
+      const msg = JSON.stringify(event);
       for (const ws of subscribers) {
         if (ws.readyState === ws.OPEN) {
-          ws.send(msg)
+          ws.send(msg);
         }
       }
     },
     size(): number {
-      return subscribers.size
+      return subscribers.size;
     },
-  }
+  };
 }
 ```
 
@@ -1547,6 +1597,7 @@ git commit -m "feat(server): token auth + ws broadcaster"
 ## Task 8: Server — REST API routes (apps/issues/patches) + ingest (M1)
 
 **Files:**
+
 - Create: `server/src/api/apps.ts`
 - Create: `server/src/api/issues.ts`
 - Create: `server/src/api/index.ts`
@@ -1554,59 +1605,63 @@ git commit -m "feat(server): token auth + ws broadcaster"
 - Modify: `server/src/index.ts` (replace stub)
 
 **Interfaces:**
+
 - Produces: `registerApi(app, { appsRepo, issuesRepo, broadcaster })` wiring every route in spec §4.7. Consumed by Fastify bootstrap.
 - Consumes: repos (Task 6), auth (Task 7), envelope parser (Task 5).
 
 - [ ] **Step 1: Create `server/src/api/apps.ts`**
 
 ```ts
-import type { FastifyInstance } from 'fastify'
-import type { createAppsRepo } from '../store/apps.js'
+import type { FastifyInstance } from "fastify";
+import type { createAppsRepo } from "../store/apps.js";
 
-type AppsRepo = ReturnType<typeof createAppsRepo>
+type AppsRepo = ReturnType<typeof createAppsRepo>;
 
 export function registerAppsRoutes(app: FastifyInstance, repo: AppsRepo) {
-  app.get('/api/apps', async () => repo.list())
+  app.get("/api/apps", async () => repo.list());
 
-  app.post<{ Body: { name: string; repoUrl: string; defaultBranch: string } }>('/api/apps', async (req, reply) => {
-    const { name, repoUrl, defaultBranch } = req.body ?? ({} as typeof req.body)
-    if (!name || !repoUrl || !defaultBranch) {
-      return reply.code(400).send({ error: 'name, repoUrl, defaultBranch required' })
-    }
-    const created = repo.create({ name, repoUrl, defaultBranch })
-    return reply.code(201).send(created)
-  })
-
-  app.get<{ Params: { id: string } }>('/api/apps/:id', async (req, reply) => {
-    const found = repo.get(req.params.id)
-    return found ? found : reply.code(404).send({ error: 'not found' })
-  })
-
-  app.patch<{ Params: { id: string }; Body: { name?: string; repoUrl?: string; defaultBranch?: string } }>(
-    '/api/apps/:id',
+  app.post<{ Body: { name: string; repoUrl: string; defaultBranch: string } }>(
+    "/api/apps",
     async (req, reply) => {
-      const updated = repo.update(req.params.id, req.body ?? {})
-      return updated ? updated : reply.code(404).send({ error: 'not found' })
+      const { name, repoUrl, defaultBranch } = req.body ?? ({} as typeof req.body);
+      if (!name || !repoUrl || !defaultBranch) {
+        return reply.code(400).send({ error: "name, repoUrl, defaultBranch required" });
+      }
+      const created = repo.create({ name, repoUrl, defaultBranch });
+      return reply.code(201).send(created);
     },
-  )
+  );
 
-  app.delete<{ Params: { id: string } }>('/api/apps/:id', async (req, reply) => {
-    const ok = repo.remove(req.params.id)
-    return ok ? reply.code(204).send() : reply.code(404).send({ error: 'not found' })
-  })
+  app.get<{ Params: { id: string } }>("/api/apps/:id", async (req, reply) => {
+    const found = repo.get(req.params.id);
+    return found ? found : reply.code(404).send({ error: "not found" });
+  });
+
+  app.patch<{
+    Params: { id: string };
+    Body: { name?: string; repoUrl?: string; defaultBranch?: string };
+  }>("/api/apps/:id", async (req, reply) => {
+    const updated = repo.update(req.params.id, req.body ?? {});
+    return updated ? updated : reply.code(404).send({ error: "not found" });
+  });
+
+  app.delete<{ Params: { id: string } }>("/api/apps/:id", async (req, reply) => {
+    const ok = repo.remove(req.params.id);
+    return ok ? reply.code(204).send() : reply.code(404).send({ error: "not found" });
+  });
 }
 ```
 
 - [ ] **Step 2: Create `server/src/api/issues.ts`**
 
 ```ts
-import type { FastifyInstance } from 'fastify'
-import type { createIssuesRepo } from '../store/issues.js'
-import type { IssueStatus } from '@traceability/protocol'
-import type { createBroadcaster } from '../ws/broadcaster.js'
+import type { FastifyInstance } from "fastify";
+import type { createIssuesRepo } from "../store/issues.js";
+import type { IssueStatus } from "@traceability/protocol";
+import type { createBroadcaster } from "../ws/broadcaster.js";
 
-type IssuesRepo = ReturnType<typeof createIssuesRepo>
-type Broadcaster = ReturnType<typeof createBroadcaster>
+type IssuesRepo = ReturnType<typeof createIssuesRepo>;
+type Broadcaster = ReturnType<typeof createBroadcaster>;
 
 export function registerIssuesRoutes(
   app: FastifyInstance,
@@ -1614,175 +1669,190 @@ export function registerIssuesRoutes(
   broadcaster: Broadcaster,
 ) {
   app.get<{
-    Querystring: { appId?: string; status?: IssueStatus; limit?: number; cursor?: string }
-  }>('/api/issues', async (req) => {
+    Querystring: { appId?: string; status?: IssueStatus; limit?: number; cursor?: string };
+  }>("/api/issues", async (req) => {
     return repo.list({
       appId: req.query.appId,
       status: req.query.status,
       limit: req.query.limit,
       cursor: req.query.cursor,
-    })
-  })
+    });
+  });
 
-  app.get<{ Params: { id: string } }>('/api/issues/:id', async (req, reply) => {
-    const issue = repo.get(req.params.id)
-    return issue ? issue : reply.code(404).send({ error: 'not found' })
-  })
+  app.get<{ Params: { id: string } }>("/api/issues/:id", async (req, reply) => {
+    const issue = repo.get(req.params.id);
+    return issue ? issue : reply.code(404).send({ error: "not found" });
+  });
 
-  app.get<{ Params: { id: string } }>('/api/issues/:id/events', async (req, reply) => {
-    const issue = repo.get(req.params.id)
-    if (!issue) return reply.code(404).send({ error: 'not found' })
-    return repo.listEvents(req.params.id)
-  })
+  app.get<{ Params: { id: string } }>("/api/issues/:id/events", async (req, reply) => {
+    const issue = repo.get(req.params.id);
+    if (!issue) return reply.code(404).send({ error: "not found" });
+    return repo.listEvents(req.params.id);
+  });
 
-  app.post<{ Params: { id: string } }>('/api/issues/:id/fix-request', async (req, reply) => {
-    const updated = repo.setStatus(req.params.id, 'fix-manual')
-    if (!updated) return reply.code(404).send({ error: 'not found' })
-    broadcaster.broadcast({ kind: 'issue:status-changed', appId: updated.appId, issueId: updated.id, payload: updated })
-    return updated
-  })
+  app.post<{ Params: { id: string } }>("/api/issues/:id/fix-request", async (req, reply) => {
+    const updated = repo.setStatus(req.params.id, "fix-manual");
+    if (!updated) return reply.code(404).send({ error: "not found" });
+    broadcaster.broadcast({
+      kind: "issue:status-changed",
+      appId: updated.appId,
+      issueId: updated.id,
+      payload: updated,
+    });
+    return updated;
+  });
 
   app.post<{ Params: { id: string }; Body: { branch: string; patch: string } }>(
-    '/api/issues/:id/attach-patch',
+    "/api/issues/:id/attach-patch",
     async (req, reply) => {
-      const issue = repo.get(req.params.id)
-      if (!issue) return reply.code(404).send({ error: 'not found' })
-      const { branch, patch } = req.body ?? ({} as typeof req.body)
-      if (!branch || !patch) return reply.code(400).send({ error: 'branch + patch required' })
-      const filePath = `patches/${issue.id}-${Date.now()}.diff`
-      const created = repo.attachPatch(req.params.id, branch, filePath)
-      broadcaster.broadcast({ kind: 'issue:updated', appId: issue.appId, issueId: issue.id, payload: created })
-      return reply.code(201).send(created)
+      const issue = repo.get(req.params.id);
+      if (!issue) return reply.code(404).send({ error: "not found" });
+      const { branch, patch } = req.body ?? ({} as typeof req.body);
+      if (!branch || !patch) return reply.code(400).send({ error: "branch + patch required" });
+      const filePath = `patches/${issue.id}-${Date.now()}.diff`;
+      const created = repo.attachPatch(req.params.id, branch, filePath);
+      broadcaster.broadcast({
+        kind: "issue:updated",
+        appId: issue.appId,
+        issueId: issue.id,
+        payload: created,
+      });
+      return reply.code(201).send(created);
     },
-  )
+  );
 
-  app.post<{ Params: { id: string } }>('/api/issues/:id/mark-fixed', async (req, reply) => {
-    const updated = repo.setStatus(req.params.id, 'fixed')
-    if (!updated) return reply.code(404).send({ error: 'not found' })
-    broadcaster.broadcast({ kind: 'issue:status-changed', appId: updated.appId, issueId: updated.id, payload: updated })
-    return updated
-  })
+  app.post<{ Params: { id: string } }>("/api/issues/:id/mark-fixed", async (req, reply) => {
+    const updated = repo.setStatus(req.params.id, "fixed");
+    if (!updated) return reply.code(404).send({ error: "not found" });
+    broadcaster.broadcast({
+      kind: "issue:status-changed",
+      appId: updated.appId,
+      issueId: updated.id,
+      payload: updated,
+    });
+    return updated;
+  });
 }
 ```
 
 - [ ] **Step 3: Create `server/src/api/ingest.ts`**
 
 ```ts
-import type { FastifyInstance } from 'fastify'
-import type { createIssuesRepo } from '../store/issues.js'
-import type { createBroadcaster } from '../ws/broadcaster.js'
-import { parseEnvelope, filterSupportedItems } from '../ingest/envelope.js'
+import type { FastifyInstance } from "fastify";
+import type { createIssuesRepo } from "../store/issues.js";
+import type { createBroadcaster } from "../ws/broadcaster.js";
+import { parseEnvelope, filterSupportedItems } from "../ingest/envelope.js";
 
-type IssuesRepo = ReturnType<typeof createIssuesRepo>
-type Broadcaster = ReturnType<typeof createBroadcaster>
+type IssuesRepo = ReturnType<typeof createIssuesRepo>;
+type Broadcaster = ReturnType<typeof createBroadcaster>;
 
 export function registerIngestRoute(
   app: FastifyInstance,
   repo: IssuesRepo,
   broadcaster: Broadcaster,
 ) {
-  app.post<{ Params: { appId: string } }>('/api/ingest/envelope/:appId', async (req, reply) => {
-    const raw = req.body as string
-    if (!raw || typeof raw !== 'string') {
-      return reply.code(400).send({ error: 'empty body' })
+  app.post<{ Params: { appId: string } }>("/api/ingest/envelope/:appId", async (req, reply) => {
+    const raw = req.body as string;
+    if (!raw || typeof raw !== "string") {
+      return reply.code(400).send({ error: "empty body" });
     }
-    let envelope
+    let envelope;
     try {
-      envelope = parseEnvelope(raw)
+      envelope = parseEnvelope(raw);
     } catch (e) {
-      return reply.code(400).send({ error: 'invalid envelope' })
+      return reply.code(400).send({ error: "invalid envelope" });
     }
-    const supported = filterSupportedItems(envelope)
+    const supported = filterSupportedItems(envelope);
     for (const { payload } of supported) {
-      const { issue, created } = repo.ingestEvent(req.params.appId, payload)
-      repo.appendEvent(issue.id, raw)
+      const { issue, created } = repo.ingestEvent(req.params.appId, payload);
+      repo.appendEvent(issue.id, raw);
       broadcaster.broadcast({
-        kind: created ? 'issue:created' : 'issue:updated',
+        kind: created ? "issue:created" : "issue:updated",
         appId: issue.appId,
         issueId: issue.id,
         payload: issue,
-      })
+      });
     }
-    return reply.code(202).send({ accepted: supported.length })
-  })
+    return reply.code(202).send({ accepted: supported.length });
+  });
 }
 ```
 
 - [ ] **Step 4: Create `server/src/api/index.ts`**
 
 ```ts
-import type { FastifyInstance } from 'fastify'
-import type { createAppsRepo } from '../store/apps.js'
-import type { createIssuesRepo } from '../store/issues.js'
-import type { createBroadcaster } from '../ws/broadcaster.js'
-import { createAuthPlugin } from '../auth/token.js'
-import { registerAppsRoutes } from './apps.js'
-import { registerIssuesRoutes } from './issues.js'
-import { registerIngestRoute } from './ingest.js'
+import type { FastifyInstance } from "fastify";
+import type { createAppsRepo } from "../store/apps.js";
+import type { createIssuesRepo } from "../store/issues.js";
+import type { createBroadcaster } from "../ws/broadcaster.js";
+import { createAuthPlugin } from "../auth/token.js";
+import { registerAppsRoutes } from "./apps.js";
+import { registerIssuesRoutes } from "./issues.js";
+import { registerIngestRoute } from "./ingest.js";
 
 interface ApiDeps {
-  appsRepo: ReturnType<typeof createAppsRepo>
-  issuesRepo: ReturnType<typeof createIssuesRepo>
-  broadcaster: ReturnType<typeof createBroadcaster>
-  apiToken: string
+  appsRepo: ReturnType<typeof createAppsRepo>;
+  issuesRepo: ReturnType<typeof createIssuesRepo>;
+  broadcaster: ReturnType<typeof createBroadcaster>;
+  apiToken: string;
 }
 
 export function registerApi(app: FastifyInstance, deps: ApiDeps) {
   // ingest is authenticated by appId+token; protect all /api/* except ingest
-  app.addHook('preHandler', (req, reply, done) => {
-    if (req.url.startsWith('/api/ingest/')) return done()
-    if (req.url.startsWith('/api/ws')) return done() // WS auth handled at upgrade
-    return createAuthPlugin(deps.apiToken)(req, reply, done)
-  })
+  app.addHook("preHandler", (req, reply, done) => {
+    if (req.url.startsWith("/api/ingest/")) return done();
+    if (req.url.startsWith("/api/ws")) return done(); // WS auth handled at upgrade
+    return createAuthPlugin(deps.apiToken)(req, reply, done);
+  });
 
-  registerIngestRoute(app, deps.issuesRepo, deps.broadcaster)
-  registerAppsRoutes(app, deps.appsRepo)
-  registerIssuesRoutes(app, deps.issuesRepo, deps.broadcaster)
+  registerIngestRoute(app, deps.issuesRepo, deps.broadcaster);
+  registerAppsRoutes(app, deps.appsRepo);
+  registerIssuesRoutes(app, deps.issuesRepo, deps.broadcaster);
 }
 ```
 
 - [ ] **Step 5: Replace `server/src/index.ts`**
 
 ```ts
-import Fastify from 'fastify'
-import websocket from '@fastify/websocket'
-import { getConfig } from './config.js'
-import { openDb } from './store/db.js'
-import { createAppsRepo } from './store/apps.js'
-import { createIssuesRepo } from './store/issues.js'
-import { createBroadcaster } from './ws/broadcaster.js'
-import { createAuthPlugin } from './auth/token.js'
-import { registerApi } from './api/index.js'
+import Fastify from "fastify";
+import websocket from "@fastify/websocket";
+import { getConfig } from "./config.js";
+import { openDb } from "./store/db.js";
+import { createAppsRepo } from "./store/apps.js";
+import { createIssuesRepo } from "./store/issues.js";
+import { createBroadcaster } from "./ws/broadcaster.js";
+import { createAuthPlugin } from "./auth/token.js";
+import { registerApi } from "./api/index.js";
 
 async function main() {
-  const config = getConfig()
-  const db = openDb(config.dbPath)
-  const broadcaster = createBroadcaster()
-  const appsRepo = createAppsRepo(db)
-  const issuesRepo = createIssuesRepo(db)
+  const config = getConfig();
+  const db = openDb(config.dbPath);
+  const broadcaster = createBroadcaster();
+  const appsRepo = createAppsRepo(db);
+  const issuesRepo = createIssuesRepo(db);
 
-  const app = Fastify({ logger: true })
-  await app.register(websocket)
+  const app = Fastify({ logger: true });
+  await app.register(websocket);
 
-  app.get('/api/ws', { websocket: true }, (socket, req) => {
-    const token = (req.query as { token?: string }).token
+  app.get("/api/ws", { websocket: true }, (socket, req) => {
+    const token = (req.query as { token?: string }).token;
     if (token !== config.apiToken) {
-      socket.close(4001, 'unauthorized')
-      return
+      socket.close(4001, "unauthorized");
+      return;
     }
-    broadcaster.add(socket)
-  })
+    broadcaster.add(socket);
+  });
 
-  registerApi(app, { appsRepo, issuesRepo, broadcaster, apiToken: config.apiToken })
+  registerApi(app, { appsRepo, issuesRepo, broadcaster, apiToken: config.apiToken });
 
-  await app.listen({ port: config.port, host: '0.0.0.0' })
-  app.log.info(`traceability server on http://0.0.0.0:${config.port}`)
+  await app.listen({ port: config.port, host: "0.0.0.0" });
+  app.log.info(`traceability server on http://0.0.0.0:${config.port}`);
 }
 
 main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+  console.error(err);
+  process.exit(1);
+});
 ```
 
 - [ ] **Step 6: Typecheck + build**
@@ -1812,6 +1882,7 @@ printf '%s\n%s\n%s\n' \
 curl -s "http://localhost:3000/api/issues?appId=$APP_ID" -H "Authorization: Bearer test-token"
 kill %1
 ```
+
 Expected: create app returns 201 with `id`; ingest returns `{"accepted":1}`; issues list shows 1 issue with title `TypeError: boom`.
 
 - [ ] **Step 8: Commit**
@@ -1826,6 +1897,7 @@ git commit -m "feat(server): REST api (apps/issues/patches) + envelope ingest + 
 ## Task 9: `@traceability/core` — types + init + transport (M2)
 
 **Files:**
+
 - Create: `packages/core/src/types.ts`
 - Create: `packages/core/src/transport/serverTransport.ts`
 - Create: `packages/core/src/index.ts`
@@ -1834,20 +1906,22 @@ git commit -m "feat(server): REST api (apps/issues/patches) + envelope ingest + 
 - Modify: `packages/core/src/index.ts` (replace stub from Task 3)
 
 **Interfaces:**
+
 - Produces: `init(opts)`, `setApp(name)`, `installGlobalProxy()`, `captureException`, `captureMessage`, `report`, `setTag`, `setContext`, `addBreadcrumb`, plus `createServerTransport({ url, appId })`.
 - Consumes: `@sentry/browser`, `@traceability/protocol`.
 
 - [ ] **Step 1: Create `packages/core/vitest.config.ts`**
 
 ```ts
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 export default defineConfig({
-  test: { environment: 'jsdom', include: ['tests/**/*.test.ts'] },
-  resolve: { extensions: ['.ts', '.js'] },
-})
+  test: { environment: "jsdom", include: ["tests/**/*.test.ts"] },
+  resolve: { extensions: [".ts", ".js"] },
+});
 ```
 
 Add `jsdom` dev dep: append to `packages/core/package.json` `devDependencies`:
+
 ```json
     "jsdom": "^25.0.0"
 ```
@@ -1855,44 +1929,44 @@ Add `jsdom` dev dep: append to `packages/core/package.json` `devDependencies`:
 - [ ] **Step 2: Create `packages/core/src/types.ts`**
 
 ```ts
-import type { Event } from '@sentry/browser'
+import type { Event } from "@sentry/browser";
 
 export interface InitOptions {
   /** Full URL of the server ingest endpoint, e.g. http://localhost:3000/api/ingest/envelope */
-  dsn: string
-  appId: string
+  dsn: string;
+  appId: string;
   /** API token; sent as Authorization: Bearer */
-  token: string
-  release?: string
-  environment?: string
-  user?: { id: string; [k: string]: unknown }
+  token: string;
+  release?: string;
+  environment?: string;
+  user?: { id: string; [k: string]: unknown };
   whiteScreen?: {
-    rootSelector?: string
-    stableWindowMs?: number
-    minContentNodes?: number
-    enableScreenshot?: boolean
-  }
-  mf?: { host: boolean }
-  beforeSend?: (event: Event) => Event | null
+    rootSelector?: string;
+    stableWindowMs?: number;
+    minContentNodes?: number;
+    enableScreenshot?: boolean;
+  };
+  mf?: { host: boolean };
+  beforeSend?: (event: Event) => Event | null;
 }
 
 export interface ReportData {
-  type: string
-  payload?: Record<string, unknown>
-  tags?: Record<string, string>
+  type: string;
+  payload?: Record<string, unknown>;
+  tags?: Record<string, string>;
 }
 ```
 
 - [ ] **Step 3: Create `packages/core/src/transport/serverTransport.ts`**
 
 ```ts
-import type { Transport, TransportMakeRequestResponse, BaseTransportOptions } from '@sentry/core'
-import type { ReportEnvelope } from '@sentry/core'
+import type { Transport, TransportMakeRequestResponse, BaseTransportOptions } from "@sentry/core";
+import type { ReportEnvelope } from "@sentry/core";
 
 export interface ServerTransportOptions {
   /** Full ingest URL, including appId, e.g. http://host/api/ingest/envelope/<appId> */
-  url: string
-  token: string
+  url: string;
+  token: string;
 }
 
 /**
@@ -1905,26 +1979,26 @@ export function createServerTransport(opts: ServerTransportOptions): Transport {
     async send(request: ReportEnvelope): Promise<TransportMakeRequestResponse> {
       // @sentry/core gives us the already-serialized envelope body as a string
       const body =
-        typeof request.body === 'string'
+        typeof request.body === "string"
           ? request.body
-          : new TextDecoder().decode(request.body as Uint8Array)
+          : new TextDecoder().decode(request.body as Uint8Array);
       const res = await fetch(opts.url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/octet-stream',
+          "Content-Type": "application/octet-stream",
           Authorization: `Bearer ${opts.token}`,
         },
         body,
-      })
+      });
       if (!res.ok && res.status >= 400 && res.status < 500) {
         // permanent client error — drop
       }
-      return { statusCode: res.status }
+      return { statusCode: res.status };
     },
     flush(): Promise<boolean> {
-      return Promise.resolve(true)
+      return Promise.resolve(true);
     },
-  } satisfies Transport
+  } satisfies Transport;
 }
 ```
 
@@ -1933,19 +2007,19 @@ NOTE: the exact `Transport` interface shape depends on `@sentry/core` v8. If typ
 - [ ] **Step 4: Create `packages/core/src/index.ts`** (replaces stub)
 
 ```ts
-import * as Sentry from '@sentry/browser'
-import type { Event } from '@sentry/browser'
-import { createServerTransport } from './transport/serverTransport.js'
-import type { InitOptions, ReportData } from './types.js'
+import * as Sentry from "@sentry/browser";
+import type { Event } from "@sentry/browser";
+import { createServerTransport } from "./transport/serverTransport.js";
+import type { InitOptions, ReportData } from "./types.js";
 
-let initialized = false
-let currentAppName: string | undefined
+let initialized = false;
+let currentAppName: string | undefined;
 
 export function init(opts: InitOptions): void {
-  if (initialized) return
-  initialized = true
+  if (initialized) return;
+  initialized = true;
 
-  const ingestUrl = `${opts.dsn.replace(/\/$/, '')}/api/ingest/envelope/${opts.appId}`
+  const ingestUrl = `${opts.dsn.replace(/\/$/, "")}/api/ingest/envelope/${opts.appId}`;
 
   Sentry.init({
     dsn: `https://dummy@local/${opts.appId}`, // unused by our transport, but required by Sentry init
@@ -1953,81 +2027,84 @@ export function init(opts: InitOptions): void {
     environment: opts.environment,
     transport: createServerTransport({ url: ingestUrl, token: opts.token }) as any,
     beforeSend(event: Event): Event | null {
-      event.tags = { ...(event.tags ?? {}), appId: opts.appId }
+      event.tags = { ...(event.tags ?? {}), appId: opts.appId };
       if (currentAppName) {
-        event.tags.appName = currentAppName
+        event.tags.appName = currentAppName;
       }
-      return opts.beforeSend ? opts.beforeSend(event) : event
+      return opts.beforeSend ? opts.beforeSend(event) : event;
     },
     integrations: (defaults) => defaults,
-  })
+  });
 
   if (opts.user) {
-    Sentry.setUser(opts.user as Parameters<typeof Sentry.setUser>[0])
+    Sentry.setUser(opts.user as Parameters<typeof Sentry.setUser>[0]);
   }
 }
 
 export function setApp(appName: string): void {
-  currentAppName = appName
-  Sentry.setTag('appName', appName)
+  currentAppName = appName;
+  Sentry.setTag("appName", appName);
 }
 
 export function installGlobalProxy(): void {
-  if (typeof window === 'undefined') return
-  const w = window as unknown as { __MONITOR_PROXY_INSTALLED__?: boolean }
-  if (w.__MONITOR_PROXY_INSTALLED__) return
-  w.__MONITOR_PROXY_INSTALLED__ = true
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { __MONITOR_PROXY_INSTALLED__?: boolean };
+  if (w.__MONITOR_PROXY_INSTALLED__) return;
+  w.__MONITOR_PROXY_INSTALLED__ = true;
   // Sentry installs its own XHR/fetch proxies via BrowserTracing; the guard
   // prevents consumers from re-init. No additional monkey-patch needed in v1.
 }
 
-export const captureException = Sentry.captureException
-export const captureMessage = Sentry.captureMessage
-export const setTag = Sentry.setTag
-export const setContext = Sentry.setContext
-export const addBreadcrumb = Sentry.addBreadcrumb
+export const captureException = Sentry.captureException;
+export const captureMessage = Sentry.captureMessage;
+export const setTag = Sentry.setTag;
+export const setContext = Sentry.setContext;
+export const addBreadcrumb = Sentry.addBreadcrumb;
 
 export function report(data: ReportData): void {
   Sentry.captureMessage(data.type, {
     tags: { ...(data.tags ?? {}), event_type: data.type },
     extra: data.payload,
-  })
+  });
 }
 ```
 
 - [ ] **Step 5: Write failing test `packages/core/tests/transport.test.ts`**
 
 ```ts
-import { describe, it, expect, vi } from 'vitest'
-import { createServerTransport } from '../src/transport/serverTransport.js'
+import { describe, it, expect, vi } from "vitest";
+import { createServerTransport } from "../src/transport/serverTransport.js";
 
-describe('createServerTransport', () => {
-  it('POSTs the serialized envelope body to the ingest URL with bearer token', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 202 })
-    vi.stubGlobal('fetch', fetchMock)
+describe("createServerTransport", () => {
+  it("POSTs the serialized envelope body to the ingest URL with bearer token", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 202 });
+    vi.stubGlobal("fetch", fetchMock);
 
-    const transport = createServerTransport({ url: 'http://localhost:3000/api/ingest/envelope/app1', token: 'tok' })
-    await transport.send({ body: 'header\nitem\npayload' } as any)
+    const transport = createServerTransport({
+      url: "http://localhost:3000/api/ingest/envelope/app1",
+      token: "tok",
+    });
+    await transport.send({ body: "header\nitem\npayload" } as any);
 
-    expect(fetchMock).toHaveBeenCalledOnce()
-    const [url, init] = fetchMock.mock.calls[0]!
-    expect(url).toBe('http://localhost:3000/api/ingest/envelope/app1')
-    expect(init.method).toBe('POST')
-    expect(init.headers.Authorization).toBe('Bearer tok')
-    expect(init.body).toBe('header\nitem\npayload')
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("http://localhost:3000/api/ingest/envelope/app1");
+    expect(init.method).toBe("POST");
+    expect(init.headers.Authorization).toBe("Bearer tok");
+    expect(init.body).toBe("header\nitem\npayload");
 
-    vi.unstubAllGlobals()
-  })
+    vi.unstubAllGlobals();
+  });
 
-  it('returns the response status code', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 202 })
-    vi.stubGlobal('fetch', fetchMock)
-    const transport = createServerTransport({ url: 'http://x', token: 't' })
-    const res = await transport.send({ body: 'x' } as any)
-    expect(res.statusCode).toBe(202)
-    vi.unstubAllGlobals()
-  })
-})
+  it("returns the response status code", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 202 });
+    vi.stubGlobal("fetch", fetchMock);
+    const transport = createServerTransport({ url: "http://x", token: "t" });
+    const res = await transport.send({ body: "x" } as any);
+    expect(res.statusCode).toBe(202);
+    vi.unstubAllGlobals();
+  });
+});
 ```
 
 - [ ] **Step 6: Install jsdom dep + run test**
@@ -2049,67 +2126,69 @@ git commit -m "feat(core): init + appId transport + report API"
 Splitting integrations into their own tasks keeps each testable in isolation.
 
 **Files:**
+
 - Create: `packages/core/src/integrations/corsDiagnostic.ts`
 - Modify: `packages/core/src/index.ts` (wire default integration)
 - Create: `packages/core/tests/integrations.test.ts`
 
 **Interfaces:**
+
 - Produces: `corsDiagnosticIntegration()` returning a Sentry `Integration`.
 - Consumes: `@sentry/browser`.
 
 - [ ] **Step 1: Create `packages/core/src/integrations/corsDiagnostic.ts`**
 
 ```ts
-import type { Integration } from '@sentry/browser'
-import { captureMessage } from '../index.js'
+import type { Integration } from "@sentry/browser";
+import { captureMessage } from "../index.js";
 
 interface ScriptElement {
-  src: string
-  crossorigin: string | null
+  src: string;
+  crossorigin: string | null;
 }
 
 function getCrossOriginScripts(doc: Document): ScriptElement[] {
-  const scripts = Array.from(doc.querySelectorAll('script[src]')) as HTMLScriptElement[]
+  const scripts = Array.from(doc.querySelectorAll("script[src]")) as HTMLScriptElement[];
   return scripts
-    .map((s) => ({ src: s.src, crossorigin: s.getAttribute('crossorigin') }))
+    .map((s) => ({ src: s.src, crossorigin: s.getAttribute("crossorigin") }))
     .filter((s) => {
       try {
-        const url = new URL(s.src, doc.location.href)
-        return url.origin !== doc.location.origin && s.crossorigin === null
+        const url = new URL(s.src, doc.location.href);
+        return url.origin !== doc.location.origin && s.crossorigin === null;
       } catch {
-        return false
+        return false;
       }
-    })
+    });
 }
 
 export function corsDiagnosticIntegration(): Integration {
   return {
-    name: 'CorsDiagnostic',
+    name: "CorsDiagnostic",
     setupOnce(): void {
-      if (typeof document === 'undefined') return
+      if (typeof document === "undefined") return;
       // defer until scripts are present
       const check = () => {
-        const offenders = getCrossOriginScripts(document)
+        const offenders = getCrossOriginScripts(document);
         if (offenders.length > 0) {
           // eslint-disable-next-line no-console
           console.warn(
             `[traceability] ${offenders.length} cross-origin <script> without crossorigin attribute. ` +
               `This causes "Script error." and lost stacktraces. Add crossorigin="anonymous" + CORS headers.`,
-          )
-          captureMessage('cors-config-warning', {
-            level: 'warning',
-            tags: { type: 'cors-config-warning' },
+          );
+          captureMessage("cors-config-warning", {
+            level: "warning",
+            tags: { type: "cors-config-warning" },
             extra: { offenders: offenders.map((o) => o.src) },
-          })
+          });
         }
-      }
-      if (document.readyState === 'complete') {
-        check()
+      };
+      if (document.readyState === "complete") {
+        check();
       } else {
-        window.addEventListener('load', check)
+        window.addEventListener("load", check);
       }
     },
-  }
+  };
 }
 ```
 
@@ -2124,55 +2203,58 @@ Replace the `integrations: (defaults) => defaults,` line with:
 And add import at top of `packages/core/src/index.ts`:
 
 ```ts
-import { corsDiagnosticIntegration } from './integrations/corsDiagnostic.js'
+import { corsDiagnosticIntegration } from "./integrations/corsDiagnostic.js";
 ```
 
 - [ ] **Step 3: Write failing test `packages/core/tests/integrations.test.ts`**
 
 ```ts
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { corsDiagnosticIntegration } from '../src/integrations/corsDiagnostic.js'
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { corsDiagnosticIntegration } from "../src/integrations/corsDiagnostic.js";
 
 // captureMessage is imported from ../index.js inside the integration; mock it
-vi.mock('../src/index.js', () => ({
+vi.mock("../src/index.js", () => ({
   captureMessage: vi.fn(),
-}))
+}));
 
-import { captureMessage } from '../src/index.js'
+import { captureMessage } from "../src/index.js";
 
-describe('corsDiagnosticIntegration', () => {
+describe("corsDiagnosticIntegration", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    document.head.innerHTML = ''
-  })
+    vi.clearAllMocks();
+    document.head.innerHTML = "";
+  });
 
-  it('warns + reports when a cross-origin script lacks crossorigin', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const script = document.createElement('script')
-    script.src = 'https://other-origin.example/bundle.js'
-    document.head.appendChild(script)
+  it("warns + reports when a cross-origin script lacks crossorigin", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const script = document.createElement("script");
+    script.src = "https://other-origin.example/bundle.js";
+    document.head.appendChild(script);
 
-    const integration = corsDiagnosticIntegration()
-    integration.setupOnce()
+    const integration = corsDiagnosticIntegration();
+    integration.setupOnce();
 
-    expect(warn).toHaveBeenCalled()
-    expect(captureMessage).toHaveBeenCalledWith('cors-config-warning', expect.objectContaining({
-      level: 'warning',
-    }))
-  })
+    expect(warn).toHaveBeenCalled();
+    expect(captureMessage).toHaveBeenCalledWith(
+      "cors-config-warning",
+      expect.objectContaining({
+        level: "warning",
+      }),
+    );
+  });
 
-  it('is silent for same-origin scripts', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const script = document.createElement('script')
-    script.src = '/local.js'
-    document.head.appendChild(script)
+  it("is silent for same-origin scripts", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const script = document.createElement("script");
+    script.src = "/local.js";
+    document.head.appendChild(script);
 
-    corsDiagnosticIntegration().setupOnce()
+    corsDiagnosticIntegration().setupOnce();
 
-    expect(warn).not.toHaveBeenCalled()
-    expect(captureMessage).not.toHaveBeenCalled()
-  })
-})
+    expect(warn).not.toHaveBeenCalled();
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+});
 ```
 
 - [ ] **Step 4: Run tests**
@@ -2192,129 +2274,135 @@ git commit -m "feat(core): cors diagnostic integration"
 ## Task 11: `@traceability/core` — whiteScreen integration (M2, part of M4)
 
 **Files:**
+
 - Create: `packages/core/src/integrations/whiteScreen.ts`
 - Modify: `packages/core/src/index.ts` (opt-in wiring)
 - Modify: `packages/core/tests/integrations.test.ts` (append tests)
 
 **Interfaces:**
+
 - Produces: `whiteScreenIntegration(opts)` returning a Sentry `Integration`, exported from core index for opt-in use.
 
 - [ ] **Step 1: Create `packages/core/src/integrations/whiteScreen.ts`**
 
 ```ts
-import type { Integration } from '@sentry/browser'
-import { captureMessage } from '../index.js'
+import type { Integration } from "@sentry/browser";
+import { captureMessage } from "../index.js";
 
 export interface WhiteScreenOptions {
-  rootSelector?: string
-  stableWindowMs?: number
-  minContentNodes?: number
-  enableScreenshot?: boolean
+  rootSelector?: string;
+  stableWindowMs?: number;
+  minContentNodes?: number;
+  enableScreenshot?: boolean;
 }
 
 interface PendingTracker {
-  pending: number
-  inc(): void
-  dec(): void
+  pending: number;
+  inc(): void;
+  dec(): void;
 }
 
-let fetchPending = 0
+let fetchPending = 0;
 function patchFetch(tracker: PendingTracker): void {
-  if (typeof window === 'undefined' || (window as any).__WS_FETCH_PATCHED__) return
-  ;(window as any).__WS_FETCH_PATCHED__ = true
-  const orig = window.fetch.bind(window)
-  tracker.inc()
+  if (typeof window === "undefined" || (window as any).__WS_FETCH_PATCHED__) return;
+  (window as any).__WS_FETCH_PATCHED__ = true;
+  const orig = window.fetch.bind(window);
+  tracker.inc();
   window.fetch = ((...args: Parameters<typeof fetch>) => {
-    return orig(...args).finally(() => tracker.dec())
-  }) as typeof fetch
-  tracker.dec()
+    return orig(...args).finally(() => tracker.dec());
+  }) as typeof fetch;
+  tracker.dec();
 }
 
 function countVisibleContent(root: Element, minNodes: number): number {
-  let n = 0
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)
+  let n = 0;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
   while (walker.nextNode()) {
-    const el = walker.currentNode as Element
-    const tag = el.tagName.toLowerCase()
-    if (tag === 'img' || (tag === 'div' && (el.textContent?.trim().length ?? 0) > 0)) {
-      n++
-      if (n >= minNodes) break
+    const el = walker.currentNode as Element;
+    const tag = el.tagName.toLowerCase();
+    if (tag === "img" || (tag === "div" && (el.textContent?.trim().length ?? 0) > 0)) {
+      n++;
+      if (n >= minNodes) break;
     }
   }
-  return n
+  return n;
 }
 
 export function whiteScreenIntegration(opts: WhiteScreenOptions = {}): Integration {
-  const rootSelector = opts.rootSelector ?? '#root,#app,[data-monitor-root]'
-  const stableWindowMs = opts.stableWindowMs ?? 500
-  const minContentNodes = opts.minContentNodes ?? 3
+  const rootSelector = opts.rootSelector ?? "#root,#app,[data-monitor-root]";
+  const stableWindowMs = opts.stableWindowMs ?? 500;
+  const minContentNodes = opts.minContentNodes ?? 3;
 
   const tracker: PendingTracker = {
     pending: 0,
-    inc() { this.pending++ },
-    dec() { this.pending-- },
-  }
+    inc() {
+      this.pending++;
+    },
+    dec() {
+      this.pending--;
+    },
+  };
 
   return {
-    name: 'WhiteScreen',
+    name: "WhiteScreen",
     setupOnce(): void {
-      if (typeof document === 'undefined') return
-      patchFetch(tracker)
+      if (typeof document === "undefined") return;
+      patchFetch(tracker);
 
       const evaluate = () => {
-        const root = document.querySelector(rootSelector)
-        if (!root) return
+        const root = document.querySelector(rootSelector);
+        if (!root) return;
         if (root.childElementCount === 0) {
-          reportWhiteScreen('empty-root')
-          return
+          reportWhiteScreen("empty-root");
+          return;
         }
-        if (root.querySelector('.dt-white-screen, .error-boundary')) {
-          reportWhiteScreen('error-screen')
-          return
+        if (root.querySelector(".dt-white-screen, .error-boundary")) {
+          reportWhiteScreen("error-screen");
+          return;
         }
-        const visible = countVisibleContent(root, minContentNodes)
+        const visible = countVisibleContent(root, minContentNodes);
         if (visible < minContentNodes) {
-          reportWhiteScreen('low-content', { visibleNodes: visible })
+          reportWhiteScreen("low-content", { visibleNodes: visible });
         }
-      }
+      };
 
       const scheduleCheck = () => {
-        let lastMutation = Date.now()
+        let lastMutation = Date.now();
         const mo = new MutationObserver(() => {
-          lastMutation = Date.now()
-        })
-        const root = document.querySelector(rootSelector)
-        if (root) mo.observe(root, { childList: true, subtree: true })
+          lastMutation = Date.now();
+        });
+        const root = document.querySelector(rootSelector);
+        if (root) mo.observe(root, { childList: true, subtree: true });
 
         const tick = () => {
-          const stable = Date.now() - lastMutation >= stableWindowMs && tracker.pending <= 0
+          const stable = Date.now() - lastMutation >= stableWindowMs && tracker.pending <= 0;
           if (stable) {
-            mo.disconnect()
-            evaluate()
+            mo.disconnect();
+            evaluate();
           } else {
-            setTimeout(tick, stableWindowMs)
+            setTimeout(tick, stableWindowMs);
           }
-        }
-        setTimeout(tick, stableWindowMs)
-      }
+        };
+        setTimeout(tick, stableWindowMs);
+      };
 
       // re-run on SPA navigation
-      const origPush = history.pushState.bind(history)
+      const origPush = history.pushState.bind(history);
       history.pushState = function (...args: Parameters<typeof history.pushState>) {
-        const r = origPush(...args)
-        scheduleCheck()
-        return r
-      }
-      window.addEventListener('popstate', scheduleCheck)
-      window.addEventListener('load', scheduleCheck)
+        const r = origPush(...args);
+        scheduleCheck();
+        return r;
+      };
+      window.addEventListener("popstate", scheduleCheck);
+      window.addEventListener("load", scheduleCheck);
     },
-  }
+  };
 
   function reportWhiteScreen(reason: string, extra?: Record<string, unknown>): void {
-    captureMessage('white-screen', {
-      tags: { type: 'white-screen' },
+    captureMessage("white-screen", {
+      tags: { type: "white-screen" },
       extra: { reason, ...extra },
-    })
+    });
   }
 }
 ```
@@ -2322,10 +2410,11 @@ export function whiteScreenIntegration(opts: WhiteScreenOptions = {}): Integrati
 - [ ] **Step 2: Export from `packages/core/src/index.ts`**
 
 Add to imports at top:
+
 ```ts
-export { whiteScreenIntegration } from './integrations/whiteScreen.js'
-export type { WhiteScreenOptions } from './integrations/whiteScreen.js'
-export { corsDiagnosticIntegration } from './integrations/corsDiagnostic.js'
+export { whiteScreenIntegration } from "./integrations/whiteScreen.js";
+export type { WhiteScreenOptions } from "./integrations/whiteScreen.js";
+export { corsDiagnosticIntegration } from "./integrations/corsDiagnostic.js";
 ```
 
 (Remove the inline import of `corsDiagnosticIntegration` added in Task 10 if it now conflicts; keep the `integrations:` array referencing the function.)
@@ -2333,32 +2422,35 @@ export { corsDiagnosticIntegration } from './integrations/corsDiagnostic.js'
 - [ ] **Step 3: Append failing test to `packages/core/tests/integrations.test.ts`**
 
 ```ts
-import { whiteScreenIntegration } from '../src/integrations/whiteScreen.js'
+import { whiteScreenIntegration } from "../src/integrations/whiteScreen.js";
 
-describe('whiteScreenIntegration', () => {
+describe("whiteScreenIntegration", () => {
   beforeEach(() => {
-    document.body.innerHTML = ''
-    vi.useFakeTimers()
-  })
+    document.body.innerHTML = "";
+    vi.useFakeTimers();
+  });
   afterEach(() => {
-    vi.useRealTimers()
-  })
+    vi.useRealTimers();
+  });
 
-  it('reports white-screen when root has no children after stable window', () => {
-    const root = document.createElement('div')
-    root.id = 'root'
-    document.body.appendChild(root)
+  it("reports white-screen when root has no children after stable window", () => {
+    const root = document.createElement("div");
+    root.id = "root";
+    document.body.appendChild(root);
 
-    whiteScreenIntegration({ stableWindowMs: 100, minContentNodes: 3 }).setupOnce()
+    whiteScreenIntegration({ stableWindowMs: 100, minContentNodes: 3 }).setupOnce();
     // load event triggers scheduleCheck
-    window.dispatchEvent(new Event('load'))
-    vi.advanceTimersByTime(300)
+    window.dispatchEvent(new Event("load"));
+    vi.advanceTimersByTime(300);
 
-    expect(captureMessage).toHaveBeenCalledWith('white-screen', expect.objectContaining({
-      tags: { type: 'white-screen' },
-    }))
-  })
-})
+    expect(captureMessage).toHaveBeenCalledWith(
+      "white-screen",
+      expect.objectContaining({
+        tags: { type: "white-screen" },
+      }),
+    );
+  });
+});
 ```
 
 - [ ] **Step 4: Run tests**
@@ -2378,25 +2470,33 @@ git commit -m "feat(core): white screen detection integration"
 ## Task 12: `@traceability/react` — MonitorErrorBoundary + hook (M4)
 
 **Files:**
+
 - Modify: `packages/react/src/index.ts` (replace stub)
 - Create: `packages/react/src/ErrorBoundary.tsx`
 - Create: `packages/react/src/hooks.ts`
 - Modify: `packages/react/package.json` (add `react-dom` devDep + vitest if testing)
 
 **Interfaces:**
+
 - Produces: `MonitorErrorBoundary` (wraps `@sentry/react`'s `ErrorBoundary`), `useMonitorReport()`.
 
 - [ ] **Step 1: Create `packages/react/src/ErrorBoundary.tsx`**
 
 ```tsx
-import React from 'react'
-import { ErrorBoundary } from '@sentry/react'
+import React from "react";
+import { ErrorBoundary } from "@sentry/react";
 
 export interface MonitorErrorBoundaryProps {
-  appName?: string
-  fallback: React.ReactNode | ((args: { error: Error; componentStack: string | null; resetError: () => void }) => React.ReactNode)
-  children: React.ReactNode
-  onError?: (error: Error, componentStack: string | null) => void
+  appName?: string;
+  fallback:
+    | React.ReactNode
+    | ((args: {
+        error: Error;
+        componentStack: string | null;
+        resetError: () => void;
+      }) => React.ReactNode);
+  children: React.ReactNode;
+  onError?: (error: Error, componentStack: string | null) => void;
 }
 
 export function MonitorErrorBoundary(props: MonitorErrorBoundaryProps) {
@@ -2404,53 +2504,55 @@ export function MonitorErrorBoundary(props: MonitorErrorBoundaryProps) {
     <ErrorBoundary
       fallback={props.fallback as any}
       beforeCapture={(scope) => {
-        if (props.appName) scope.setTag('appName', props.appName)
+        if (props.appName) scope.setTag("appName", props.appName);
       }}
       onError={props.onError}
       showDialog={false}
     >
       {props.children}
     </ErrorBoundary>
-  )
+  );
 }
 ```
 
 - [ ] **Step 2: Create `packages/react/src/hooks.ts`**
 
 ```ts
-import { useCallback } from 'react'
-import * as core from '@traceability/core'
-import type { ReportData } from '@traceability/core'
+import { useCallback } from "react";
+import * as core from "@traceability/core";
+import type { ReportData } from "@traceability/core";
 
 export function useMonitorReport() {
   return useCallback((data: ReportData) => {
-    core.report(data)
-  }, [])
+    core.report(data);
+  }, []);
 }
 
 export function useMonitorTag() {
   return useCallback((key: string, value: string) => {
-    core.setTag(key, value)
-  }, [])
+    core.setTag(key, value);
+  }, []);
 }
 ```
 
 - [ ] **Step 3: Replace `packages/react/src/index.ts`**
 
 ```ts
-export { MonitorErrorBoundary } from './ErrorBoundary.js'
-export type { MonitorErrorBoundaryProps } from './ErrorBoundary.js'
-export { useMonitorReport, useMonitorTag } from './hooks.js'
-export * from '@traceability/core'
+export { MonitorErrorBoundary } from "./ErrorBoundary.js";
+export type { MonitorErrorBoundaryProps } from "./ErrorBoundary.js";
+export { useMonitorReport, useMonitorTag } from "./hooks.js";
+export * from "@traceability/core";
 ```
 
 - [ ] **Step 4: Typecheck**
 
 Run: `cd packages/react && pnpm typecheck`
 Expected: exits 0. Add `@types/react` is already in devDeps via root? No — add to `packages/react/package.json` devDependencies:
+
 ```json
     "@types/react": "^19.0.0"
 ```
+
 Then `cd packages/react && pnpm install` and re-run typecheck.
 
 - [ ] **Step 5: Commit**
@@ -2465,54 +2567,61 @@ git commit -m "feat(react): MonitorErrorBoundary + useMonitorReport hook"
 ## Task 13: `@traceability/electron` — main + renderer + preload (M6, partial)
 
 **Files:**
+
 - Modify: `packages/electron/src/index.ts` (replace stub)
 - Create: `packages/electron/src/main.ts`
 - Create: `packages/electron/src/renderer.ts`
 - Create: `packages/electron/src/preload.ts`
 
 **Interfaces:**
+
 - Produces: `initMain(opts)`, `initRenderer(opts)`, `preloadBridge`.
 
 - [ ] **Step 1: Create `packages/electron/src/main.ts`**
 
 ```ts
-import * as SentryMain from '@sentry/electron/main'
-import type { InitOptions } from '@traceability/core'
+import * as SentryMain from "@sentry/electron/main";
+import type { InitOptions } from "@traceability/core";
 
 export interface MainInitOptions extends InitOptions {}
 
 export function initMain(opts: MainInitOptions): void {
-  const ingestUrl = `${opts.dsn.replace(/\/$/, '')}/api/ingest/envelope/${opts.appId}`
+  const ingestUrl = `${opts.dsn.replace(/\/$/, "")}/api/ingest/envelope/${opts.appId}`;
   SentryMain.init({
     dsn: `https://dummy@local/${opts.appId}`,
     release: opts.release,
     environment: opts.environment,
     transport: makeElectronMainTransport(ingestUrl, opts.token),
     beforeSend(event) {
-      event.tags = { ...(event.tags ?? {}), appId: opts.appId }
-      return event
+      event.tags = { ...(event.tags ?? {}), appId: opts.appId };
+      return event;
     },
-  })
+  });
 }
 
 function makeElectronMainTransport(url: string, token: string) {
   // @sentry/electron main process has Node fetch available
   return {
     async send(request: { body?: Uint8Array | string }) {
-      const body = typeof request.body === 'string' ? request.body : new TextDecoder().decode(request.body ?? new Uint8Array())
+      const body =
+        typeof request.body === "string"
+          ? request.body
+          : new TextDecoder().decode(request.body ?? new Uint8Array());
       try {
         await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/octet-stream', Authorization: `Bearer ${token}` },
+          method: "POST",
+          headers: { "Content-Type": "application/octet-stream", Authorization: `Bearer ${token}` },
           body,
-        })
+        });
       } catch {
         // drop on failure (v1)
       }
-      return { statusCode: 202 }
+      return { statusCode: 202 };
     },
-    flush() { return Promise.resolve(true) },
-  }
+    flush() {
+      return Promise.resolve(true);
+    },
+  };
 }
 ```
 
@@ -2520,33 +2629,41 @@ function makeElectronMainTransport(url: string, token: string) {
 
 ```ts
 // The renderer reuses @traceability/core, which uses @sentry/browser under the hood.
-export { init as initRenderer, captureException, captureMessage, report, setTag, setContext, addBreadcrumb } from '@traceability/core'
+export {
+  init as initRenderer,
+  captureException,
+  captureMessage,
+  report,
+  setTag,
+  setContext,
+  addBreadcrumb,
+} from "@traceability/core";
 ```
 
 - [ ] **Step 3: Create `packages/electron/src/preload.ts`**
 
 ```ts
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from "electron";
 
 export const preloadBridge = {
   /** Forward a breadcrumb from the renderer to the main process log. */
-  addBreadcrumb: (breadcrumb: unknown) => ipcRenderer.send('traceability:breadcrumb', breadcrumb),
-}
+  addBreadcrumb: (breadcrumb: unknown) => ipcRenderer.send("traceability:breadcrumb", breadcrumb),
+};
 
 if (process.contextIsolated) {
-  contextBridge.exposeInMainWorld('traceability', preloadBridge)
+  contextBridge.exposeInMainWorld("traceability", preloadBridge);
 } else {
-  ;(globalThis as any).traceability = preloadBridge
+  (globalThis as any).traceability = preloadBridge;
 }
 ```
 
 - [ ] **Step 4: Replace `packages/electron/src/index.ts`**
 
 ```ts
-export { initMain } from './main.js'
-export type { MainInitOptions } from './main.js'
-export { initRenderer } from './renderer.js'
-export { preloadBridge } from './preload.js'
+export { initMain } from "./main.js";
+export type { MainInitOptions } from "./main.js";
+export { initRenderer } from "./renderer.js";
+export { preloadBridge } from "./preload.js";
 ```
 
 - [ ] **Step 5: Typecheck (electron types optional)**
@@ -2566,6 +2683,7 @@ git commit -m "feat(electron): main + renderer + preload bridges"
 ## Task 14: `@traceability/cli` — config + api client + output (M5)
 
 **Files:**
+
 - Create: `packages/cli/src/lib/config.ts`
 - Create: `packages/cli/src/lib/api.ts`
 - Create: `packages/cli/src/lib/output.ts`
@@ -2573,120 +2691,122 @@ git commit -m "feat(electron): main + renderer + preload bridges"
 - Modify: `packages/cli/src/index.ts` (bootstrap commander)
 
 **Interfaces:**
+
 - Produces: `getConfig()`/`saveConfig()` (reads `~/.traceability/config.json`), `apiGet/apiPost` helpers, `printJson/printTable`.
 - Consumes: `@traceability/protocol`.
 
 - [ ] **Step 1: Create `packages/cli/src/lib/config.ts`**
 
 ```ts
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 export interface CliConfig {
-  server: string
-  token: string
+  server: string;
+  token: string;
 }
 
-const CONFIG_DIR = join(homedir(), '.traceability')
-const CONFIG_PATH = join(CONFIG_DIR, 'config.json')
+const CONFIG_DIR = join(homedir(), ".traceability");
+const CONFIG_PATH = join(CONFIG_DIR, "config.json");
 
 export function getConfig(): CliConfig {
   if (!existsSync(CONFIG_PATH)) {
-    throw new Error(`No config found. Run: traceability config set --server <url> --token <token>`)
+    throw new Error(`No config found. Run: traceability config set --server <url> --token <token>`);
   }
-  return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as CliConfig
+  return JSON.parse(readFileSync(CONFIG_PATH, "utf8")) as CliConfig;
 }
 
 export function saveConfig(cfg: CliConfig): void {
-  mkdirSync(CONFIG_DIR, { recursive: true })
-  writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), { mode: 0o600 })
+  mkdirSync(CONFIG_DIR, { recursive: true });
+  writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), { mode: 0o600 });
 }
 ```
 
 - [ ] **Step 2: Create `packages/cli/src/lib/api.ts`**
 
 ```ts
-import { getConfig } from './config.js'
+import { getConfig } from "./config.js";
 
 export interface ApiOptions {
-  json?: boolean
+  json?: boolean;
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const cfg = getConfig()
-  const res = await fetch(`${cfg.server.replace(/\/$/, '')}${path}`, {
+  const cfg = getConfig();
+  const res = await fetch(`${cfg.server.replace(/\/$/, "")}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${cfg.token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
-  })
+  });
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
-  if (res.status === 204) return undefined as T
-  return (await res.json()) as T
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
-  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
-  delete: <T>(path: string) => request<T>('DELETE', path),
-}
+  get: <T>(path: string) => request<T>("GET", path),
+  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
+  delete: <T>(path: string) => request<T>("DELETE", path),
+};
 ```
 
 - [ ] **Step 3: Create `packages/cli/src/lib/output.ts`**
 
 ```ts
 export function printJson(data: unknown): void {
-  console.log(JSON.stringify(data, null, 2))
+  console.log(JSON.stringify(data, null, 2));
 }
 
-export function printTable(rows: Array<Record<string, unknown>>, columns: Array<{ key: string; label: string; width?: number }>): void {
+export function printTable(
+  rows: Array<Record<string, unknown>>,
+  columns: Array<{ key: string; label: string; width?: number }>,
+): void {
   if (rows.length === 0) {
-    console.log('(no rows)')
-    return
+    console.log("(no rows)");
+    return;
   }
-  const header = columns.map((c) => pad(c.label, c.width ?? 20)).join('  ')
-  console.log(header)
-  console.log('-'.repeat(header.length))
+  const header = columns.map((c) => pad(c.label, c.width ?? 20)).join("  ");
+  console.log(header);
+  console.log("-".repeat(header.length));
   for (const row of rows) {
-    console.log(columns.map((c) => pad(String(row[c.key] ?? ''), c.width ?? 20)).join('  '))
+    console.log(columns.map((c) => pad(String(row[c.key] ?? ""), c.width ?? 20)).join("  "));
   }
 }
 
 function pad(s: string, n: number): string {
-  return s.length > n ? s.slice(0, n - 1) + '…' : s.padEnd(n)
+  return s.length > n ? s.slice(0, n - 1) + "…" : s.padEnd(n);
 }
 ```
 
 - [ ] **Step 4: Create `packages/cli/src/commands/config.ts`**
 
 ```ts
-import { Command } from 'commander'
-import { saveConfig, getConfig } from '../lib/config.js'
+import { Command } from "commander";
+import { saveConfig, getConfig } from "../lib/config.js";
 
 export function configCommand(program: Command): void {
-  const cmd = program.command('config').description('CLI configuration')
+  const cmd = program.command("config").description("CLI configuration");
   cmd
-    .command('set')
-    .requiredOption('--server <url>')
-    .requiredOption('--token <token>')
+    .command("set")
+    .requiredOption("--server <url>")
+    .requiredOption("--token <token>")
     .action((opts) => {
-      saveConfig({ server: opts.server, token: opts.token })
-      console.log('Saved.')
-    })
-  cmd
-    .command('show')
-    .action(() => {
-      const cfg = getConfig()
-      console.log(`server: ${cfg.server}`)
-      console.log(`token:  ${cfg.token.slice(0, 4)}…`)
-    })
+      saveConfig({ server: opts.server, token: opts.token });
+      console.log("Saved.");
+    });
+  cmd.command("show").action(() => {
+    const cfg = getConfig();
+    console.log(`server: ${cfg.server}`);
+    console.log(`token:  ${cfg.token.slice(0, 4)}…`);
+  });
 }
 ```
 
@@ -2702,141 +2822,144 @@ git commit -m "feat(cli): config store + api client + output helpers"
 ## Task 15: `@traceability/cli` — app + issue commands (M5)
 
 **Files:**
+
 - Create: `packages/cli/src/commands/app.ts`
 - Create: `packages/cli/src/commands/issue.ts`
 - Modify: `packages/cli/src/index.ts` (wire all commands)
 
 **Interfaces:**
+
 - Produces: `traceability app {list,create,show,update,delete}` and `traceability issue {list,show,fix-request,attach-patch,mark-fixed}`.
 
 - [ ] **Step 1: Create `packages/cli/src/commands/app.ts`**
 
 ```ts
-import { Command } from 'commander'
-import { api } from '../lib/api.js'
-import { printJson, printTable } from '../lib/output.js'
-import type { Application } from '@traceability/protocol'
+import { Command } from "commander";
+import { api } from "../lib/api.js";
+import { printJson, printTable } from "../lib/output.js";
+import type { Application } from "@traceability/protocol";
 
 export function appCommand(program: Command): void {
-  const cmd = program.command('app').description('manage applications')
+  const cmd = program.command("app").description("manage applications");
   cmd
-    .command('list')
-    .option('--json', 'output JSON')
+    .command("list")
+    .option("--json", "output JSON")
     .action(async (opts) => {
-      const apps = await api.get<Application[]>('/api/apps')
-      opts.json ? printJson(apps) : printTable(apps, [
-        { key: 'id', label: 'ID', width: 36 },
-        { key: 'name', label: 'NAME', width: 20 },
-        { key: 'defaultBranch', label: 'BRANCH', width: 12 },
-      ])
-    })
+      const apps = await api.get<Application[]>("/api/apps");
+      opts.json
+        ? printJson(apps)
+        : printTable(apps, [
+            { key: "id", label: "ID", width: 36 },
+            { key: "name", label: "NAME", width: 20 },
+            { key: "defaultBranch", label: "BRANCH", width: 12 },
+          ]);
+    });
 
   cmd
-    .command('create')
-    .requiredOption('--name <name>')
-    .requiredOption('--repo-url <url>')
-    .requiredOption('--branch <branch>')
-    .option('--json', 'output JSON')
+    .command("create")
+    .requiredOption("--name <name>")
+    .requiredOption("--repo-url <url>")
+    .requiredOption("--branch <branch>")
+    .option("--json", "output JSON")
     .action(async (opts) => {
-      const app = await api.post<Application>('/api/apps', {
-        name: opts.name, repoUrl: opts.repoUrl, defaultBranch: opts.branch,
-      })
-      opts.json ? printJson(app) : console.log(`Created app ${app.id} (${app.name})`)
-    })
+      const app = await api.post<Application>("/api/apps", {
+        name: opts.name,
+        repoUrl: opts.repoUrl,
+        defaultBranch: opts.branch,
+      });
+      opts.json ? printJson(app) : console.log(`Created app ${app.id} (${app.name})`);
+    });
 
   cmd
-    .command('show <appId>')
-    .option('--json', 'output JSON')
+    .command("show <appId>")
+    .option("--json", "output JSON")
     .action(async (appId, opts) => {
-      const app = await api.get<Application>(`/api/apps/${appId}`)
-      opts.json ? printJson(app) : printJson(app)
-    })
+      const app = await api.get<Application>(`/api/apps/${appId}`);
+      opts.json ? printJson(app) : printJson(app);
+    });
 
   cmd
-    .command('update <appId>')
-    .option('--name <name>')
-    .option('--repo-url <url>')
-    .option('--branch <branch>')
+    .command("update <appId>")
+    .option("--name <name>")
+    .option("--repo-url <url>")
+    .option("--branch <branch>")
     .action(async (appId, opts) => {
-      const body: Record<string, string> = {}
-      if (opts.name) body.name = opts.name
-      if (opts.repoUrl) body.repoUrl = opts.repoUrl
-      if (opts.branch) body.defaultBranch = opts.branch
-      const app = await api.patch<Application>(`/api/apps/${appId}`, body)
-      printJson(app)
-    })
+      const body: Record<string, string> = {};
+      if (opts.name) body.name = opts.name;
+      if (opts.repoUrl) body.repoUrl = opts.repoUrl;
+      if (opts.branch) body.defaultBranch = opts.branch;
+      const app = await api.patch<Application>(`/api/apps/${appId}`, body);
+      printJson(app);
+    });
 
-  cmd
-    .command('delete <appId>')
-    .action(async (appId) => {
-      await api.delete(`/api/apps/${appId}`)
-      console.log('Deleted.')
-    })
+  cmd.command("delete <appId>").action(async (appId) => {
+    await api.delete(`/api/apps/${appId}`);
+    console.log("Deleted.");
+  });
 }
 ```
 
 - [ ] **Step 2: Create `packages/cli/src/commands/issue.ts`**
 
 ```ts
-import { Command } from 'commander'
-import { readFileSync } from 'node:fs'
-import { api } from '../lib/api.js'
-import { printJson, printTable } from '../lib/output.js'
-import type { Issue, IssueStatus } from '@traceability/protocol'
+import { Command } from "commander";
+import { readFileSync } from "node:fs";
+import { api } from "../lib/api.js";
+import { printJson, printTable } from "../lib/output.js";
+import type { Issue, IssueStatus } from "@traceability/protocol";
 
 export function issueCommand(program: Command): void {
-  const cmd = program.command('issue').description('list and act on issues')
+  const cmd = program.command("issue").description("list and act on issues");
   cmd
-    .command('list')
-    .requiredOption('--appId <id>')
-    .option('--status <status>')
-    .option('--limit <n>', 'max results', '20')
-    .option('--json', 'output JSON')
+    .command("list")
+    .requiredOption("--appId <id>")
+    .option("--status <status>")
+    .option("--limit <n>", "max results", "20")
+    .option("--json", "output JSON")
     .action(async (opts) => {
-      const qs = new URLSearchParams({ appId: opts.appId, limit: opts.limit })
-      if (opts.status) qs.set('status', opts.status)
-      const res = await api.get<{ items: Issue[] }>(`/api/issues?${qs}`)
-      opts.json ? printJson(res) : printTable(res.items, [
-        { key: 'id', label: 'ID', width: 36 },
-        { key: 'title', label: 'TITLE', width: 40 },
-        { key: 'status', label: 'STATUS', width: 12 },
-        { key: 'count', label: 'COUNT', width: 6 },
-      ])
-    })
+      const qs = new URLSearchParams({ appId: opts.appId, limit: opts.limit });
+      if (opts.status) qs.set("status", opts.status);
+      const res = await api.get<{ items: Issue[] }>(`/api/issues?${qs}`);
+      opts.json
+        ? printJson(res)
+        : printTable(res.items, [
+            { key: "id", label: "ID", width: 36 },
+            { key: "title", label: "TITLE", width: 40 },
+            { key: "status", label: "STATUS", width: 12 },
+            { key: "count", label: "COUNT", width: 6 },
+          ]);
+    });
 
   cmd
-    .command('show <issueId>')
-    .option('--json', 'output JSON')
+    .command("show <issueId>")
+    .option("--json", "output JSON")
     .action(async (issueId, opts) => {
-      const issue = await api.get<Issue>(`/api/issues/${issueId}`)
-      printJson(issue)
-    })
+      const issue = await api.get<Issue>(`/api/issues/${issueId}`);
+      printJson(issue);
+    });
+
+  cmd.command("fix-request <issueId>").action(async (issueId) => {
+    const issue = await api.post<Issue>(`/api/issues/${issueId}/fix-request`);
+    console.log(`Issue ${issueId} marked fix-manual.`);
+  });
 
   cmd
-    .command('fix-request <issueId>')
-    .action(async (issueId) => {
-      const issue = await api.post<Issue>(`/api/issues/${issueId}/fix-request`)
-      console.log(`Issue ${issueId} marked fix-manual.`)
-    })
-
-  cmd
-    .command('attach-patch <issueId>')
-    .requiredOption('--patch <path>')
-    .requiredOption('--branch <branch>')
+    .command("attach-patch <issueId>")
+    .requiredOption("--patch <path>")
+    .requiredOption("--branch <branch>")
     .action(async (issueId, opts) => {
-      const patch = readFileSync(opts.patch, 'utf8')
+      const patch = readFileSync(opts.patch, "utf8");
       const res = await api.post<{ id: string }>(`/api/issues/${issueId}/attach-patch`, {
-        branch: opts.branch, patch,
-      })
-      console.log(`Patch attached: ${res.id}`)
-    })
+        branch: opts.branch,
+        patch,
+      });
+      console.log(`Patch attached: ${res.id}`);
+    });
 
-  cmd
-    .command('mark-fixed <issueId>')
-    .action(async (issueId) => {
-      await api.post(`/api/issues/${issueId}/mark-fixed`)
-      console.log(`Issue ${issueId} marked fixed.`)
-    })
+  cmd.command("mark-fixed <issueId>").action(async (issueId) => {
+    await api.post(`/api/issues/${issueId}/mark-fixed`);
+    console.log(`Issue ${issueId} marked fixed.`);
+  });
 }
 ```
 
@@ -2844,22 +2967,22 @@ export function issueCommand(program: Command): void {
 
 ```ts
 #!/usr/bin/env node
-import { Command } from 'commander'
-import { configCommand } from './commands/config.js'
-import { appCommand } from './commands/app.js'
-import { issueCommand } from './commands/issue.js'
+import { Command } from "commander";
+import { configCommand } from "./commands/config.js";
+import { appCommand } from "./commands/app.js";
+import { issueCommand } from "./commands/issue.js";
 
-const program = new Command()
-program.name('traceability').description('Traceability CLI').version('1.0.0')
+const program = new Command();
+program.name("traceability").description("Traceability CLI").version("1.0.0");
 
-configCommand(program)
-appCommand(program)
-issueCommand(program)
+configCommand(program);
+appCommand(program);
+issueCommand(program);
 
 program.parseAsync(process.argv).catch((err) => {
-  console.error(err instanceof Error ? err.message : String(err))
-  process.exit(1)
-})
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+});
 ```
 
 - [ ] **Step 4: Build + manual smoke (requires running server from Task 8)**
@@ -2872,6 +2995,7 @@ node dist/index.js config set --server http://localhost:3000 --token test-token
 node dist/index.js app create --name demo --repo-url git@x:demo.git --branch main --json
 node dist/index.js app list
 ```
+
 Expected: `app create` prints JSON with `id`; `app list` prints a table with one row.
 
 - [ ] **Step 5: Commit**
@@ -2888,6 +3012,7 @@ git commit -m "feat(cli): app + issue subcommands"
 **Design source of truth:** `docs/prototype/index.html`. Port its `<style>` block into `app/src/styles.css` and reuse the prototype's class names (`.panel`, `.data-table`, `.badge`, `.app-card`, `.tabs`, `.timeline`, `.command`, `.modal`, `.toast`, `.palette`) instead of inline styles. The shell (`.shell`/`.sidebar`/`.topbar`) must match the prototype.
 
 **Files:**
+
 - Create: `app/index.html`
 - Create: `app/vite.config.ts`
 - Create: `app/src/styles.css` (verbatim port of prototype `<style>` - see Step 3)
@@ -2903,6 +3028,7 @@ git commit -m "feat(cli): app + issue subcommands"
 - Create: `app/src/pages/Login.tsx`
 
 **Interfaces:**
+
 - Produces: Vite dev server at `:5173`; `apiFetch`; `onIssueEvent`; UI primitives (`Button`/`Panel`/`Badge`/`Modal`/`Field`); `ToastProvider`/`useToast`; `CommandPalette`; `Layout`. Pages in Tasks 17/18 import these.
 
 - [ ] **Step 1: Create `app/index.html`**
@@ -2925,18 +3051,18 @@ git commit -m "feat(cli): app + issue subcommands"
 - [ ] **Step 2: Create `app/vite.config.ts`**
 
 ```ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:3000',
+      "/api": "http://localhost:3000",
     },
   },
-})
+});
 ```
 
 - [ ] **Step 3: Create `app/src/styles.css` - port the prototype's `<style>` block verbatim**
@@ -2946,119 +3072,123 @@ Open `docs/prototype/index.html`, copy the entire contents of its `<style>...</s
 - [ ] **Step 4: Create `app/src/auth/token.ts`**
 
 ```ts
-const KEY = 'traceability.token'
-const SERVER_KEY = 'traceability.server'
+const KEY = "traceability.token";
+const SERVER_KEY = "traceability.server";
 
 export function getToken(): string | null {
-  return localStorage.getItem(KEY)
+  return localStorage.getItem(KEY);
 }
 export function setToken(token: string): void {
-  localStorage.setItem(KEY, token)
+  localStorage.setItem(KEY, token);
 }
 export function getServer(): string {
-  return localStorage.getItem(SERVER_KEY) ?? ''
+  return localStorage.getItem(SERVER_KEY) ?? "";
 }
 export function setServer(server: string): void {
-  localStorage.setItem(SERVER_KEY, server)
+  localStorage.setItem(SERVER_KEY, server);
 }
 export function clearAuth(): void {
-  localStorage.removeItem(KEY)
-  localStorage.removeItem(SERVER_KEY)
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(SERVER_KEY);
 }
 ```
 
 - [ ] **Step 5: Create `app/src/api/client.ts`**
 
 ```ts
-import { getToken, getServer } from '../auth/token'
+import { getToken, getServer } from "../auth/token";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message)
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
   }
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = getToken()
-  const server = getServer()
-  if (!token || !server) throw new ApiError(401, 'not authenticated')
-  const res = await fetch(`${server.replace(/\/$/, '')}${path}`, {
+  const token = getToken();
+  const server = getServer();
+  if (!token || !server) throw new ApiError(401, "not authenticated");
+  const res = await fetch(`${server.replace(/\/$/, "")}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
-  })
+  });
   if (!res.ok) {
-    throw new ApiError(res.status, await res.text().catch(() => res.statusText))
+    throw new ApiError(res.status, await res.text().catch(() => res.statusText));
   }
-  if (res.status === 204) return undefined as T
-  return (await res.json()) as T
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
 }
 ```
 
 - [ ] **Step 6: Create `app/src/ws/client.ts`**
 
 ```ts
-import { getToken, getServer } from '../auth/token'
+import { getToken, getServer } from "../auth/token";
 
 export interface IssueEvent {
-  kind: 'issue:created' | 'issue:updated' | 'issue:status-changed'
-  appId: string
-  issueId: string
-  payload: unknown
+  kind: "issue:created" | "issue:updated" | "issue:status-changed";
+  appId: string;
+  issueId: string;
+  payload: unknown;
 }
 
-type Handler = (event: IssueEvent) => void
+type Handler = (event: IssueEvent) => void;
 
-let socket: WebSocket | null = null
-const handlers = new Set<Handler>()
+let socket: WebSocket | null = null;
+const handlers = new Set<Handler>();
 
 export function connectWs(): void {
-  const token = getToken()
-  const server = getServer()
-  if (!token || !server) return
-  const wsUrl = server.replace(/^http/, 'ws').replace(/\/$/, '') + `/api/ws?token=${encodeURIComponent(token)}`
-  socket = new WebSocket(wsUrl)
+  const token = getToken();
+  const server = getServer();
+  if (!token || !server) return;
+  const wsUrl =
+    server.replace(/^http/, "ws").replace(/\/$/, "") + `/api/ws?token=${encodeURIComponent(token)}`;
+  socket = new WebSocket(wsUrl);
   socket.onmessage = (e) => {
     try {
-      const evt = JSON.parse(e.data) as IssueEvent
-      handlers.forEach((h) => h(evt))
+      const evt = JSON.parse(e.data) as IssueEvent;
+      handlers.forEach((h) => h(evt));
     } catch {
       // ignore malformed
     }
-  }
+  };
   socket.onclose = () => {
-    socket = null
-    setTimeout(connectWs, 3000)
-  }
+    socket = null;
+    setTimeout(connectWs, 3000);
+  };
 }
 
 export function onIssueEvent(h: Handler): () => void {
-  handlers.add(h)
-  return () => handlers.delete(h)
+  handlers.add(h);
+  return () => handlers.delete(h);
 }
 ```
 
 - [ ] **Step 7: Create `app/src/components/ui/primitives.tsx`**
 
 ```tsx
-import React from 'react'
+import React from "react";
 
-type BtnVariant = 'default' | 'primary' | 'danger'
+type BtnVariant = "default" | "primary" | "danger";
 export function Button({
-  variant = 'default',
+  variant = "default",
   sm,
-  className = '',
+  className = "",
   ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; sm?: boolean }) {
-  const cls = ['btn']
-  if (variant === 'primary') cls.push('btn-primary')
-  if (variant === 'danger') cls.push('btn-danger')
-  if (sm) cls.push('btn-sm')
-  cls.push(className)
-  return <button className={cls.join(' ')} {...rest} />
+  const cls = ["btn"];
+  if (variant === "primary") cls.push("btn-primary");
+  if (variant === "danger") cls.push("btn-danger");
+  if (sm) cls.push("btn-sm");
+  cls.push(className);
+  return <button className={cls.join(" ")} {...rest} />;
 }
 
 export function Panel({
@@ -3067,10 +3197,10 @@ export function Panel({
   children,
   headExtra,
 }: {
-  title?: React.ReactNode
-  meta?: React.ReactNode
-  children: React.ReactNode
-  headExtra?: React.ReactNode
+  title?: React.ReactNode;
+  meta?: React.ReactNode;
+  children: React.ReactNode;
+  headExtra?: React.ReactNode;
 }) {
   return (
     <div className="panel">
@@ -3083,24 +3213,24 @@ export function Panel({
       )}
       {children}
     </div>
-  )
+  );
 }
 
 const BADGE: Record<string, { cls: string; label: string }> = {
-  open: { cls: 'open', label: 'Open' },
-  'fix-manual': { cls: 'fixing', label: 'Fix requested' },
-  fixing: { cls: 'fixing', label: 'Fixing' },
-  fixed: { cls: 'fixed', label: 'Fixed' },
-  ignored: { cls: '', label: 'Ignored' },
-}
+  open: { cls: "open", label: "Open" },
+  "fix-manual": { cls: "fixing", label: "Fix requested" },
+  fixing: { cls: "fixing", label: "Fixing" },
+  fixed: { cls: "fixed", label: "Fixed" },
+  ignored: { cls: "", label: "Ignored" },
+};
 export function Badge({ status, label }: { status: string; label?: string }) {
-  const info = BADGE[status] ?? BADGE.ignored
+  const info = BADGE[status] ?? BADGE.ignored;
   return (
     <span className={`badge ${info.cls}`}>
       <span className="dot"></span>
       {label ?? info.label}
     </span>
-  )
+  );
 }
 
 export function Modal({
@@ -3111,14 +3241,14 @@ export function Modal({
   children,
   footer,
 }: {
-  show: boolean
-  onClose: () => void
-  title: string
-  subtitle?: string
-  children: React.ReactNode
-  footer: React.ReactNode
+  show: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  footer: React.ReactNode;
 }) {
-  if (!show) return null
+  if (!show) return null;
   return (
     <div className="modal-backdrop show" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -3130,7 +3260,7 @@ export function Modal({
         <div className="modal-foot">{footer}</div>
       </div>
     </div>
-  )
+  );
 }
 
 export function Field({
@@ -3142,65 +3272,65 @@ export function Field({
       <label>{label}</label>
       <input {...rest} />
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 8: Create `app/src/components/Toast.tsx`**
 
 ```tsx
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback } from "react";
 
-const ToastCtx = createContext<(msg: string) => void>(() => {})
+const ToastCtx = createContext<(msg: string) => void>(() => {});
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [msg, setMsg] = useState('')
-  const [show, setShow] = useState(false)
+  const [msg, setMsg] = useState("");
+  const [show, setShow] = useState(false);
   const show_ = useCallback((m: string) => {
-    setMsg(m)
-    setShow(true)
-    setTimeout(() => setShow(false), 2200)
-  }, [])
+    setMsg(m);
+    setShow(true);
+    setTimeout(() => setShow(false), 2200);
+  }, []);
   return (
     <ToastCtx.Provider value={show_}>
       {children}
-      <div className={`toast ${show ? 'show' : ''}`}>{msg}</div>
+      <div className={`toast ${show ? "show" : ""}`}>{msg}</div>
     </ToastCtx.Provider>
-  )
+  );
 }
 
 export function useToast() {
-  return useContext(ToastCtx)
+  return useContext(ToastCtx);
 }
 ```
 
 - [ ] **Step 9: Create `app/src/components/CommandPalette.tsx`**
 
 ```tsx
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ACTIONS: Array<{ icon: string; label: string; to: string; key: string }> = [
-  { icon: '◇', label: 'Go to Issues', to: '/issues', key: 'G then I' },
-  { icon: '▦', label: 'Go to Applications', to: '/apps', key: 'G then A' },
-  { icon: '⌁', label: 'Go to SDK setup', to: '/settings', key: 'G then S' },
-]
+  { icon: "◇", label: "Go to Issues", to: "/issues", key: "G then I" },
+  { icon: "▦", label: "Go to Applications", to: "/apps", key: "G then A" },
+  { icon: "⌁", label: "Go to SDK setup", to: "/settings", key: "G then S" },
+];
 
 export function CommandPalette() {
-  const [open, setOpen] = useState(false)
-  const nav = useNavigate()
+  const [open, setOpen] = useState(false);
+  const nav = useNavigate();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        setOpen((o) => !o)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen((o) => !o);
       }
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
-  if (!open) return null
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+  if (!open) return null;
   return (
     <>
       <div className="modal-backdrop show" onClick={() => setOpen(false)} />
@@ -3212,8 +3342,8 @@ export function CommandPalette() {
               key={a.to}
               className="palette-item"
               onClick={() => {
-                nav(a.to)
-                setOpen(false)
+                nav(a.to);
+                setOpen(false);
               }}
             >
               <span>{a.icon}</span>
@@ -3224,29 +3354,29 @@ export function CommandPalette() {
         </div>
       </div>
     </>
-  )
+  );
 }
 ```
 
 - [ ] **Step 10: Create `app/src/components/Layout.tsx`** (matches prototype `.shell`/`.sidebar`/`.topbar`)
 
 ```tsx
-import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-import { clearAuth } from '../auth/token'
-import { CommandPalette } from './CommandPalette'
+import React from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { clearAuth } from "../auth/token";
+import { CommandPalette } from "./CommandPalette";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const loc = useLocation()
-  const crumb = loc.pathname.startsWith('/apps')
-    ? 'Applications'
-    : loc.pathname.startsWith('/issues')
-    ? 'Issues'
-    : loc.pathname.startsWith('/fix')
-    ? 'AI repair'
-    : loc.pathname.startsWith('/settings')
-    ? 'SDK setup'
-    : 'Issues'
+  const loc = useLocation();
+  const crumb = loc.pathname.startsWith("/apps")
+    ? "Applications"
+    : loc.pathname.startsWith("/issues")
+      ? "Issues"
+      : loc.pathname.startsWith("/fix")
+        ? "AI repair"
+        : loc.pathname.startsWith("/settings")
+          ? "SDK setup"
+          : "Issues";
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -3264,14 +3394,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <nav>
           <div className="nav-label">Workspace</div>
-          <NavLink to="/issues" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <NavLink
+            to="/issues"
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
             <span className="nav-icon">◇</span>Issues
           </NavLink>
-          <NavLink to="/apps" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <NavLink to="/apps" className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
             <span className="nav-icon">▦</span>Applications
           </NavLink>
           <div className="nav-label">Manage</div>
-          <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
             <span className="nav-icon">⌁</span>SDK setup
           </NavLink>
         </nav>
@@ -3280,7 +3416,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="avatar">LY</div>
             <div className="user-meta">
               <div className="user-name">研发</div>
-              <div className="user-email" style={{ cursor: 'pointer' }} onClick={() => { clearAuth(); location.href = '/login' }}>
+              <div
+                className="user-email"
+                style={{ cursor: "pointer" }}
+                onClick={() => {
+                  clearAuth();
+                  location.href = "/login";
+                }}
+              >
                 Sign out
               </div>
             </div>
@@ -3295,37 +3438,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <b>{crumb}</b>
           </div>
           <div className="top-actions">
-            <button className="btn btn-sm">Search or jump to… <span className="kbd">⌘ K</span></button>
+            <button className="btn btn-sm">
+              Search or jump to… <span className="kbd">⌘ K</span>
+            </button>
           </div>
         </header>
         <div className="content">{children}</div>
       </main>
       <CommandPalette />
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 11: Create `app/src/pages/Login.tsx`**
 
 ```tsx
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { setToken, setServer } from '../auth/token'
-import { Button, Field } from '../components/ui/primitives'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { setToken, setServer } from "../auth/token";
+import { Button, Field } from "../components/ui/primitives";
 
 export function Login() {
-  const [server, setServerState] = useState('http://localhost:3000')
-  const [token, setTokenState] = useState('')
-  const nav = useNavigate()
+  const [server, setServerState] = useState("http://localhost:3000");
+  const [token, setTokenState] = useState("");
+  const nav = useNavigate();
   const submit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setServer(server)
-    setToken(token)
-    nav('/apps')
-  }
+    e.preventDefault();
+    setServer(server);
+    setToken(token);
+    nav("/apps");
+  };
   return (
-    <div className="shell" style={{ placeItems: 'center' }}>
+    <div className="shell" style={{ placeItems: "center" }}>
       <form onSubmit={submit} className="panel" style={{ width: 380, padding: 24 }}>
         <div className="brand" style={{ marginBottom: 18 }}>
           <span className="brand-mark">T</span>
@@ -3333,50 +3478,60 @@ export function Login() {
         </div>
         <Field label="Server URL" value={server} onChange={(e) => setServerState(e.target.value)} />
         <div style={{ height: 15 }} />
-        <Field label="API token" type="password" value={token} onChange={(e) => setTokenState(e.target.value)} placeholder="dev-token" />
+        <Field
+          label="API token"
+          type="password"
+          value={token}
+          onChange={(e) => setTokenState(e.target.value)}
+          placeholder="dev-token"
+        />
         <div style={{ marginTop: 18 }}>
-          <Button variant="primary" type="submit" className="full">Login</Button>
+          <Button variant="primary" type="submit" className="full">
+            Login
+          </Button>
         </div>
       </form>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 12: Create `app/src/main.tsx` + `app/src/App.tsx`**
 
 `app/src/main.tsx`:
-```tsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import { App } from './App'
-import './styles.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+```tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { App } from "./App";
+import "./styles.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
   </React.StrictMode>,
-)
+);
 ```
 
 `app/src/App.tsx` (pages wired in Tasks 17/18):
+
 ```tsx
-import React, { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { getToken } from './auth/token'
-import { connectWs } from './ws/client'
-import { ToastProvider } from './components/Toast'
-import { Layout } from './components/Layout'
-import { Login } from './pages/Login'
+import React, { useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { getToken } from "./auth/token";
+import { connectWs } from "./ws/client";
+import { ToastProvider } from "./components/Toast";
+import { Layout } from "./components/Layout";
+import { Login } from "./pages/Login";
 
 export function App() {
-  const token = getToken()
+  const token = getToken();
   useEffect(() => {
-    if (token) connectWs()
-  }, [token])
+    if (token) connectWs();
+  }, [token]);
 
   if (!token) {
     return (
@@ -3384,7 +3539,7 @@ export function App() {
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
-    )
+    );
   }
   return (
     <ToastProvider>
@@ -3396,7 +3551,7 @@ export function App() {
         </Routes>
       </Layout>
     </ToastProvider>
-  )
+  );
 }
 ```
 
@@ -3419,6 +3574,7 @@ git commit -m "feat(app): scaffold + design system ported from prototype + auth/
 **Design reference:** `docs/prototype/index.html` `#page-apps` (`.app-grid`/`.app-card`) and `#page-app-detail` (`.detail-grid`/`.info-list`/`.side-panel`). Use the primitives from Task 16.
 
 **Files:**
+
 - Create: `app/src/pages/Apps.tsx`
 - Create: `app/src/pages/AppDetail.tsx`
 - Modify: `app/src/App.tsx` (add routes)
@@ -3426,44 +3582,60 @@ git commit -m "feat(app): scaffold + design system ported from prototype + auth/
 - [ ] **Step 1: Create `app/src/pages/Apps.tsx`** (app-grid cards + create modal)
 
 ```tsx
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api/client'
-import { useToast } from '../components/Toast'
-import { Button, Panel, Modal, Field } from '../components/ui/primitives'
-import type { Application } from '@traceability/protocol'
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../api/client";
+import { useToast } from "../components/Toast";
+import { Button, Panel, Modal, Field } from "../components/ui/primitives";
+import type { Application } from "@traceability/protocol";
 
 export function Apps() {
-  const [apps, setApps] = useState<Application[]>([])
-  const [showCreate, setShowCreate] = useState(false)
-  const [name, setName] = useState('')
-  const [repoUrl, setRepoUrl] = useState('')
-  const [branch, setBranch] = useState('master')
-  const nav = useNavigate()
-  const toast = useToast()
+  const [apps, setApps] = useState<Application[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [name, setName] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
+  const [branch, setBranch] = useState("master");
+  const nav = useNavigate();
+  const toast = useToast();
 
-  const load = () => apiFetch<Application[]>('/api/apps').then(setApps).catch((e) => toast(String(e)))
-  useEffect(() => { load() }, [])
+  const load = () =>
+    apiFetch<Application[]>("/api/apps")
+      .then(setApps)
+      .catch((e) => toast(String(e)));
+  useEffect(() => {
+    load();
+  }, []);
 
   const create = async () => {
-    if (!name.trim()) { toast('Enter an application name'); return }
-    const app = await apiFetch<Application>('/api/apps', {
-      method: 'POST', body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
-    })
-    setShowCreate(false); setName(''); setRepoUrl(''); setBranch('master')
-    toast('Application created')
-    nav(`/apps/${app.id}`)
-  }
+    if (!name.trim()) {
+      toast("Enter an application name");
+      return;
+    }
+    const app = await apiFetch<Application>("/api/apps", {
+      method: "POST",
+      body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
+    });
+    setShowCreate(false);
+    setName("");
+    setRepoUrl("");
+    setBranch("master");
+    toast("Application created");
+    nav(`/apps/${app.id}`);
+  };
 
   return (
     <div className="page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Applications</h1>
-          <p className="page-subtitle">Manage monitored apps, repositories and ingestion endpoints.</p>
+          <p className="page-subtitle">
+            Manage monitored apps, repositories and ingestion endpoints.
+          </p>
         </div>
         <div className="header-actions">
-          <Button variant="primary" onClick={() => setShowCreate(true)}>New application</Button>
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
+            New application
+          </Button>
         </div>
       </div>
       {apps.length === 0 ? (
@@ -3478,11 +3650,19 @@ export function Apps() {
                   <div className="app-name">{a.name}</div>
                   <div className="app-repo">{a.repoUrl}</div>
                 </div>
-                <span className="badge fixed" style={{ marginLeft: 'auto' }}><span className="dot"></span>Live</span>
+                <span className="badge fixed" style={{ marginLeft: "auto" }}>
+                  <span className="dot"></span>Live
+                </span>
               </div>
               <div className="app-stats">
-                <div className="app-stat"><b>{a.defaultBranch}</b><span>Default branch</span></div>
-                <div className="app-stat"><b>{a.id.slice(0, 6)}</b><span>App ID</span></div>
+                <div className="app-stat">
+                  <b>{a.defaultBranch}</b>
+                  <span>Default branch</span>
+                </div>
+                <div className="app-stat">
+                  <b>{a.id.slice(0, 6)}</b>
+                  <span>App ID</span>
+                </div>
               </div>
             </article>
           ))}
@@ -3493,71 +3673,115 @@ export function Apps() {
         onClose={() => setShowCreate(false)}
         title="Create application"
         subtitle="Connect a repository and generate its appId and DSN."
-        footer={<>
-          <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-          <Button variant="primary" onClick={create}>Create application</Button>
-        </>}
+        footer={
+          <>
+            <Button onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button variant="primary" onClick={create}>
+              Create application
+            </Button>
+          </>
+        }
       >
-        <Field label="Application name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. customer-portal" />
-        <Field label="Repository URL" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="git@git.example.com:team/repo.git" />
+        <Field
+          label="Application name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. customer-portal"
+        />
+        <Field
+          label="Repository URL"
+          value={repoUrl}
+          onChange={(e) => setRepoUrl(e.target.value)}
+          placeholder="git@git.example.com:team/repo.git"
+        />
         <Field label="Default branch" value={branch} onChange={(e) => setBranch(e.target.value)} />
       </Modal>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 2: Create `app/src/pages/AppDetail.tsx`** (info-list + side-panel, matches `#page-app-detail`)
 
 ```tsx
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api/client'
-import { useToast } from '../components/Toast'
-import { Button } from '../components/ui/primitives'
-import type { Application } from '@traceability/protocol'
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api/client";
+import { useToast } from "../components/Toast";
+import { Button } from "../components/ui/primitives";
+import type { Application } from "@traceability/protocol";
 
 export function AppDetail() {
-  const { id } = useParams<{ id: string }>()
-  const [app, setApp] = useState<Application | null>(null)
-  const nav = useNavigate()
-  const toast = useToast()
+  const { id } = useParams<{ id: string }>();
+  const [app, setApp] = useState<Application | null>(null);
+  const nav = useNavigate();
+  const toast = useToast();
   useEffect(() => {
-    if (id) apiFetch<Application>(`/api/apps/${id}`).then(setApp).catch((e) => toast(String(e)))
-  }, [id])
-  if (!app) return <div className="page"><div className="empty">Loading…</div></div>
+    if (id)
+      apiFetch<Application>(`/api/apps/${id}`)
+        .then(setApp)
+        .catch((e) => toast(String(e)));
+  }, [id]);
+  if (!app)
+    return (
+      <div className="page">
+        <div className="empty">Loading…</div>
+      </div>
+    );
 
-  const dsn = `${location.origin.replace(/:\d+$/, ':3000')}/api/ingest/envelope/${app.id}`
+  const dsn = `${location.origin.replace(/:\d+$/, ":3000")}/api/ingest/envelope/${app.id}`;
 
   const del = async () => {
-    await apiFetch(`/api/apps/${app.id}`, { method: 'DELETE' })
-    toast('Application deleted')
-    nav('/apps')
-  }
+    await apiFetch(`/api/apps/${app.id}`, { method: "DELETE" });
+    toast("Application deleted");
+    nav("/apps");
+  };
 
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <Button sm onClick={() => nav('/apps')}>← Applications</Button>
-          <h1 className="page-title" style={{ marginTop: 18 }}>{app.name}</h1>
-          <p className="page-subtitle">{app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}</p>
+          <Button sm onClick={() => nav("/apps")}>
+            ← Applications
+          </Button>
+          <h1 className="page-title" style={{ marginTop: 18 }}>
+            {app.name}
+          </h1>
+          <p className="page-subtitle">
+            {app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}
+          </p>
         </div>
         <div className="header-actions">
-          <Button variant="primary" onClick={() => nav(`/issues?appId=${app.id}`)}>View issues</Button>
+          <Button variant="primary" onClick={() => nav(`/issues?appId=${app.id}`)}>
+            View issues
+          </Button>
         </div>
       </div>
       <div className="detail-grid">
         <div className="panel">
           <div className="panel-head">
             <div className="panel-title">SDK connection</div>
-            <span className="badge fixed" style={{ marginLeft: 'auto' }}><span className="dot"></span>Receiving events</span>
+            <span className="badge fixed" style={{ marginLeft: "auto" }}>
+              <span className="dot"></span>Receiving events
+            </span>
           </div>
           <div className="info-list">
-            <div className="info-row"><div className="info-key">App ID</div><div className="info-value">{app.id}</div></div>
-            <div className="info-row"><div className="info-key">DSN</div><div className="info-value">{dsn}</div></div>
-            <div className="info-row"><div className="info-key">Repository</div><div className="info-value">{app.repoUrl}</div></div>
-            <div className="info-row"><div className="info-key">Default branch</div><div className="info-value">{app.defaultBranch}</div></div>
+            <div className="info-row">
+              <div className="info-key">App ID</div>
+              <div className="info-value">{app.id}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-key">DSN</div>
+              <div className="info-value">{dsn}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-key">Repository</div>
+              <div className="info-value">{app.repoUrl}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-key">Default branch</div>
+              <div className="info-value">{app.defaultBranch}</div>
+            </div>
           </div>
         </div>
         <aside className="side-panel">
@@ -3566,28 +3790,37 @@ export function AppDetail() {
             <div className="side-value">{new Date(app.createdAt).toLocaleString()}</div>
           </div>
           <div className="side-section">
-            <Button variant="danger" className="full" onClick={del}>Delete application</Button>
+            <Button variant="danger" className="full" onClick={del}>
+              Delete application
+            </Button>
           </div>
         </aside>
       </div>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 3: Wire routes in `app/src/App.tsx`**
 
 Add imports near the top:
+
 ```ts
-import { Apps } from './pages/Apps'
-import { AppDetail } from './pages/AppDetail'
+import { Apps } from "./pages/Apps";
+import { AppDetail } from "./pages/AppDetail";
 ```
+
 Replace the placeholder routes block:
+
 ```tsx
-          {/* pages added in Tasks 17/18 */}
-          <Route path="*" element={<div className="page">Not found</div>} />
+{
+  /* pages added in Tasks 17/18 */
+}
+<Route path="*" element={<div className="page">Not found</div>} />;
 ```
+
 with:
+
 ```tsx
           <Route path="/apps" element={<Apps />} />
           <Route path="/apps/:id" element={<AppDetail />} />
@@ -3613,6 +3846,7 @@ git commit -m "feat(app): applications grid + create modal + detail page"
 **Design reference:** `docs/prototype/index.html` `#page-issues` (`.metrics`/`.toolbar`/`.data-table`), `#page-issue-detail` (`.issue-heading`/`.tabs`/`.side-panel`), `#page-fix` (`.command`/`.patch-file`/`.timeline`), `#page-settings` (`.code` snippet).
 
 **Files:**
+
 - Create: `app/src/pages/Issues.tsx`
 - Create: `app/src/pages/IssueDetail.tsx`
 - Create: `app/src/pages/FixSession.tsx`
@@ -3622,42 +3856,48 @@ git commit -m "feat(app): applications grid + create modal + detail page"
 - [ ] **Step 1: Create `app/src/pages/Issues.tsx`** (metrics + toolbar + data-table)
 
 ```tsx
-import React, { useEffect, useMemo, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api/client'
-import { onIssueEvent } from '../ws/client'
-import { Button } from '../components/ui/primitives'
-import type { Issue, IssueStatus } from '@traceability/protocol'
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api/client";
+import { onIssueEvent } from "../ws/client";
+import { Button } from "../components/ui/primitives";
+import type { Issue, IssueStatus } from "@traceability/protocol";
 
 export function Issues() {
-  const [params, setParams] = useSearchParams()
-  const nav = useNavigate()
-  const appId = params.get('appId') ?? ''
-  const status = (params.get('status') ?? 'all') as 'all' | IssueStatus
-  const [q, setQ] = useState('')
-  const [issues, setIssues] = useState<Issue[]>([])
+  const [params, setParams] = useSearchParams();
+  const nav = useNavigate();
+  const appId = params.get("appId") ?? "";
+  const status = (params.get("status") ?? "all") as "all" | IssueStatus;
+  const [q, setQ] = useState("");
+  const [issues, setIssues] = useState<Issue[]>([]);
 
   const load = () => {
-    const qs = new URLSearchParams()
-    if (appId) qs.set('appId', appId)
-    qs.set('limit', '100')
-    apiFetch<{ items: Issue[] }>(`/api/issues?${qs}`).then((r) => setIssues(r.items))
-  }
-  useEffect(() => { load() }, [appId])
-  useEffect(() => onIssueEvent(() => load()), [])
+    const qs = new URLSearchParams();
+    if (appId) qs.set("appId", appId);
+    qs.set("limit", "100");
+    apiFetch<{ items: Issue[] }>(`/api/issues?${qs}`).then((r) => setIssues(r.items));
+  };
+  useEffect(() => {
+    load();
+  }, [appId]);
+  useEffect(() => onIssueEvent(() => load()), []);
 
   const filtered = useMemo(() => {
     return issues.filter((i) => {
-      if (status !== 'all' && i.status !== status) return false
-      if (q && !`${i.title} ${i.id} ${i.metadata.message ?? ''}`.toLowerCase().includes(q.toLowerCase())) return false
-      return true
-    })
-  }, [issues, status, q])
+      if (status !== "all" && i.status !== status) return false;
+      if (
+        q &&
+        !`${i.title} ${i.id} ${i.metadata.message ?? ""}`.toLowerCase().includes(q.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  }, [issues, status, q]);
 
-  const open = issues.filter((i) => i.status === 'open').length
-  const fixing = issues.filter((i) => i.status === 'fix-manual' || i.status === 'fixing').length
-  const fixed = issues.filter((i) => i.status === 'fixed').length
-  const events24h = issues.reduce((n, i) => n + i.count, 0)
+  const open = issues.filter((i) => i.status === "open").length;
+  const fixing = issues.filter((i) => i.status === "fix-manual" || i.status === "fixing").length;
+  const fixed = issues.filter((i) => i.status === "fixed").length;
+  const events24h = issues.reduce((n, i) => n + i.count, 0);
 
   return (
     <div className="page">
@@ -3667,24 +3907,46 @@ export function Issues() {
           <p className="page-subtitle">Triage errors across all monitored applications.</p>
         </div>
         <div className="header-actions">
-          <Button variant="primary" onClick={() => nav('/apps')}>Manage applications</Button>
+          <Button variant="primary" onClick={() => nav("/apps")}>
+            Manage applications
+          </Button>
         </div>
       </div>
       <div className="metrics">
-        <div className="metric"><div className="metric-label">Open issues</div><div className="metric-value">{open}</div></div>
-        <div className="metric"><div className="metric-label">Events · total</div><div className="metric-value">{events24h}</div></div>
-        <div className="metric"><div className="metric-label">Fixing</div><div className="metric-value">{fixing}</div></div>
-        <div className="metric"><div className="metric-label">Resolved</div><div className="metric-value">{fixed}</div></div>
+        <div className="metric">
+          <div className="metric-label">Open issues</div>
+          <div className="metric-value">{open}</div>
+        </div>
+        <div className="metric">
+          <div className="metric-label">Events · total</div>
+          <div className="metric-value">{events24h}</div>
+        </div>
+        <div className="metric">
+          <div className="metric-label">Fixing</div>
+          <div className="metric-value">{fixing}</div>
+        </div>
+        <div className="metric">
+          <div className="metric-label">Resolved</div>
+          <div className="metric-value">{fixed}</div>
+        </div>
       </div>
       <div className="toolbar">
         <div className="search">
           <span>⌕</span>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search issues…" />
         </div>
-        <select className="select" value={appId} onChange={(e) => setParams(e.target.value ? { appId: e.target.value } : {})}>
+        <select
+          className="select"
+          value={appId}
+          onChange={(e) => setParams(e.target.value ? { appId: e.target.value } : {})}
+        >
           <option value="">All applications</option>
         </select>
-        <select className="select" value={status} onChange={(e) => setParams({ ...(appId ? { appId } : {}), status: e.target.value })}>
+        <select
+          className="select"
+          value={status}
+          onChange={(e) => setParams({ ...(appId ? { appId } : {}), status: e.target.value })}
+        >
           <option value="all">All statuses</option>
           <option value="open">Open</option>
           <option value="fix-manual">Fix requested</option>
@@ -3695,23 +3957,45 @@ export function Issues() {
       <div className="panel">
         <div className="panel-head">
           <div className="panel-title">All issues</div>
-          <div className="panel-meta">{filtered.length} issue{filtered.length === 1 ? '' : 's'}</div>
+          <div className="panel-meta">
+            {filtered.length} issue{filtered.length === 1 ? "" : "s"}
+          </div>
         </div>
         <table className="data-table">
-          <thead><tr><th>Issue</th><th>Status</th><th>Events</th><th>Last seen</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Issue</th>
+              <th>Status</th>
+              <th>Events</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
           <tbody>
             {filtered.map((i) => (
               <tr key={i.id} className="clickable" onClick={() => nav(`/issues/${i.id}`)}>
                 <td>
                   <div className="issue-main">
-                    <span className={`severity ${i.type === 'error' ? '' : 'warn'}`}></span>
+                    <span className={`severity ${i.type === "error" ? "" : "warn"}`}></span>
                     <div>
                       <div className="issue-title">{i.title}</div>
-                      <div className="issue-sub">{i.id.slice(0, 8)} · {i.appId.slice(0, 8)}</div>
+                      <div className="issue-sub">
+                        {i.id.slice(0, 8)} · {i.appId.slice(0, 8)}
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td><span className={`badge ${i.status === 'open' ? 'open' : i.status === 'fixed' ? 'fixed' : 'fixing'}`}><span className="dot"></span>{i.status === 'open' ? 'Open' : i.status === 'fixed' ? 'Fixed' : 'Fix requested'}</span></td>
+                <td>
+                  <span
+                    className={`badge ${i.status === "open" ? "open" : i.status === "fixed" ? "fixed" : "fixing"}`}
+                  >
+                    <span className="dot"></span>
+                    {i.status === "open"
+                      ? "Open"
+                      : i.status === "fixed"
+                        ? "Fixed"
+                        : "Fix requested"}
+                  </span>
+                </td>
                 <td className="muted">{i.count}</td>
                 <td className="muted">{new Date(i.lastSeen).toLocaleString()}</td>
               </tr>
@@ -3721,73 +4005,100 @@ export function Issues() {
         {filtered.length === 0 && <div className="empty">No issues match these filters.</div>}
       </div>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 2: Create `app/src/pages/IssueDetail.tsx`** (issue-heading + tabs + side-panel + fix modal)
 
 ```tsx
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api/client'
-import { useToast } from '../components/Toast'
-import { Button, Modal } from '../components/ui/primitives'
-import type { Issue, Event } from '@traceability/protocol'
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api/client";
+import { useToast } from "../components/Toast";
+import { Button, Modal } from "../components/ui/primitives";
+import type { Issue, Event } from "@traceability/protocol";
 
-type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs'
+type Tab = "stack" | "events" | "context" | "breadcrumbs";
 
 export function IssueDetail() {
-  const { id } = useParams<{ id: string }>()
-  const nav = useNavigate()
-  const toast = useToast()
-  const [issue, setIssue] = useState<Issue | null>(null)
-  const [events, setEvents] = useState<Event[]>([])
-  const [tab, setTab] = useState<Tab>('stack')
-  const [showFix, setShowFix] = useState(false)
+  const { id } = useParams<{ id: string }>();
+  const nav = useNavigate();
+  const toast = useToast();
+  const [issue, setIssue] = useState<Issue | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [tab, setTab] = useState<Tab>("stack");
+  const [showFix, setShowFix] = useState(false);
 
   const load = () => {
-    if (!id) return
-    apiFetch<Issue>(`/api/issues/${id}`).then(setIssue).catch((e) => toast(String(e)))
-    apiFetch<Event[]>(`/api/issues/${id}/events`).then(setEvents).catch(() => {})
-  }
-  useEffect(() => { load() }, [id])
+    if (!id) return;
+    apiFetch<Issue>(`/api/issues/${id}`)
+      .then(setIssue)
+      .catch((e) => toast(String(e)));
+    apiFetch<Event[]>(`/api/issues/${id}/events`)
+      .then(setEvents)
+      .catch(() => {});
+  };
+  useEffect(() => {
+    load();
+  }, [id]);
 
   const startFix = async () => {
-    if (!id) return
-    await apiFetch(`/api/issues/${id}/fix-request`, { method: 'POST' })
-    setShowFix(false)
-    toast('AI repair session started')
-    nav(`/fix/${id}`)
-  }
+    if (!id) return;
+    await apiFetch(`/api/issues/${id}/fix-request`, { method: "POST" });
+    setShowFix(false);
+    toast("AI repair session started");
+    nav(`/fix/${id}`);
+  };
 
-  if (!issue) return <div className="page"><div className="empty">Loading…</div></div>
+  if (!issue)
+    return (
+      <div className="page">
+        <div className="empty">Loading…</div>
+      </div>
+    );
 
   return (
     <div className="page">
       <div className="issue-heading">
-        <span className={`severity ${issue.type === 'error' ? '' : 'warn'}`}></span>
+        <span className={`severity ${issue.type === "error" ? "" : "warn"}`}></span>
         <div style={{ flex: 1 }}>
           <h1>{issue.title}</h1>
-          <div className="issue-id">{issue.id.slice(0, 8)} · {issue.appId.slice(0, 8)} · {issue.type}</div>
+          <div className="issue-id">
+            {issue.id.slice(0, 8)} · {issue.appId.slice(0, 8)} · {issue.type}
+          </div>
         </div>
         <div className="header-actions">
-          <Button variant="primary" onClick={() => setShowFix(true)}>Start AI fix</Button>
+          <Button variant="primary" onClick={() => setShowFix(true)}>
+            Start AI fix
+          </Button>
         </div>
       </div>
       <div className="detail-grid">
         <div className="panel">
           <div className="tabs">
-            {(['stack', 'events', 'context', 'breadcrumbs'] as Tab[]).map((t) => (
-              <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                {t === 'stack' ? 'Stack trace' : t === 'events' ? `Events · ${events.length}` : t === 'context' ? 'Context' : 'Breadcrumbs'}
+            {(["stack", "events", "context", "breadcrumbs"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                className={`tab ${tab === t ? "active" : ""}`}
+                onClick={() => setTab(t)}
+              >
+                {t === "stack"
+                  ? "Stack trace"
+                  : t === "events"
+                    ? `Events · ${events.length}`
+                    : t === "context"
+                      ? "Context"
+                      : "Breadcrumbs"}
               </button>
             ))}
           </div>
-          <div className={`tab-pane ${tab === 'stack' ? 'active' : ''}`}>
-            <pre className="code">{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
+          <div className={`tab-pane ${tab === "stack" ? "active" : ""}`}>
+            <pre className="code">
+              {issue.metadata.stacktrace ?? issue.metadata.message ?? "(no stacktrace)"}
+            </pre>
           </div>
-          <div className={`tab-pane ${tab === 'events' ? 'active' : ''}`}>
+          <div className={`tab-pane ${tab === "events" ? "active" : ""}`}>
             <div className="info-list">
               {events.map((e) => (
                 <div className="info-row" key={e.id}>
@@ -3798,21 +4109,37 @@ export function IssueDetail() {
               {events.length === 0 && <div className="empty">No events.</div>}
             </div>
           </div>
-          <div className={`tab-pane ${tab === 'context' ? 'active' : ''}`}>
+          <div className={`tab-pane ${tab === "context" ? "active" : ""}`}>
             <div className="info-list">
-              <div className="info-row"><div className="info-key">type</div><div className="info-value">{issue.type}</div></div>
-              <div className="info-row"><div className="info-key">fingerprint</div><div className="info-value">{issue.fingerprint}</div></div>
-              <div className="info-row"><div className="info-key">context</div><div className="info-value">{JSON.stringify(issue.metadata.context ?? {})}</div></div>
+              <div className="info-row">
+                <div className="info-key">type</div>
+                <div className="info-value">{issue.type}</div>
+              </div>
+              <div className="info-row">
+                <div className="info-key">fingerprint</div>
+                <div className="info-value">{issue.fingerprint}</div>
+              </div>
+              <div className="info-row">
+                <div className="info-key">context</div>
+                <div className="info-value">{JSON.stringify(issue.metadata.context ?? {})}</div>
+              </div>
             </div>
           </div>
-          <div className={`tab-pane ${tab === 'breadcrumbs' ? 'active' : ''}`}>
-            <div className="empty">Breadcrumbs are captured inside each event envelope (see Events tab).</div>
+          <div className={`tab-pane ${tab === "breadcrumbs" ? "active" : ""}`}>
+            <div className="empty">
+              Breadcrumbs are captured inside each event envelope (see Events tab).
+            </div>
           </div>
         </div>
         <aside className="side-panel">
           <div className="side-section">
             <div className="side-label">Status</div>
-            <span className={`badge ${issue.status === 'open' ? 'open' : issue.status === 'fixed' ? 'fixed' : 'fixing'}`}><span className="dot"></span>{issue.status}</span>
+            <span
+              className={`badge ${issue.status === "open" ? "open" : issue.status === "fixed" ? "fixed" : "fixing"}`}
+            >
+              <span className="dot"></span>
+              {issue.status}
+            </span>
             <div className="side-label">First seen</div>
             <div className="side-value">{new Date(issue.firstSeen).toLocaleString()}</div>
             <div className="side-label">Last seen</div>
@@ -3820,9 +4147,11 @@ export function IssueDetail() {
             <div className="side-label">Total events</div>
             <div className="side-value">{issue.count} events</div>
           </div>
-          {issue.status !== 'open' && issue.status !== 'fixed' && (
+          {issue.status !== "open" && issue.status !== "fixed" && (
             <div className="side-section">
-              <Button variant="primary" className="full" onClick={() => nav(`/fix/${issue.id}`)}>View fix session</Button>
+              <Button variant="primary" className="full" onClick={() => nav(`/fix/${issue.id}`)}>
+                View fix session
+              </Button>
             </div>
           )}
         </aside>
@@ -3832,73 +4161,116 @@ export function IssueDetail() {
         onClose={() => setShowFix(false)}
         title="Start AI-assisted fix?"
         subtitle="This changes the issue status to Fix requested."
-        footer={<>
-          <Button onClick={() => setShowFix(false)}>Cancel</Button>
-          <Button variant="primary" onClick={startFix}>Start AI fix</Button>
-        </>}
+        footer={
+          <>
+            <Button onClick={() => setShowFix(false)}>Cancel</Button>
+            <Button variant="primary" onClick={startFix}>
+              Start AI fix
+            </Button>
+          </>
+        }
       >
-        <p className="muted">Traceability will prepare the issue context for your coding agent. No branch, commit or merge request will be created automatically.</p>
+        <p className="muted">
+          Traceability will prepare the issue context for your coding agent. No branch, commit or
+          merge request will be created automatically.
+        </p>
       </Modal>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 3: Create `app/src/pages/FixSession.tsx`** (command + patch + timeline, matches `#page-fix`)
 
 ```tsx
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api/client'
-import { useToast } from '../components/Toast'
-import { Button } from '../components/ui/primitives'
-import type { Issue } from '@traceability/protocol'
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api/client";
+import { useToast } from "../components/Toast";
+import { Button } from "../components/ui/primitives";
+import type { Issue } from "@traceability/protocol";
 
 export function FixSession() {
-  const { issueId } = useParams<{ issueId: string }>()
-  const nav = useNavigate()
-  const toast = useToast()
-  const [issue, setIssue] = useState<Issue | null>(null)
+  const { issueId } = useParams<{ issueId: string }>();
+  const nav = useNavigate();
+  const toast = useToast();
+  const [issue, setIssue] = useState<Issue | null>(null);
 
   const load = () => {
-    if (issueId) apiFetch<Issue>(`/api/issues/${issueId}`).then(setIssue).catch((e) => toast(String(e)))
-  }
-  useEffect(() => { load() }, [issueId])
-  if (!issue) return <div className="page"><div className="empty">Loading…</div></div>
+    if (issueId)
+      apiFetch<Issue>(`/api/issues/${issueId}`)
+        .then(setIssue)
+        .catch((e) => toast(String(e)));
+  };
+  useEffect(() => {
+    load();
+  }, [issueId]);
+  if (!issue)
+    return (
+      <div className="page">
+        <div className="empty">Loading…</div>
+      </div>
+    );
 
-  const cliCmd = `traceability issue show ${issue.id} --json`
+  const cliCmd = `traceability issue show ${issue.id} --json`;
   const markFixed = async () => {
-    await apiFetch(`/api/issues/${issue.id}/mark-fixed`, { method: 'POST' })
-    toast('Issue marked as fixed')
-    load()
-  }
+    await apiFetch(`/api/issues/${issue.id}/mark-fixed`, { method: "POST" });
+    toast("Issue marked as fixed");
+    load();
+  };
   const copy = async () => {
-    try { await navigator.clipboard.writeText(cliCmd); toast('CLI command copied') } catch { toast('Select the command to copy') }
-  }
+    try {
+      await navigator.clipboard.writeText(cliCmd);
+      toast("CLI command copied");
+    } catch {
+      toast("Select the command to copy");
+    }
+  };
 
-  const done = issue.status === 'fixed'
+  const done = issue.status === "fixed";
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <Button sm onClick={() => nav(`/issues/${issue.id}`)}>← Issue {issue.id.slice(0, 8)}</Button>
-          <h1 className="page-title" style={{ marginTop: 18 }}>AI repair session</h1>
-          <p className="page-subtitle">The server is ready for a coding agent to retrieve issue context.</p>
+          <Button sm onClick={() => nav(`/issues/${issue.id}`)}>
+            ← Issue {issue.id.slice(0, 8)}
+          </Button>
+          <h1 className="page-title" style={{ marginTop: 18 }}>
+            AI repair session
+          </h1>
+          <p className="page-subtitle">
+            The server is ready for a coding agent to retrieve issue context.
+          </p>
         </div>
-        <span className={`badge ${done ? 'fixed' : 'fixing'}`}><span className="dot"></span>{done ? 'Fixed' : 'Fix requested'}</span>
+        <span className={`badge ${done ? "fixed" : "fixing"}`}>
+          <span className="dot"></span>
+          {done ? "Fixed" : "Fix requested"}
+        </span>
       </div>
       <div className="detail-grid">
         <div>
           <div className="panel" style={{ marginBottom: 18 }}>
-            <div className="panel-head"><div className="panel-title">Continue in your coding agent</div></div>
+            <div className="panel-head">
+              <div className="panel-title">Continue in your coding agent</div>
+            </div>
             <div style={{ padding: 18 }}>
-              <p className="muted" style={{ marginTop: 0 }}>Run this command in the application repository. The agent will receive the stack trace, event context and reproduction evidence.</p>
+              <p className="muted" style={{ marginTop: 0 }}>
+                Run this command in the application repository. The agent will receive the stack
+                trace, event context and reproduction evidence.
+              </p>
               <div className="command">
                 <code>{cliCmd}</code>
-                <Button sm onClick={copy}>Copy</Button>
+                <Button sm onClick={copy}>
+                  Copy
+                </Button>
               </div>
-              <p className="muted" style={{ marginTop: 16 }}>After the agent produces a patch:</p>
-              <div className="command" style={{ display: 'block', whiteSpace: 'pre', overflow: 'auto' }}>
+              <p className="muted" style={{ marginTop: 16 }}>
+                After the agent produces a patch:
+              </p>
+              <div
+                className="command"
+                style={{ display: "block", whiteSpace: "pre", overflow: "auto" }}
+              >
                 <code>{`traceability issue attach-patch ${issue.id} --patch ./fix.diff --branch fix-${issue.id.slice(0, 6)}
 traceability issue mark-fixed ${issue.id}`}</code>
               </div>
@@ -3906,38 +4278,57 @@ traceability issue mark-fixed ${issue.id}`}</code>
           </div>
         </div>
         <aside className="side-panel">
-          <div className="panel-head"><div className="panel-title">Progress</div></div>
+          <div className="panel-head">
+            <div className="panel-title">Progress</div>
+          </div>
           <div className="timeline">
-            <div className={`timeline-item ${issue.status !== 'open' ? 'done' : ''}`}>
+            <div className={`timeline-item ${issue.status !== "open" ? "done" : ""}`}>
               <div className="timeline-mark"></div>
-              <div><div className="timeline-title">Fix requested</div><div className="timeline-time">{new Date(issue.lastSeen).toLocaleTimeString()}</div></div>
+              <div>
+                <div className="timeline-title">Fix requested</div>
+                <div className="timeline-time">{new Date(issue.lastSeen).toLocaleTimeString()}</div>
+              </div>
             </div>
-            <div className={`timeline-item ${issue.status === 'fixing' || issue.status === 'fixed' ? 'done' : ''}`}>
+            <div
+              className={`timeline-item ${issue.status === "fixing" || issue.status === "fixed" ? "done" : ""}`}
+            >
               <div className="timeline-mark"></div>
-              <div><div className="timeline-title">Issue retrieved by agent</div><div className="timeline-time">{issue.status === 'fixing' || issue.status === 'fixed' ? 'in progress' : 'Waiting'}</div></div>
+              <div>
+                <div className="timeline-title">Issue retrieved by agent</div>
+                <div className="timeline-time">
+                  {issue.status === "fixing" || issue.status === "fixed"
+                    ? "in progress"
+                    : "Waiting"}
+                </div>
+              </div>
             </div>
-            <div className={`timeline-item ${issue.status === 'fixed' ? 'done' : ''}`}>
+            <div className={`timeline-item ${issue.status === "fixed" ? "done" : ""}`}>
               <div className="timeline-mark"></div>
-              <div><div className="timeline-title">Marked as fixed</div><div className="timeline-time">{done ? 'Done' : 'Waiting'}</div></div>
+              <div>
+                <div className="timeline-title">Marked as fixed</div>
+                <div className="timeline-time">{done ? "Done" : "Waiting"}</div>
+              </div>
             </div>
           </div>
           {!done && (
             <div className="side-section">
-              <Button variant="primary" className="full" onClick={markFixed}>Mark as fixed</Button>
+              <Button variant="primary" className="full" onClick={markFixed}>
+                Mark as fixed
+              </Button>
             </div>
           )}
         </aside>
       </div>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 4: Create `app/src/pages/Settings.tsx`** (SDK setup snippet, matches `#page-settings`)
 
 ```tsx
-import React from 'react'
-import { Panel } from '../components/ui/primitives'
+import React from "react";
+import { Panel } from "../components/ui/primitives";
 
 export function Settings() {
   return (
@@ -3945,12 +4336,14 @@ export function Settings() {
       <div className="page-header">
         <div>
           <h1 className="page-title">SDK setup</h1>
-          <p className="page-subtitle">Connect a web, React, Electron or Module Federation application.</p>
+          <p className="page-subtitle">
+            Connect a web, React, Electron or Module Federation application.
+          </p>
         </div>
       </div>
       <Panel title="Install @traceability/core">
         <pre className="code">
-{`pnpm add @traceability/core @sentry/browser
+          {`pnpm add @traceability/core @sentry/browser
 
 import { init } from '@traceability/core'
 
@@ -3964,20 +4357,23 @@ init({
         </pre>
       </Panel>
     </div>
-  )
+  );
 }
 ```
 
 - [ ] **Step 5: Wire routes in `app/src/App.tsx`**
 
 Add imports:
+
 ```ts
-import { Issues } from './pages/Issues'
-import { IssueDetail } from './pages/IssueDetail'
-import { FixSession } from './pages/FixSession'
-import { Settings } from './pages/Settings'
+import { Issues } from "./pages/Issues";
+import { IssueDetail } from "./pages/IssueDetail";
+import { FixSession } from "./pages/FixSession";
+import { Settings } from "./pages/Settings";
 ```
+
 Replace the `<Route path="/apps/:id" .../>` + wildcard block from Task 17 with:
+
 ```tsx
           <Route path="/apps/:id" element={<AppDetail />} />
           <Route path="/issues" element={<Issues />} />
@@ -4006,6 +4402,7 @@ git commit -m "feat(app): issues + issue detail tabs + fix session timeline + se
 ## Task 19: `packages/skills` — instrumentation + diagnose-issue + add-boundary (M6)
 
 **Files:**
+
 - Create: `packages/skills/instrumentation/SKILL.md`
 - Create: `packages/skills/instrumentation/README.md`
 - Create: `packages/skills/instrumentation/references/core-api.md`
@@ -4019,7 +4416,7 @@ git commit -m "feat(app): issues + issue detail tabs + fix session timeline + se
 
 - [ ] **Step 1: Create `packages/skills/instrumentation/SKILL.md`**
 
-```markdown
+````markdown
 ---
 name: traceability-instrumentation
 description: Use when the user asks to add instrumentation/monitoring/collection (埋点/监控/采集) to a feature or code path. Teaches how to call @traceability/core APIs at the right call sites.
@@ -4032,6 +4429,7 @@ When the user says something like "在 XX 功能加埋点 / 加监控 / 加采�
 ## 1. Identify the call site
 
 Find the function / handler / lifecycle method that bounds the feature the user named. Instrumentation belongs at:
+
 - Function entry/exit (timing + errors)
 - State transitions (before/after)
 - Network call boundaries (before fetch, on success, on error)
@@ -4041,8 +4439,9 @@ Find the function / handler / lifecycle method that bounds the feature the user 
 Import from `@traceability/core` (or `@traceability/react` if in a React component):
 
 ```ts
-import { report, setTag, addBreadcrumb, captureException } from '@traceability/core'
+import { report, setTag, addBreadcrumb, captureException } from "@traceability/core";
 ```
+````
 
 - `report({ type, payload, tags })` — custom event with a stable `type`
 - `addBreadcrumb({ category, message, level, data })` — attaches context to the next error event
@@ -4056,17 +4455,21 @@ See `references/core-api.md` for the full signature, and `references/event-types
 Wrap the call site:
 
 ```ts
-import { report, addBreadcrumb, captureException } from '@traceability/core'
+import { report, addBreadcrumb, captureException } from "@traceability/core";
 
 async function sendMessage(msg: Message) {
-  addBreadcrumb({ category: 'message', message: 'send start', data: { id: msg.id } })
+  addBreadcrumb({ category: "message", message: "send start", data: { id: msg.id } });
   try {
-    await api.post('/messages', msg)
-    report({ type: 'message-sent', payload: { id: msg.id }, tags: { feature: 'message' } })
+    await api.post("/messages", msg);
+    report({ type: "message-sent", payload: { id: msg.id }, tags: { feature: "message" } });
   } catch (err) {
-    report({ type: 'message-send-failed', payload: { id: msg.id, error: String(err) }, tags: { feature: 'message' } })
-    captureException(err)
-    throw err
+    report({
+      type: "message-send-failed",
+      payload: { id: msg.id, error: String(err) },
+      tags: { feature: "message" },
+    });
+    captureException(err);
+    throw err;
   }
 }
 ```
@@ -4080,7 +4483,8 @@ async function sendMessage(msg: Message) {
 ## 5. Commit
 
 Commit the instrumentation with a `feat:` or `chore:` message referencing the feature.
-```
+
+````
 
 - [ ] **Step 2: Create `packages/skills/instrumentation/README.md`**
 
@@ -4099,14 +4503,15 @@ Teaches a coding agent how to add monitoring instrumentation to application code
 - `references/core-api.md` — full API reference
 - `references/event-types.md` — recommended event `type` naming
 - `assets/templates/report-event.ts` — copy-paste template
-```
+````
 
 - [ ] **Step 3: Create `packages/skills/instrumentation/references/core-api.md`**
 
-```markdown
+````markdown
 # @traceability/core API reference
 
 ## init(opts)
+
 ```ts
 init({
   dsn: string       // server base URL
@@ -4117,29 +4522,39 @@ init({
   user?: { id: string }
 })
 ```
+````
+
 Call once at app startup.
 
 ## report(data)
+
 ```ts
 report({ type: string, payload?: Record<string, unknown>, tags?: Record<string, string> })
 ```
+
 Custom event. `type` must be a stable string for aggregation.
 
 ## captureException(err)
+
 Report an error with its stacktrace.
 
 ## captureMessage(msg, opts?)
+
 Report a free-form message.
 
 ## setTag(key, value) / setContext(key, obj) / addBreadcrumb(crumb)
+
 Attach context to subsequent events.
 
-## setApp(appName)  (MF only)
+## setApp(appName) (MF only)
+
 Tag subsequent events with the current micro-app name.
 
-## installGlobalProxy()  (MF host only)
+## installGlobalProxy() (MF host only)
+
 Call once in the host app to install shared proxies.
-```
+
+````
 
 - [ ] **Step 4: Create `packages/skills/instrumentation/references/event-types.md`**
 
@@ -4153,12 +4568,12 @@ Use `kebab-case`, feature-prefixed, action-suffixed:
 - `<feature>-<state>` for state: `agent-status-change`, `ws-disconnected`
 
 Avoid generic types like `log` or `event` — they won't aggregate cleanly.
-```
+````
 
 - [ ] **Step 5: Create `packages/skills/instrumentation/assets/templates/report-event.ts`**
 
 ```ts
-import { report, addBreadcrumb, captureException } from '@traceability/core'
+import { report, addBreadcrumb, captureException } from "@traceability/core";
 
 // Template: instrument an async operation
 export async function instrumentedOperation<T>(
@@ -4167,22 +4582,26 @@ export async function instrumentedOperation<T>(
   fn: () => Promise<T>,
   context?: Record<string, unknown>,
 ): Promise<T> {
-  addBreadcrumb({ category: feature, message: `${action} start`, data: context })
+  addBreadcrumb({ category: feature, message: `${action} start`, data: context });
   try {
-    const result = await fn()
-    report({ type: `${feature}-${action}`, payload: { ...context }, tags: { feature } })
-    return result
+    const result = await fn();
+    report({ type: `${feature}-${action}`, payload: { ...context }, tags: { feature } });
+    return result;
   } catch (err) {
-    report({ type: `${feature}-${action}-failed`, payload: { ...context, error: String(err) }, tags: { feature } })
-    captureException(err)
-    throw err
+    report({
+      type: `${feature}-${action}-failed`,
+      payload: { ...context, error: String(err) },
+      tags: { feature },
+    });
+    captureException(err);
+    throw err;
   }
 }
 ```
 
 - [ ] **Step 6: Create `packages/skills/diagnose-issue/SKILL.md`**
 
-```markdown
+````markdown
 ---
 name: traceability-diagnose-issue
 description: Use when the user gives a Traceability issue id and asks to diagnose / fix / investigate it. Walks the agent through pulling the issue, locating the code, adding diagnostic breadcrumbs, and producing a patch.
@@ -4197,6 +4616,8 @@ When the user says "诊断 / 修复 / 排查 issue <id>" or "investigate issue <
 ```bash
 traceability issue show <id> --json
 ```
+````
+
 Read `metadata.stacktrace`, `metadata.message`, `metadata.context`, and `tags.appName`.
 
 ## 2. Locate the code
@@ -4224,7 +4645,8 @@ The human reviewer will push the branch and open the MR (v1 does not auto-open M
 ## 6. Report
 
 Tell the user the branch name and that the issue is marked fixed in the Inbox.
-```
+
+````
 
 - [ ] **Step 7: Create `packages/skills/diagnose-issue/README.md`**
 
@@ -4241,7 +4663,7 @@ Walks a coding agent through diagnosing a Traceability issue and producing a pat
 ## Files
 - `SKILL.md` — workflow
 - `scripts/fetch-issue.sh` — wrapper that calls `traceability issue show --json`
-```
+````
 
 - [ ] **Step 8: Create `packages/skills/diagnose-issue/scripts/fetch-issue.sh`**
 
@@ -4258,7 +4680,7 @@ Make it executable: `chmod +x packages/skills/diagnose-issue/scripts/fetch-issue
 
 - [ ] **Step 9: Create `packages/skills/add-boundary/SKILL.md`**
 
-```markdown
+````markdown
 ---
 name: traceability-add-boundary
 description: Use when the user asks to add an error boundary to a React component (加错误边界). Teaches how to wrap with MonitorErrorBoundary from @traceability/react.
@@ -4271,8 +4693,9 @@ When the user says "给 X 组件加错误边界" or "add an error boundary to X"
 ## 1. Import
 
 ```tsx
-import { MonitorErrorBoundary } from '@traceability/react'
+import { MonitorErrorBoundary } from "@traceability/react";
 ```
+````
 
 ## 2. Wrap the target component
 
@@ -4298,7 +4721,8 @@ Throw inside the wrapped component in dev; confirm an error issue appears in the
 ## 5. Commit
 
 Commit with `feat: add error boundary to <component>`.
-```
+
+````
 
 - [ ] **Step 10: Create `packages/skills/add-boundary/README.md`**
 
@@ -4313,7 +4737,7 @@ Teaches a coding agent how to wrap a React component with `MonitorErrorBoundary`
 
 ## Files
 - `SKILL.md` — workflow
-```
+````
 
 - [ ] **Step 11: Commit**
 
@@ -4327,6 +4751,7 @@ git commit -m "feat(skills): instrumentation + diagnose-issue + add-boundary ski
 ## Task 20: End-to-end verification + README (M6)
 
 **Files:**
+
 - Create: `README.md` (root)
 
 - [ ] **Step 1: Write root `README.md`**
@@ -4338,16 +4763,16 @@ Sentry-based web/electron/mf monitoring + exception-to-fix loop.
 
 ## Packages
 
-| Path | Description |
-|---|---|
-| `packages/core` | Thin wrapper over `@sentry/browser` + self-built integrations + server transport |
-| `packages/react` | `MonitorErrorBoundary` + hooks |
-| `packages/electron` | Electron main/renderer/preload |
-| `packages/cli` | `traceability` CLI client for the server |
-| `packages/skills` | Coding-agent skills (instrumentation / diagnose-issue / add-boundary) |
-| `packages/protocol` | Shared TS types |
-| `app` | Inbox Web UI (React + Vite) |
-| `server` | Self-hosted Sentry-envelope ingest + issue store + REST/WS API |
+| Path                | Description                                                                      |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `packages/core`     | Thin wrapper over `@sentry/browser` + self-built integrations + server transport |
+| `packages/react`    | `MonitorErrorBoundary` + hooks                                                   |
+| `packages/electron` | Electron main/renderer/preload                                                   |
+| `packages/cli`      | `traceability` CLI client for the server                                         |
+| `packages/skills`   | Coding-agent skills (instrumentation / diagnose-issue / add-boundary)            |
+| `packages/protocol` | Shared TS types                                                                  |
+| `app`               | Inbox Web UI (React + Vite)                                                      |
+| `server`            | Self-hosted Sentry-envelope ingest + issue store + REST/WS API                   |
 
 ## Quick start
 
@@ -4372,17 +4797,17 @@ cd ../../app && pnpm dev &        # http://localhost:5173
 ## Integrating the SDK
 
 ```ts
-import { init, report } from '@traceability/core'
+import { init, report } from "@traceability/core";
 
 init({
-  dsn: 'http://localhost:3000',
-  appId: '<appId from the Inbox>',
-  token: 'dev-token',
-  release: '1.0.0',
-})
+  dsn: "http://localhost:3000",
+  appId: "<appId from the Inbox>",
+  token: "dev-token",
+  release: "1.0.0",
+});
 
 // custom event
-report({ type: 'feature-action', payload: { foo: 1 }, tags: { feature: 'demo' } })
+report({ type: "feature-action", payload: { foo: 1 }, tags: { feature: "demo" } });
 ```
 
 ## The fix loop
@@ -4424,6 +4849,7 @@ echo "fix" > /tmp/fix.diff
 (cd packages/cli && node dist/index.js issue show "$ISSUE_ID" --json | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const s=JSON.parse(d).status;console.log('final status:',s);process.exit(s==='fixed'?0:1)})")
 kill %1 2>/dev/null
 ```
+
 Expected: final status prints `fixed`; exit 0.
 
 - [ ] **Step 4: Commit**
@@ -4440,6 +4866,7 @@ git commit -m "docs: root README + e2e verification"
 **Goal:** A runnable demo that integrates `@traceability/core` and exercises every reportable event against a local server, so the SDK and the full ingest→Inbox loop can be verified end-to-end without writing app code.
 
 **Files:**
+
 - Create: `examples/package.json`
 - Create: `examples/web-demo/package.json`
 - Create: `examples/web-demo/vite.config.ts`
@@ -4448,6 +4875,7 @@ git commit -m "docs: root README + e2e verification"
 - Create: `examples/README.md`
 
 **Interfaces:**
+
 - Produces: `examples/web-demo` - a Vite vanilla-TS app that calls `@traceability/core` `init` + triggers error/white-screen/custom-report events. Documented to run against the local server + an appId created in the Inbox.
 
 - [ ] **Step 1: Create `examples/package.json`** (workspace folder is itself a package so pnpm treats it as a root for the demos)
@@ -4463,6 +4891,7 @@ git commit -m "docs: root README + e2e verification"
 - [ ] **Step 2: Add `examples/*` to `pnpm-workspace.yaml`**
 
 Modify `pnpm-workspace.yaml` to:
+
 ```yaml
 packages:
   - "packages/*"
@@ -4496,11 +4925,11 @@ packages:
 - [ ] **Step 4: Create `examples/web-demo/vite.config.ts`**
 
 ```ts
-import { defineConfig } from 'vite'
+import { defineConfig } from "vite";
 
 export default defineConfig({
   server: { port: 5174 },
-})
+});
 ```
 
 - [ ] **Step 5: Create `examples/web-demo/index.html`**
@@ -4528,37 +4957,37 @@ export default defineConfig({
 - [ ] **Step 6: Create `examples/web-demo/src/main.ts`**
 
 ```ts
-import { init, report, whiteScreenIntegration } from '@traceability/core'
+import { init, report, whiteScreenIntegration } from "@traceability/core";
 
 // Replace these with a real appId (create an app in the Inbox at http://localhost:5173)
 // and the server's API token (TRACEABILITY_API_TOKEN).
-const APP_ID = localStorage.getItem('demo.appId') ?? 'REPLACE_WITH_APP_ID'
-const TOKEN = localStorage.getItem('demo.token') ?? 'dev-token'
+const APP_ID = localStorage.getItem("demo.appId") ?? "REPLACE_WITH_APP_ID";
+const TOKEN = localStorage.getItem("demo.token") ?? "dev-token";
 
 init({
-  dsn: 'http://localhost:3000',
+  dsn: "http://localhost:3000",
   appId: APP_ID,
   token: TOKEN,
-  environment: 'demo',
+  environment: "demo",
   whiteScreen: { stableWindowMs: 500, minContentNodes: 3 },
-})
+});
 
 // opt-in white screen integration
 // (init already accepts whiteScreen options; this explicit integration is for demo clarity)
-void whiteScreenIntegration
+void whiteScreenIntegration;
 
-document.querySelector('#err')!.addEventListener('click', () => {
-  throw new TypeError('demo: Cannot read properties of undefined')
-})
-document.querySelector('#promise')!.addEventListener('click', () => {
-  void Promise.reject(new Error('demo: unhandled rejection'))
-})
-document.querySelector('#white')!.addEventListener('click', () => {
-  document.getElementById('root')!.innerHTML = ''
-})
-document.querySelector('#custom')!.addEventListener('click', () => {
-  report({ type: 'demo-custom-event', payload: { at: Date.now() }, tags: { feature: 'demo' } })
-})
+document.querySelector("#err")!.addEventListener("click", () => {
+  throw new TypeError("demo: Cannot read properties of undefined");
+});
+document.querySelector("#promise")!.addEventListener("click", () => {
+  void Promise.reject(new Error("demo: unhandled rejection"));
+});
+document.querySelector("#white")!.addEventListener("click", () => {
+  document.getElementById("root")!.innerHTML = "";
+});
+document.querySelector("#custom")!.addEventListener("click", () => {
+  report({ type: "demo-custom-event", payload: { at: Date.now() }, tags: { feature: "demo" } });
+});
 ```
 
 - [ ] **Step 7: Create `examples/README.md`**
@@ -4596,9 +5025,9 @@ pnpm dev
 Open http://localhost:5174. In the browser console set the appId/token if needed:
 
 ```js
-localStorage.setItem('demo.appId', '<paste appId>')
-localStorage.setItem('demo.token', 'dev-token')
-location.reload()
+localStorage.setItem("demo.appId", "<paste appId>");
+localStorage.setItem("demo.token", "dev-token");
+location.reload();
 ```
 
 Click the buttons. Each fires an event that the server ingests and aggregates into an issue visible in the Inbox.
@@ -4632,6 +5061,7 @@ git commit -m "feat(examples): web-demo integrating @traceability/core"
 ## Self-Review (completed)
 
 **1. Spec coverage:**
+
 - §2 architecture (core/server/app/cli/skills) -> Tasks 9–19 ✓
 - §3 SDK design principles (generic, appId injection) -> Task 9 (`beforeSend` injects appId) ✓
 - §4.1 core (init/transport/report/integrations) -> Tasks 9, 10, 11 ✓
@@ -4654,6 +5084,7 @@ git commit -m "feat(examples): web-demo integrating @traceability/core"
 **2. Placeholder scan:** No "TBD"/"TODO" in executable steps. The styles.css step (Task 16 Step 3) points to the concrete `docs/prototype/index.html` file with an exhaustive class-name checklist - that is a concrete instruction, not a placeholder. ✓
 
 **3. Type consistency:**
+
 - `Application`/`Issue`/`Event`/`Patch`/`IssueStatus` defined in Task 2 (`@traceability/protocol`), consumed identically in Tasks 6, 8, 15, 16–18. ✓
 - `InitOptions`/`ReportData` defined in Task 9, consumed in Tasks 12, 13, 21. ✓
 - `createAppsRepo`/`createIssuesRepo`/`createBroadcaster` return types threaded via `ReturnType<typeof …>`. ✓

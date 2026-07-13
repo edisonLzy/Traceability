@@ -30,9 +30,9 @@ pnpm dev
 Open http://localhost:5174. In the browser console set the appId/token if needed:
 
 ```js
-localStorage.setItem('demo.appId', '<paste appId>')
-localStorage.setItem('demo.token', 'dev-token')
-location.reload()
+localStorage.setItem("demo.appId", "<paste appId>");
+localStorage.setItem("demo.token", "dev-token");
+location.reload();
 ```
 
 Click the buttons. Each fires an event that the server ingests and aggregates into an issue visible in the Inbox.

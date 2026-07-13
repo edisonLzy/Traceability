@@ -1,15 +1,15 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['src/tests/**/*.test.ts'],
+    environment: "node",
+    include: ["src/tests/**/*.test.ts"],
   },
   resolve: {
-    extensions: ['.ts', '.js'],
-    extensionAlias: { '.js': ['.ts', '.js'] },
+    extensions: [".ts", ".js"],
+    extensionAlias: { ".js": [".ts", ".js"] },
   },
   esbuild: {
-    target: 'es2022',
+    target: "es2022",
   },
-})
+});

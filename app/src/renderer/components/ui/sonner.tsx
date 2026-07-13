@@ -1,4 +1,4 @@
-import { Toaster as SonnerToaster } from 'sonner'
+import { Toaster as SonnerToaster } from "sonner";
 
 export function Toaster() {
   return (
@@ -9,9 +9,9 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            'rounded-lg border border-hairline-strong bg-surface-3 px-3.5 py-2.5 text-muted text-sm',
+            "rounded-lg border border-hairline-strong bg-surface-3 px-3.5 py-2.5 text-muted text-sm",
         },
       }}
     />
-  )
+  );
 }

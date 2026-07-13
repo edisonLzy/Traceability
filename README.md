@@ -4,16 +4,16 @@ Sentry-based web/electron/mf monitoring + exception-to-fix loop.
 
 ## Packages
 
-| Path | Description |
-|---|---|
-| `packages/core` | Thin wrapper over `@sentry/browser` + self-built integrations + server transport |
-| `packages/react` | `MonitorErrorBoundary` + hooks |
-| `packages/electron` | Electron main/renderer/preload |
-| `packages/cli` | `traceability` CLI client for the server |
-| `packages/skills` | Coding-agent skills (instrumentation / diagnose-issue / add-boundary) |
-| `packages/protocol` | Shared TS types |
-| `app` | Inbox Web UI (React + Vite) |
-| `server` | Self-hosted Sentry-envelope ingest + issue store + REST/WS API |
+| Path                | Description                                                                      |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `packages/core`     | Thin wrapper over `@sentry/browser` + self-built integrations + server transport |
+| `packages/react`    | `MonitorErrorBoundary` + hooks                                                   |
+| `packages/electron` | Electron main/renderer/preload                                                   |
+| `packages/cli`      | `traceability` CLI client for the server                                         |
+| `packages/skills`   | Coding-agent skills (instrumentation / diagnose-issue / add-boundary)            |
+| `packages/protocol` | Shared TS types                                                                  |
+| `app`               | Inbox Web UI (React + Vite)                                                      |
+| `server`            | Self-hosted Sentry-envelope ingest + issue store + REST/WS API                   |
 
 ## Quick start
 
@@ -38,17 +38,17 @@ Auth is intentionally disabled for the MVP: the server accepts all requests with
 ## Integrating the SDK
 
 ```ts
-import { init, report } from '@traceability/core'
+import { init, report } from "@traceability/core";
 
 init({
-  dsn: 'http://localhost:3000',
-  appId: '<appId from the Inbox>',
-  token: 'dev-token',
-  release: '1.0.0',
-})
+  dsn: "http://localhost:3000",
+  appId: "<appId from the Inbox>",
+  token: "dev-token",
+  release: "1.0.0",
+});
 
 // custom event
-report({ type: 'feature-action', payload: { foo: 1 }, tags: { feature: 'demo' } })
+report({ type: "feature-action", payload: { foo: 1 }, tags: { feature: "demo" } });
 ```
 
 ## Performance, source maps and Electron

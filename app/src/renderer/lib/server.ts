@@ -6,4 +6,4 @@
  * a wrong default. Auth is intentionally absent in the MVP - this is purely a
  * transport target.
  */
-export const SERVER_URL = (import.meta.env.VITE_SERVER_URL ?? '').replace(/\/$/, '')
+export const SERVER_URL = (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");

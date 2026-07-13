@@ -1,13 +1,14 @@
-import { Router } from 'express'
-import type { PerformanceService } from './service.js'
+import { Router } from "express";
+
+import type { PerformanceService } from "./service.js";
 
 interface PerformanceRouterDeps {
-  performanceService: PerformanceService
+  performanceService: PerformanceService;
 }
 
 export function createPerformanceRouter(deps: PerformanceRouterDeps): Router {
-  const router = Router()
-  const { performanceService } = deps
+  const router = Router();
+  const { performanceService } = deps;
 
   /**
    * @openapi
@@ -21,9 +22,9 @@ export function createPerformanceRouter(deps: PerformanceRouterDeps): Router {
    *       404:
    *         description: app not found
    */
-  router.post('/api/ingest/performance/:appId', (req, res) => {
-    res.success(performanceService.record(req.params.appId, req.body), 202)
-  })
+  router.post("/api/ingest/performance/:appId", (req, res) => {
+    res.success(performanceService.record(req.params.appId, req.body), 202);
+  });
 
   /**
    * @openapi
@@ -35,12 +36,14 @@ export function createPerformanceRouter(deps: PerformanceRouterDeps): Router {
    *       200:
    *         description: ok
    */
-  router.get('/api/performance', (req, res) => {
-    res.success(performanceService.summary({
-      appId: req.query.appId as string | undefined,
-      hours: req.query.hours ? Number(req.query.hours) : undefined,
-    }))
-  })
+  router.get("/api/performance", (req, res) => {
+    res.success(
+      performanceService.summary({
+        appId: req.query.appId as string | undefined,
+        hours: req.query.hours ? Number(req.query.hours) : undefined,
+      }),
+    );
+  });
 
-  return router
+  return router;
 }

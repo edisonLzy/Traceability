@@ -1,88 +1,89 @@
-import type { BrowserWindow } from 'electron'
-import type { AxiosInstance } from 'axios'
+import type { AxiosInstance } from "axios";
+import type { BrowserWindow } from "electron";
+
 import type {
   AgentPromptInput,
   AgentSessionDetail,
   AgentSessionSummary,
   AvailableModel,
   ModelRef,
-} from '../../shared/ipc.js'
-import { createMonitorHttp } from './monitor.js'
-import { AgentRuntime } from './agent-runtime.js'
-import { ModelRegistry } from './model-registry.js'
-import { SessionStore } from './session-store.js'
+} from "../../shared/ipc.js";
+import { AgentRuntime } from "./agent-runtime.js";
+import { ModelRegistry } from "./model-registry.js";
+import { createMonitorHttp } from "./monitor.js";
+import { SessionStore } from "./session-store.js";
 
 export class AgentPool {
-  private readonly runtimes = new Map<string, AgentRuntime>()
-  private readonly monitorHttp: AxiosInstance
+  private readonly runtimes = new Map<string, AgentRuntime>();
+  private readonly monitorHttp: AxiosInstance;
 
   constructor(
     private readonly sessions: SessionStore,
     private readonly models: ModelRegistry,
     private readonly getWindow: () => BrowserWindow | null,
   ) {
-    this.monitorHttp = createMonitorHttp()
+    this.monitorHttp = createMonitorHttp();
   }
 
   async initialize(): Promise<void> {
-    this.sessions.recoverInterruptedRuns()
-    await this.models.reload()
+    this.sessions.recoverInterruptedRuns();
+    await this.models.reload();
   }
 
   listSessions(appId: string): AgentSessionSummary[] {
-    return this.sessions.list(appId)
+    return this.sessions.list(appId);
   }
 
   createSession(appId: string): AgentSessionSummary {
-    return this.sessions.create(appId)
+    return this.sessions.create(appId);
   }
 
   getSession(sessionId: string): AgentSessionDetail | null {
-    return this.sessions.get(sessionId)
+    return this.sessions.get(sessionId);
   }
 
   renameSession(sessionId: string, title: string): void {
-    this.sessions.rename(sessionId, title)
+    this.sessions.rename(sessionId, title);
   }
 
   deleteSession(sessionId: string): void {
-    this.destroyRuntime(sessionId)
-    this.sessions.delete(sessionId)
+    this.destroyRuntime(sessionId);
+    this.sessions.delete(sessionId);
   }
 
   async setModel(sessionId: string, model: ModelRef): Promise<boolean> {
-    const runtime = this.getOrCreateRuntime(sessionId)
-    return runtime.setModel(model)
+    const runtime = this.getOrCreateRuntime(sessionId);
+    return runtime.setModel(model);
   }
 
   async prompt(input: AgentPromptInput): Promise<void> {
-    const runtime = this.getOrCreateRuntime(input.sessionId)
-    await runtime.prompt(input)
+    const runtime = this.getOrCreateRuntime(input.sessionId);
+    await runtime.prompt(input);
   }
 
   abort(sessionId: string): void {
-    this.runtimes.get(sessionId)?.abort()
+    this.runtimes.get(sessionId)?.abort();
   }
 
   listModels(): AvailableModel[] {
-    return this.models.list()
+    return this.models.list();
   }
 
   async reloadModels(): Promise<AvailableModel[]> {
-    return this.models.reload()
+    return this.models.reload();
   }
 
   dispose(): void {
-    for (const runtime of this.runtimes.values()) runtime.dispose()
-    this.runtimes.clear()
+    for (const runtime of this.runtimes.values()) runtime.dispose();
+    this.runtimes.clear();
   }
 
   private getOrCreateRuntime(sessionId: string): AgentRuntime {
-    const existing = this.runtimes.get(sessionId)
-    if (existing) return existing
+    const existing = this.runtimes.get(sessionId);
+    if (existing) return existing;
 
-    const detail = this.sessions.get(sessionId)
-    if (!detail) throw new Error('Session not found')
+    const detail = this.sessions.get(sessionId);
+    if (!detail) throw new Error("Session not found");
     const runtime = new AgentRuntime(
       detail.id,
       detail.appId,
@@ -90,20 +91,24 @@ export class AgentPool {
       this.models,
       this.monitorHttp,
       (event) => this.sendEvent(event),
-    )
-    runtime.hydrate(detail)
-    this.runtimes.set(sessionId, runtime)
-    return runtime
+    );
+    runtime.hydrate(detail);
+    this.runtimes.set(sessionId, runtime);
+    return runtime;
   }
 
   private destroyRuntime(sessionId: string): void {
-    this.runtimes.get(sessionId)?.dispose()
-    this.runtimes.delete(sessionId)
+    this.runtimes.get(sessionId)?.dispose();
+    this.runtimes.delete(sessionId);
   }
 
-  private sendEvent(event: { type: string; sessionId: string; payload: Record<string, unknown> }): void {
-    const window = this.getWindow()
-    if (!window || window.isDestroyed() || window.webContents.isDestroyed()) return
-    window.webContents.send('agent:event', event)
+  private sendEvent(event: {
+    type: string;
+    sessionId: string;
+    payload: Record<string, unknown>;
+  }): void {
+    const window = this.getWindow();
+    if (!window || window.isDestroyed() || window.webContents.isDestroyed()) return;
+    window.webContents.send("agent:event", event);
   }
 }

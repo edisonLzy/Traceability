@@ -1,5 +1,6 @@
-import type { Request, Response, NextFunction } from 'express'
-import type { ApiResponse } from '../types/index.js'
+import type { Request, Response, NextFunction } from "express";
+
+import type { ApiResponse } from "../types/index.js";
 
 export function createResponseMiddleware() {
   return (_: Request, res: Response, next: NextFunction) => {
@@ -8,9 +9,9 @@ export function createResponseMiddleware() {
         code: 0,
         data,
         timestamp: new Date().toISOString(),
-      }
-      res.status(status).json(response)
-    }
-    next()
-  }
+      };
+      res.status(status).json(response);
+    };
+    next();
+  };
 }

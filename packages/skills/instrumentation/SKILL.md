@@ -10,6 +10,7 @@ When the user says something like "在 XX 功能加埋点 / 加监控 / 加采�
 ## 1. Identify the call site
 
 Find the function / handler / lifecycle method that bounds the feature the user named. Instrumentation belongs at:
+
 - Function entry/exit (timing + errors)
 - State transitions (before/after)
 - Network call boundaries (before fetch, on success, on error)
@@ -19,7 +20,7 @@ Find the function / handler / lifecycle method that bounds the feature the user 
 Import from `@traceability/core` (or `@traceability/react` if in a React component):
 
 ```ts
-import { report, setTag, addBreadcrumb, captureException } from '@traceability/core'
+import { report, setTag, addBreadcrumb, captureException } from "@traceability/core";
 ```
 
 - `report({ type, payload, tags })` — custom event with a stable `type`
@@ -34,17 +35,21 @@ See `references/core-api.md` for the full signature, and `references/event-types
 Wrap the call site:
 
 ```ts
-import { report, addBreadcrumb, captureException } from '@traceability/core'
+import { report, addBreadcrumb, captureException } from "@traceability/core";
 
 async function sendMessage(msg: Message) {
-  addBreadcrumb({ category: 'message', message: 'send start', data: { id: msg.id } })
+  addBreadcrumb({ category: "message", message: "send start", data: { id: msg.id } });
   try {
-    await api.post('/messages', msg)
-    report({ type: 'message-sent', payload: { id: msg.id }, tags: { feature: 'message' } })
+    await api.post("/messages", msg);
+    report({ type: "message-sent", payload: { id: msg.id }, tags: { feature: "message" } });
   } catch (err) {
-    report({ type: 'message-send-failed', payload: { id: msg.id, error: String(err) }, tags: { feature: 'message' } })
-    captureException(err)
-    throw err
+    report({
+      type: "message-send-failed",
+      payload: { id: msg.id, error: String(err) },
+      tags: { feature: "message" },
+    });
+    captureException(err);
+    throw err;
   }
 }
 ```

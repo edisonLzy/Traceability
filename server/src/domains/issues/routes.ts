@@ -1,13 +1,14 @@
-import { Router } from 'express'
-import type { IssuesService } from './service.js'
+import { Router } from "express";
+
+import type { IssuesService } from "./service.js";
 
 interface IssuesRouterDeps {
-  issuesService: IssuesService
+  issuesService: IssuesService;
 }
 
 export function createIssuesRouter(deps: IssuesRouterDeps): Router {
-  const router = Router()
-  const { issuesService } = deps
+  const router = Router();
+  const { issuesService } = deps;
 
   /**
    * @openapi
@@ -19,14 +20,16 @@ export function createIssuesRouter(deps: IssuesRouterDeps): Router {
    *       200:
    *         description: ok
    */
-  router.get('/api/issues', (req, res) => {
-    res.success(issuesService.list({
-      appId: req.query.appId as string | undefined,
-      status: req.query.status as any,
-      limit: req.query.limit ? Number(req.query.limit) : undefined,
-      cursor: req.query.cursor as string | undefined,
-    }))
-  })
+  router.get("/api/issues", (req, res) => {
+    res.success(
+      issuesService.list({
+        appId: req.query.appId as string | undefined,
+        status: req.query.status as any,
+        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        cursor: req.query.cursor as string | undefined,
+      }),
+    );
+  });
 
   /**
    * @openapi
@@ -39,9 +42,9 @@ export function createIssuesRouter(deps: IssuesRouterDeps): Router {
    *       404:
    *         description: not found
    */
-  router.get('/api/issues/:id', (req, res) => {
-    res.success(issuesService.get(req.params.id))
-  })
+  router.get("/api/issues/:id", (req, res) => {
+    res.success(issuesService.get(req.params.id));
+  });
 
   /**
    * @openapi
@@ -54,9 +57,14 @@ export function createIssuesRouter(deps: IssuesRouterDeps): Router {
    *       404:
    *         description: not found
    */
-  router.get('/api/issues/:id/events', (req, res) => {
-    res.success(issuesService.listEvents(req.params.id, req.query.limit ? Number(req.query.limit) : undefined))
-  })
+  router.get("/api/issues/:id/events", (req, res) => {
+    res.success(
+      issuesService.listEvents(
+        req.params.id,
+        req.query.limit ? Number(req.query.limit) : undefined,
+      ),
+    );
+  });
 
   /**
    * @openapi
@@ -69,9 +77,9 @@ export function createIssuesRouter(deps: IssuesRouterDeps): Router {
    *       404:
    *         description: not found
    */
-  router.post('/api/issues/:id/fix-request', (req, res) => {
-    res.success(issuesService.requestFix(req.params.id))
-  })
+  router.post("/api/issues/:id/fix-request", (req, res) => {
+    res.success(issuesService.requestFix(req.params.id));
+  });
 
   /**
    * @openapi
@@ -86,9 +94,9 @@ export function createIssuesRouter(deps: IssuesRouterDeps): Router {
    *       404:
    *         description: not found
    */
-  router.post('/api/issues/:id/attach-patch', (req, res) => {
-    res.success(issuesService.attachPatch(req.params.id, req.body ?? {}), 201)
-  })
+  router.post("/api/issues/:id/attach-patch", (req, res) => {
+    res.success(issuesService.attachPatch(req.params.id, req.body ?? {}), 201);
+  });
 
   /**
    * @openapi
@@ -101,9 +109,9 @@ export function createIssuesRouter(deps: IssuesRouterDeps): Router {
    *       404:
    *         description: not found
    */
-  router.post('/api/issues/:id/mark-fixed', (req, res) => {
-    res.success(issuesService.markFixed(req.params.id))
-  })
+  router.post("/api/issues/:id/mark-fixed", (req, res) => {
+    res.success(issuesService.markFixed(req.params.id));
+  });
 
-  return router
+  return router;
 }

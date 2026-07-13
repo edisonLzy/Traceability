@@ -1,28 +1,28 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Kbd } from '@renderer/components/ui/kbd'
+import { Kbd } from "@renderer/components/ui/kbd";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ACTIONS: Array<{ icon: string; label: string; to: string; key: string }> = [
-  { icon: '◇', label: 'Go to Issues', to: '/issues', key: 'G then I' },
-  { icon: '▦', label: 'Go to Applications', to: '/apps', key: 'G then A' },
-  { icon: '⌁', label: 'Go to SDK setup', to: '/settings', key: 'G then S' },
-]
+  { icon: "◇", label: "Go to Issues", to: "/issues", key: "G then I" },
+  { icon: "▦", label: "Go to Applications", to: "/apps", key: "G then A" },
+  { icon: "⌁", label: "Go to SDK setup", to: "/settings", key: "G then S" },
+];
 
 export function CommandPalette() {
-  const [open, setOpen] = useState(false)
-  const nav = useNavigate()
+  const [open, setOpen] = useState(false);
+  const nav = useNavigate();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        setOpen((o) => !o)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen((o) => !o);
       }
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
-  if (!open) return null
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+  if (!open) return null;
   return (
     <>
       <div className="fixed inset-0 z-20 bg-black/75" onClick={() => setOpen(false)} />
@@ -38,8 +38,8 @@ export function CommandPalette() {
               key={a.to}
               className="flex items-center gap-3 rounded-md p-2.5 text-muted hover:bg-surface-3"
               onClick={() => {
-                nav(a.to)
-                setOpen(false)
+                nav(a.to);
+                setOpen(false);
               }}
             >
               <span>{a.icon}</span>
@@ -50,5 +50,5 @@ export function CommandPalette() {
         </div>
       </div>
     </>
-  )
+  );
 }
