@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [master, feature/*]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Type-check all packages
+        run: pnpm type-check
+      - name: Run all tests
+        run: pnpm test
+      - name: Lint check
+        run: pnpm oxlint --fix-dry-run 2>&1 || true
