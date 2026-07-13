@@ -22,7 +22,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new Error(`HTTP ${res.status}: ${text}`)
   }
   if (res.status === 204) return undefined as T
-  return (await res.json()) as T
+  const envelope = (await res.json()) as { code: number; data: T }
+  return envelope.data
 }
 
 export const api = {

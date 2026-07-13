@@ -10,24 +10,30 @@ export class ApiError extends Error {
 /**
  * Shared axios instance for the renderer.
  *
- * The backend address (`SERVER_URL`) is read from `VITE_SERVER_URL` at build
- * time. The server returns bare JSON (no `{ code, data }` envelope), so
- * responses are not unwrapped here -- callers read `response.data`. Errors are
- * normalized into {@link ApiError}; UI toast handling stays at the call site /
- * react-query `onError`, keeping the transport layer free of UI coupling.
+ * The backend wraps every success response in `{code, data, timestamp}`; this
+ * interceptor unwraps it so callers read the inner `data` via `response.data`.
+ * 204 responses carry no body and are left untouched. Errors are normalized into
+ * {@link ApiError}; the server error envelope carries `message`, which the
+ * interceptor reads directly.
  */
 export const request = axios.create({ baseURL: SERVER_URL })
 
 request.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const body = response.data
+    if (body && typeof body === 'object' && 'code' in body && 'data' in body) {
+      response.data = body.data
+    }
+    return response
+  },
   (error) => {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status ?? 0
       const payload = error.response?.data
-      const message = typeof payload?.error === 'string'
-        ? payload.error
-        : typeof payload?.message === 'string'
-          ? payload.message
+      const message = typeof payload?.message === 'string'
+        ? payload.message
+        : typeof payload?.error === 'string'
+          ? payload.error
           : error.message ?? 'request failed'
       return Promise.reject(new ApiError(status, message))
     }

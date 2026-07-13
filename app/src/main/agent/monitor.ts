@@ -161,7 +161,17 @@ export function createMonitorTools(client: MonitorClient): AgentTool[] {
  */
 export function createMonitorHttp(): AxiosInstance {
   const serverUrl = (import.meta.env.VITE_SERVER_URL ?? '').replace(/\/$/, '')
-  return axios.create({ baseURL: serverUrl })
+  const http = axios.create({ baseURL: serverUrl })
+  // The server wraps success responses in {code, data, timestamp}; unwrap so
+  // `.then(r => r.data)` yields the inner data for zod validation.
+  http.interceptors.response.use((response) => {
+    const body = response.data
+    if (body && typeof body === 'object' && 'code' in body && 'data' in body) {
+      response.data = body.data
+    }
+    return response
+  })
+  return http
 }
 
 function belongsTo(appId: string): (candidate: { appId: string }) => boolean {
