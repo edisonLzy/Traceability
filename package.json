@@ -9,12 +9,26 @@
     "build:app": "pnpm --filter ./app build",
     "dev:app": "pnpm --filter ./app dev",
     "test": "pnpm -r run test",
-    "typecheck": "pnpm -r run typecheck"
+    "type-check": "pnpm -r run typecheck",
+    "prepare": "husky",
+    "lint": "oxlint --fix",
+    "format": "oxfmt --write"
   },
   "engines": {
     "node": ">=20"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["better-sqlite3", "electron", "esbuild"]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "oxfmt": "^0.46.0",
+    "oxlint": "^1.61.0",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

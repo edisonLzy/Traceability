@@ -3,3 +3,12 @@ packages:
   - "app"
   - "server"
   - "examples/*"
+
+catalog:
+  typescript: ^7.0.2
+  vitest: ^4.0.16
+  tsx: ^4.21.0
+
+allowBuilds:
+  electron: true
+  esbuild: true
