@@ -1,8 +1,8 @@
 import { Sidebar } from "@renderer/components/Sidebar";
 import { Titlebar } from "@renderer/components/Titlebar";
 import { useCurrentApp } from "@renderer/context/current-app";
-import { AgentPanel } from "@renderer/features/agent-panel/AgentPanel";
-import { CommandPalette } from "@renderer/features/command-palette/CommandPalette";
+import { AgentPanel } from "@renderer/features/agent";
+import { CommandPalette } from "@renderer/features/command-palette";
 import { useQueryClient } from "@tanstack/react-query";
 import { Command, Radio, RefreshCw } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";

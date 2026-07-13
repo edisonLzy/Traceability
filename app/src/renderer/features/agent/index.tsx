@@ -1,7 +1,7 @@
 import { useCurrentApp } from "@renderer/context/current-app";
+import { useIssue } from "@renderer/hooks/use-issue";
 import type { AgentPromptEvent } from "@renderer/lib/agent-events";
 import { cn } from "@renderer/lib/utils";
-import { useIssue } from "@renderer/pages/issues/hooks/use-issue";
 import type {
   AgentEntry,
   AgentPromptInput,

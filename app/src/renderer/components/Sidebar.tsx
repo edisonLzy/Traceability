@@ -1,7 +1,7 @@
 import { CreateAppModal } from "@renderer/components/CreateAppModal";
 import { useCurrentApp } from "@renderer/context/current-app";
+import { useIssues } from "@renderer/hooks/use-issues";
 import { cn } from "@renderer/lib/utils";
-import { useIssues } from "@renderer/pages/issues/hooks/use-issues";
 import {
   Activity,
   AlertTriangle,

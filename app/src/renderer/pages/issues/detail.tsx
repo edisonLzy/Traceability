@@ -1,14 +1,9 @@
 import { useCurrentApp } from "@renderer/context/current-app";
+import { useIssue, useIssueEvents, useIssueReplays, useReplay } from "@renderer/hooks/use-issue";
 import { promptAgent } from "@renderer/lib/agent-events";
 import { cn, issueSource, relativeTime, statusGroup, statusLabel } from "@renderer/lib/utils";
 import { RrwebReplayPlayer } from "@renderer/pages/issues/components/RrwebReplayPlayer";
 import { SourceLocation } from "@renderer/pages/issues/components/SourceLocation";
-import {
-  useIssue,
-  useIssueEvents,
-  useIssueReplays,
-  useReplay,
-} from "@renderer/pages/issues/hooks/use-issue";
 import type { RrwebReplay } from "@traceability/protocol";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";

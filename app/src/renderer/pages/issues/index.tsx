@@ -1,9 +1,9 @@
 import { NoAppState } from "@renderer/components/NoAppState";
 import { useCurrentApp } from "@renderer/context/current-app";
+import { useInvalidateIssues, useIssues } from "@renderer/hooks/use-issues";
 import { promptAgent } from "@renderer/lib/agent-events";
 import { cn, issueSource, relativeTime, statusGroup, statusLabel } from "@renderer/lib/utils";
 import { onIssueEvent } from "@renderer/lib/ws";
-import { useInvalidateIssues, useIssues } from "@renderer/pages/issues/hooks/use-issues";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
