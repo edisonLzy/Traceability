@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { Database } from 'better-sqlite3'
-import { openDb } from '../store/db.js'
-import { createAppsRepo } from '../store/apps.js'
-import { createIssuesRepo } from '../store/issues.js'
-import { createRrwebReplaysRepo } from '../store/replays.js'
+import { openDb } from '../db.js'
+import { createAppsRepo } from '../domains/apps/db.js'
+import { createIssuesRepo } from '../domains/issues/db.js'
+import { createRrwebReplaysRepo } from '../domains/replays/db.js'
 
 let db: Database
 beforeEach(() => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { openDb } from '../store/db.js'
-import { createAppsRepo } from '../store/apps.js'
-import { createIssuesRepo } from '../store/issues.js'
+import { openDb } from '../db.js'
+import { createAppsRepo } from '../domains/apps/db.js'
+import { createIssuesRepo } from '../domains/issues/db.js'
 import type { Database } from 'better-sqlite3'
 import type { SentryEventPayload } from '@traceability/protocol'
 

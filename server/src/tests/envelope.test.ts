@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseEnvelope, filterSupportedItems, extractIssueFingerprint, payloadToIssueFields } from '../ingest/envelope.js'
+import { parseEnvelope, filterSupportedItems, extractIssueFingerprint, payloadToIssueFields } from '../domains/ingest/envelope.js'
 
 const sampleEnvelope = [
   JSON.stringify({ sent_at: '2026-01-01T00:00:00Z', dsn: 'https://x@ingest/1' }),

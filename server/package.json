@@ -12,15 +12,11 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@fastify/cors": "^9.0.0",
-    "@fastify/multipart": "^8.0.0",
-    "@fastify/websocket": "^10.0.0",
     "@traceability/protocol": "workspace:*",
     "better-sqlite3": "^11.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
-    "fastify": "^4.28.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
     "pino-pretty": "^11.3.0",

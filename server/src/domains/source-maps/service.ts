@@ -10,7 +10,12 @@ interface StackFrame {
   colno?: number
 }
 
-export function createSourceMapsService(db: Database) {
+export interface SourceMapsService {
+  upsert(appId: string, input: SourceMapUpload): void
+  resolveFrames(appId: string, release: string | undefined, frames: StackFrame[]): SourceLocation[]
+}
+
+export function createSourceMapsService(db: Database): SourceMapsService {
   const repo = createSourceMapsRepo(db)
   return {
     upsert(appId: string, input: SourceMapUpload): void {

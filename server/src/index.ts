@@ -1,55 +1,94 @@
-import Fastify from 'fastify'
-import websocket from '@fastify/websocket'
-import cors from '@fastify/cors'
+import 'dotenv/config'
+import express, { type Express } from 'express'
+import cors from 'cors'
+import { createServer } from 'node:http'
+import { createLogger, createRequestLoggerMiddleware, isMainModule } from './shared/index.js'
+import { createSwaggerMiddleware } from './middlewares/swagger.js'
+import { createResponseMiddleware } from './middlewares/response.js'
+import { createGlobalErrorHandlerMiddleware } from './middlewares/error.js'
 import { getConfig } from './config.js'
-import { openDb } from './store/db.js'
-import { createAppsRepo } from './store/apps.js'
-import { createIssuesRepo } from './store/issues.js'
-import { createRrwebReplaysRepo } from './store/replays.js'
-import { createPerformanceRepo } from './store/performance.js'
-import { createSourceMapsRepo } from './store/sourceMaps.js'
-import { createBroadcaster } from './ws/broadcaster.js'
-import { registerApi } from './api/index.js'
+import { openDb } from './db.js'
+import { createBroadcaster, attachWebSocket } from './ws/broadcaster.js'
+import { healthRouter } from './routes/health.js'
+import { createAppsRepo } from './domains/apps/db.js'
+import { createIssuesRepo } from './domains/issues/db.js'
+import { createRrwebReplaysRepo } from './domains/replays/db.js'
+import { createPerformanceRepo } from './domains/performance/db.js'
+import { createSourceMapsRepo } from './domains/source-maps/db.js'
+import { createAppsService } from './domains/apps/service.js'
+import { createIssuesService } from './domains/issues/service.js'
+import { createReplaysService } from './domains/replays/service.js'
+import { createPerformanceService } from './domains/performance/service.js'
+import { createSourceMapsService } from './domains/source-maps/service.js'
+import { createIngestService } from './domains/ingest/service.js'
+import { createAppsRouter } from './domains/apps/routes.js'
+import { createIssuesRouter } from './domains/issues/routes.js'
+import { createReplaysRouter } from './domains/replays/routes.js'
+import { createPerformanceRouter } from './domains/performance/routes.js'
+import { createIngestRouter } from './domains/ingest/routes.js'
 
-async function main() {
-  const config = getConfig()
-  const db = openDb(config.dbPath)
-  const broadcaster = createBroadcaster()
+const isProduction = process.env.NODE_ENV === 'production'
+const logger = createLogger('traceability-server')
+
+const DEVELOPMENT_API_PATHS = ['./src/domains/**/routes.ts', './src/routes/**/*.ts']
+const PRODUCTION_API_PATHS = ['./dist/domains/**/routes.js', './dist/routes/**/*.js']
+
+export function createApp(db: ReturnType<typeof openDb>, broadcaster: ReturnType<typeof createBroadcaster>): Express {
   const appsRepo = createAppsRepo(db)
   const issuesRepo = createIssuesRepo(db)
   const replaysRepo = createRrwebReplaysRepo(db)
   const performanceRepo = createPerformanceRepo(db)
   const sourceMapsRepo = createSourceMapsRepo(db)
 
-  const app = Fastify({ logger: true })
-  await app.register(websocket)
-  // Allow the Inbox UI (:5173) and demo (:5174) to call the API cross-origin.
-  // Reflect any origin in dev; tighten for production deployment.
-  await app.register(cors, { origin: true, credentials: false })
+  const sourceMapsService = createSourceMapsService(db)
+  const appsService = createAppsService(db, sourceMapsService)
+  const issuesService = createIssuesService(db, broadcaster)
+  const replaysService = createReplaysService(db, issuesService)
+  const performanceService = createPerformanceService(db, appsService)
+  const ingestService = createIngestService({ issues: issuesService, replays: replaysService, sourceMaps: sourceMapsService, broadcaster })
 
-  // Accept raw envelope bodies as a string for content-types the Sentry SDK
-  // transport sends (application/octet-stream) and any other raw body. Fastify
-  // has no built-in parser for these, so without it the ingest endpoint returns
-  // HTTP 415. The '*' catch-all only applies to content-types not matched by a
-  // more specific parser, so the octet-stream entry above still takes precedence.
-  app.addContentTypeParser('application/octet-stream', { parseAs: 'string' }, (_req, body, done) => {
-    done(null, body)
-  })
-  app.addContentTypeParser('*', { parseAs: 'string' }, (_req, body, done) => {
-    done(null, body)
-  })
+  const app = express()
 
-  app.get('/api/ws', { websocket: true }, (socket) => {
-    broadcaster.add(socket)
-  })
+  app.use(createRequestLoggerMiddleware(logger))
+  app.use(cors({ origin: true, credentials: false }))
+  app.use(express.json({ limit: '6mb' }))
+  app.use(createResponseMiddleware())
 
-  registerApi(app, { appsRepo, issuesRepo, replaysRepo, performanceRepo, sourceMapsRepo, broadcaster })
+  createSwaggerMiddleware({
+    apiPaths: isProduction ? PRODUCTION_API_PATHS : DEVELOPMENT_API_PATHS,
+    docsRoute: '/api-docs',
+    title: 'Traceability Server API',
+    version: '1.0.0',
+    description: 'Sentry-based web monitoring + exception-to-fix loop',
+    serverUrl: process.env.SERVER_URL,
+  })(app)
 
-  await app.listen({ port: config.port, host: '0.0.0.0' })
-  app.log.info(`traceability server on http://0.0.0.0:${config.port}`)
+  app.use(healthRouter)
+  app.use(createAppsRouter({ appsService }))
+  app.use(createIssuesRouter({ issuesService }))
+  app.use(createReplaysRouter({ replaysService }))
+  app.use(createPerformanceRouter({ performanceService }))
+  app.use(createIngestRouter({ ingestService }))
+
+  app.use(createGlobalErrorHandlerMiddleware())
+
+  return app
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+function main() {
+  const config = getConfig()
+  const db = openDb(config.dbPath)
+  const broadcaster = createBroadcaster()
+
+  const app = createApp(db, broadcaster)
+  const server = createServer(app)
+
+  attachWebSocket(server, broadcaster)
+
+  server.listen(config.port, '0.0.0.0', () => {
+    logger.info(`traceability server on http://0.0.0.0:${config.port}`)
+    logger.info(`Swagger Docs at http://0.0.0.0:${config.port}/api-docs`)
+  })
+}
+
+if (isMainModule(import.meta.url)) main()
