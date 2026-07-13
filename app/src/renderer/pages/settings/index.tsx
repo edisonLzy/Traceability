@@ -1,7 +1,7 @@
 import React from 'react'
-import { Panel } from '../../components/ui/primitives'
+import { Panel } from '@renderer/components/ui/primitives'
 
-export function Settings() {
+export function SettingsPage() {
   return (
     <div className="page">
       <div className="page-header">

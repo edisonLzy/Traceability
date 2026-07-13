@@ -1,4 +1,4 @@
-import { getToken, getServer } from '../auth/token'
+import { getToken, getServer } from '@renderer/store/auth'
 
 export interface IssueEvent {
   kind: 'issue:created' | 'issue:updated' | 'issue:status-changed'

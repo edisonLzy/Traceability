@@ -1,9 +1,9 @@
 import { type SubmitEvent, useEffect, useState } from 'react'
 import { Streamdown } from 'streamdown'
 import type { Application } from '@traceability/protocol'
-import { apiFetch } from '../../api/client'
-import { fetchMonitorData } from '../../agent-monitor-data'
-import type { AgentEntry, AgentPromptInput, AgentSessionDetail, AgentSessionSummary, AvailableModel } from '../../../shared/ipc'
+import { apiFetch } from '@renderer/lib/request'
+import { fetchMonitorData } from '@renderer/apis/monitor'
+import type { AgentEntry, AgentPromptInput, AgentSessionDetail, AgentSessionSummary, AvailableModel } from '@shared/ipc'
 
 export function AgentPanel() {
   const [applications, setApplications] = useState<Application[]>([])

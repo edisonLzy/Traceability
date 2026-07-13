@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { CommandPalette } from '../components/CommandPalette'
-import { AgentPanel } from './agent/AgentPanel'
-import { Sidebar } from './sidebar/Sidebar'
+import { AgentPanel } from '@renderer/components/AgentPanel'
+import { CommandPalette } from '@renderer/components/CommandPalette'
+import { Sidebar } from '@renderer/components/Sidebar'
 
 interface LayoutProps {
   sidebar?: ReactNode

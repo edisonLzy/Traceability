@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearAuth, saveConnection } from '../../auth/token'
-import { apiFetch } from '../../api/client'
-import { Button, Field } from '../../components/ui/primitives'
+import { clearAuth, saveConnection } from '@renderer/store/auth'
+import { apiFetch } from '@renderer/lib/request'
+import { Button, Field } from '@renderer/components/ui/primitives'
 
-export function Login() {
+export function LoginPage() {
   const [server, setServerState] = useState('http://localhost:3000')
   const [token, setTokenState] = useState('')
   const [error, setError] = useState('')

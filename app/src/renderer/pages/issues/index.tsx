@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../../api/client'
-import { onIssueEvent } from '../../ws/client'
-import { Button } from '../../components/ui/primitives'
+import { apiFetch } from '@renderer/lib/request'
+import { onIssueEvent } from '@renderer/lib/ws'
+import { Button } from '@renderer/components/ui/primitives'
 import type { Issue, IssueStatus } from '@traceability/protocol'
 
-export function Issues() {
+export function IssuesPage() {
   const [params, setParams] = useSearchParams()
   const nav = useNavigate()
   const appId = params.get('appId') ?? ''

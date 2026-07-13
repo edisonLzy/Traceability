@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../../api/client'
-import { useToast } from '../../components/Toast'
-import { Button } from '../../components/ui/primitives'
+import { apiFetch } from '@renderer/lib/request'
+import { useToast } from '@renderer/components/Toast'
+import { Button } from '@renderer/components/ui/primitives'
 import type { Application } from '@traceability/protocol'
 
-export function AppDetail() {
+export function AppDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [app, setApp] = useState<Application | null>(null)
   const nav = useNavigate()

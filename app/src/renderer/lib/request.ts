@@ -1,4 +1,4 @@
-import { getToken, getServer } from '../auth/token'
+import { getToken, getServer } from '@renderer/store/auth'
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {

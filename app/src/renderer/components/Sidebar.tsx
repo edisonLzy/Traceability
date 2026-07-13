@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { clearAuth } from '../../auth/token'
+import { clearAuth } from '@renderer/store/auth'
 
 export function Sidebar() {
   const navigate = useNavigate()

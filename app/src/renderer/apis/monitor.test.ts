@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fetchMonitorData } from './agent-monitor-data'
+import { fetchMonitorData } from './monitor'
 
 describe('fetchMonitorData', () => {
   it('maps Issue and Performance tools to the existing renderer REST endpoints', async () => {

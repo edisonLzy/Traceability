@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { apiFetch } from '../../api/client'
-import { useToast } from '../../components/Toast'
+import { apiFetch } from '@renderer/lib/request'
+import { useToast } from '@renderer/components/Toast'
 import type { PerformanceAppSummary, PerformanceMetricSummary, PerformanceSummary } from '@traceability/protocol'
 
 const rangeOptions = [
@@ -10,7 +10,7 @@ const rangeOptions = [
   { value: '168', label: 'Last 7 days' },
 ]
 
-export function Performance() {
+export function PerformancePage() {
   const [params, setParams] = useSearchParams()
   const toast = useToast()
   const [summary, setSummary] = useState<PerformanceSummary | null>(null)
@@ -53,7 +53,7 @@ export function Performance() {
         <div className="metric"><div className="metric-label">Monitored applications</div><div className="metric-value">{totals.apps}</div></div>
         <div className="metric"><div className="metric-label">Metric samples</div><div className="metric-value">{totals.samples}</div></div>
         <div className="metric"><div className="metric-label">Metric types</div><div className="metric-value">{totals.metricKinds}</div></div>
-        <div className="metric"><div className="metric-label">Since</div><div className="metric-value metric-date">{summary ? new Date(summary.since).toLocaleString() : '—'}</div></div>
+        <div className="metric"><div className="metric-label">Since</div><div className="metric-value metric-date">{summary ? new Date(summary.since).toLocaleString() : '-'}</div></div>
       </div>
       <div className="toolbar">
         <select className="select" value={hours} onChange={(event) => update({ ...(appId ? { appId } : {}), hours: event.target.value })}>

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { apiFetch } from '../../api/client'
-import { RrwebReplayPlayer } from '../../components/RrwebReplayPlayer'
-import { useToast } from '../../components/Toast'
-import { Button } from '../../components/ui/primitives'
+import { apiFetch } from '@renderer/lib/request'
+import { RrwebReplayPlayer } from '@renderer/components/RrwebReplayPlayer'
+import { useToast } from '@renderer/components/Toast'
+import { Button } from '@renderer/components/ui/primitives'
 import type { Issue, Event, RrwebReplay, RrwebReplaySummary } from '@traceability/protocol'
 
 type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs' | 'replay'
 
-export function IssueDetail() {
+export function IssueDetailPage() {
   const { id } = useParams<{ id: string }>()
   const toast = useToast()
   const [issue, setIssue] = useState<Issue | null>(null)

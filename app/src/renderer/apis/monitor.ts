@@ -1,4 +1,4 @@
-import type { MonitorDataRequest } from '../shared/ipc'
+import type { MonitorDataRequest } from '@shared/ipc'
 
 interface ScopedIssue {
   appId: string
