@@ -1,4 +1,4 @@
-import { Layout } from "@renderer/Layout";
+import { Layout } from "@renderer/pages/_layout";
 import { IssuesPage } from "@renderer/pages/issues";
 import { IssueDetailPage } from "@renderer/pages/issues/detail";
 import { PerformancePage } from "@renderer/pages/performance";

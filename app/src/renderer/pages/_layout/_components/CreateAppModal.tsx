@@ -9,9 +9,10 @@ import {
 } from "@renderer/components/ui/dialog";
 import { Field } from "@renderer/components/ui/field";
 import { useCurrentApp } from "@renderer/context/current-app";
-import { useCreateApp } from "@renderer/pages/apps/hooks/use-create-app";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+import { useCreateApp } from "../_hooks/use-create-app";
 
 export function CreateAppModal({
   open,

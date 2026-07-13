@@ -1,4 +1,3 @@
-import { CreateAppModal } from "@renderer/components/CreateAppModal";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { useIssues } from "@renderer/hooks/use-issues";
 import { cn } from "@renderer/lib/utils";
@@ -14,6 +13,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+
+import { CreateAppModal } from "./CreateAppModal";
 
 export function Sidebar() {
   return (
