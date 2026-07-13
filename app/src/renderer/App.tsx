@@ -1,4 +1,5 @@
 import { Toaster } from "@renderer/components/ui/sonner";
+import { CurrentAppProvider } from "@renderer/context/current-app";
 import { connectWs } from "@renderer/lib/ws";
 import { router } from "@renderer/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -22,8 +23,10 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
+      <CurrentAppProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </CurrentAppProvider>
     </QueryClientProvider>
   );
 }

@@ -19,6 +19,11 @@ const api = {
   clipboard: {
     writeText: (text: string) => ipcRenderer.invoke("clipboard:writeText", text),
   },
+  window: {
+    minimize: () => ipcRenderer.invoke("window:minimize"),
+    toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
+    close: () => ipcRenderer.invoke("window:close"),
+  },
   sessions: {
     list: (appId: string) =>
       ipcRenderer.invoke("sessions:list", appId) as Promise<AgentSessionSummary[]>,

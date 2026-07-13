@@ -97,6 +97,15 @@ function registerIpc(): void {
   ipcMain.handle("clipboard:writeText", (_event, text: unknown) => {
     clipboard.writeText(z.string().parse(text));
   });
+
+  // Custom titlebar window controls (titleBarStyle is "hidden" / "hiddenInset").
+  ipcMain.handle("window:minimize", () => mainWindow?.minimize());
+  ipcMain.handle("window:toggle-maximize", () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMaximized()) mainWindow.unmaximize();
+    else mainWindow.maximize();
+  });
+  ipcMain.handle("window:close", () => mainWindow?.close());
 }
 
 app.whenReady().then(async () => {

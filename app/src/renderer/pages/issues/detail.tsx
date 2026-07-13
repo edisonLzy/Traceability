@@ -1,15 +1,6 @@
-import { Badge } from "@renderer/components/ui/badge";
-import { Button } from "@renderer/components/ui/button";
-import { Card } from "@renderer/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@renderer/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@renderer/components/ui/tabs";
-import { cn } from "@renderer/lib/utils";
+import { useCurrentApp } from "@renderer/context/current-app";
+import { promptAgent } from "@renderer/lib/agent-events";
+import { cn, issueSource, relativeTime, statusGroup, statusLabel } from "@renderer/lib/utils";
 import { RrwebReplayPlayer } from "@renderer/pages/issues/components/RrwebReplayPlayer";
 import { SourceLocation } from "@renderer/pages/issues/components/SourceLocation";
 import {
@@ -19,21 +10,30 @@ import {
   useReplay,
 } from "@renderer/pages/issues/hooks/use-issue";
 import type { RrwebReplay } from "@traceability/protocol";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 type Tab = "stack" | "events" | "context" | "breadcrumbs" | "replay";
 
+const TAB_LABELS: Array<{ id: Tab; label: (n: number) => string }> = [
+  { id: "stack", label: () => "Stack trace" },
+  { id: "events", label: (n) => `Events · ${n}` },
+  { id: "context", label: () => "Context" },
+  { id: "breadcrumbs", label: () => "Breadcrumbs" },
+  { id: "replay", label: (n) => `Replay · ${n}` },
+];
+
 export function IssueDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { currentApp } = useCurrentApp();
   const issueQuery = useIssue(id);
   const eventsQuery = useIssueEvents(id);
   const replaysQuery = useIssueReplays(id);
   const [selectedReplayId, setSelectedReplayId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("stack");
 
-  // Pick the first replay once the list loads.
   useEffect(() => {
     const first = replaysQuery.data?.[0]?.id;
     if (first && selectedReplayId === null) setSelectedReplayId(first);
@@ -55,177 +55,232 @@ export function IssueDetailPage() {
 
   if (!issue)
     return (
-      <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
-        <div className="px-5 py-13.5 text-center text-subtle">Loading…</div>
+      <div className="mx-auto block min-h-full max-w-[1260px] px-[22px] pt-[22px] pb-12">
+        <div className="px-5 py-12 text-center text-[12px] text-tertiary">Loading…</div>
       </div>
     );
 
   const investigate = () => {
-    window.dispatchEvent(
-      new CustomEvent("traceability:agent-context", {
-        detail: { appId: issue.appId, source: "issue", issueId: issue.id },
-      }),
-    );
-    toast("Issue context attached to Traceability Agent");
+    promptAgent({
+      context: { appId: issue.appId, source: "issue", issueId: issue.id },
+      prompt: `Investigate ${issue.id}`,
+    });
   };
 
-  const replayItems = Object.fromEntries(
-    replays.map((r) => [
-      r.id,
-      `${new Date(r.receivedAt).toLocaleString()} · ${r.eventCount} events`,
-    ]),
-  );
-
   return (
-    <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
+    <div className="mx-auto block min-h-full max-w-[1260px] px-[22px] pt-[22px] pb-12">
+      <button
+        type="button"
+        onClick={() => window.history.back()}
+        className="mb-4 inline-flex items-center gap-1.5 text-[12px] text-tertiary transition-colors hover:text-ink"
+      >
+        <ArrowLeft size={14} /> Issues
+      </button>
+
       <div className="mb-5 flex items-start gap-3">
         <span
           className={cn(
             "mt-2.5 size-2.5 shrink-0 rounded-full",
             issue.type === "error" ? "bg-danger" : "bg-warning",
           )}
+          style={{
+            boxShadow:
+              issue.type === "error"
+                ? "0 0 0 3px rgba(241,124,124,0.1)"
+                : "0 0 0 3px rgba(228,181,90,0.1)",
+          }}
         />
-        <div className="flex-1">
-          <h1 className="mb-2 text-2xl leading-snug tracking-[-0.5px]">{issue.title}</h1>
-          <div className="mt-0.5 font-mono text-[11px] text-tertiary">
-            {issue.id.slice(0, 8)} · {issue.appId.slice(0, 8)} · {issue.type}
+        <div className="min-w-0 flex-1">
+          <h1 className="m-0 text-[24px] font-[680] leading-[1.12] tracking-[-0.04em]">
+            {issue.title}
+          </h1>
+          <div className="mt-1.5 font-mono text-[11px] text-tertiary">
+            {issue.id} · {currentApp?.name ?? issue.appId} · production
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="primary" onClick={investigate}>
-            Investigate with Agent
-          </Button>
+          <button
+            type="button"
+            onClick={investigate}
+            className="inline-flex h-8.5 items-center gap-1.5 rounded-[9px] border border-primary/40 bg-primary px-3 text-[12px] font-[590] text-[#111329] transition-colors hover:bg-primary-hover"
+          >
+            <Sparkles size={14} /> Investigate
+          </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-4.5 desktop:grid-cols-[minmax(0,1fr)_310px]">
-        <Card>
-          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-            <TabsList>
-              <TabsTrigger value="stack">Stack trace</TabsTrigger>
-              <TabsTrigger value="events">Events · {events.length}</TabsTrigger>
-              <TabsTrigger value="context">Context</TabsTrigger>
-              <TabsTrigger value="breadcrumbs">Breadcrumbs</TabsTrigger>
-              <TabsTrigger value="replay">Replay · {replays.length}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="stack">
+
+      <div className="grid grid-cols-1 gap-4.5 desktop:grid-cols-[minmax(0,1fr)_260px]">
+        <section className="overflow-hidden rounded-2xl border border-hairline bg-white/[0.025]">
+          <div className="flex gap-4.5 overflow-auto border-b border-hairline px-4">
+            {TAB_LABELS.map((entry) => {
+              const count =
+                entry.id === "events" ? events.length : entry.id === "replay" ? replays.length : 0;
+              const active = tab === entry.id;
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => setTab(entry.id)}
+                  className={cn(
+                    "relative flex-none h-[43px] border-0 bg-transparent text-[12px] text-tertiary transition-colors hover:text-muted",
+                    active && "font-[610] text-ink",
+                  )}
+                >
+                  {entry.label(count)}
+                  {active && (
+                    <span className="absolute inset-x-0 bottom-[-1px] h-0.5 rounded-t bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {tab === "stack" && (
+            <div>
               {issue.metadata.source && <SourceLocation location={issue.metadata.source} />}
-              <pre className="m-0 overflow-auto bg-[#090a0b] px-5 py-4.5 font-mono text-xs leading-7 text-[#c7cbd3]">
+              <pre className="m-0 overflow-auto bg-[#0b0c10] px-5 py-4 font-mono text-[11px] leading-[1.8] text-[#d0d3dc]">
                 {issue.metadata.stacktrace ?? issue.metadata.message ?? "(no stacktrace)"}
               </pre>
-            </TabsContent>
-            <TabsContent value="events">
-              <div className="px-4.5 py-2">
-                {events.map((e) => (
-                  <div
-                    className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs last:border-b-0"
-                    key={e.id}
+            </div>
+          )}
+
+          {tab === "events" && (
+            <div className="px-4 py-2">
+              {events.map((e) => (
+                <div
+                  className="grid grid-cols-[134px_1fr] gap-3.5 border-b border-hairline py-3 text-[12px] last:border-b-0"
+                  key={e.id}
+                >
+                  <div className="text-[11px] text-tertiary">
+                    {new Date(e.receivedAt).toLocaleTimeString()}
+                  </div>
+                  <div className="break-all font-mono text-[11px] text-muted">
+                    {e.envelope.slice(0, 160)}
+                  </div>
+                </div>
+              ))}
+              {events.length === 0 && (
+                <div className="px-5 py-12 text-center text-[12px] text-tertiary">No events.</div>
+              )}
+            </div>
+          )}
+
+          {tab === "context" && (
+            <div className="px-4 py-2">
+              <InfoRow k="Application" v={currentApp?.name ?? issue.appId} />
+              <InfoRow k="Fingerprint" v={issue.fingerprint} />
+              <InfoRow k="Type" v={issue.type} />
+              <InfoRow k="Context" v={JSON.stringify(issue.metadata.context ?? {})} last />
+            </div>
+          )}
+
+          {tab === "breadcrumbs" && (
+            <div className="px-5 py-12 text-center text-[12px] text-tertiary">
+              Breadcrumbs are captured inside each event envelope (see Events tab).
+            </div>
+          )}
+
+          {tab === "replay" && (
+            <div className="px-4 pt-3.5 pb-4">
+              {replays.length > 0 && (
+                <div className="mb-3 flex items-center gap-2">
+                  <select
+                    value={selectedReplayId ?? ""}
+                    onChange={(e) => setSelectedReplayId(e.target.value || null)}
+                    className="h-9 min-w-[min(420px,100%)] rounded-[9px] border border-hairline bg-surface-2 px-2.5 pr-7 text-[12px] text-muted outline-none focus:border-primary/55"
                   >
-                    <div className="text-[11px] text-tertiary">
-                      {new Date(e.receivedAt).toLocaleTimeString()}
-                    </div>
-                    <div className="break-all font-medium text-muted">
-                      {e.envelope.slice(0, 120)}…
-                    </div>
-                  </div>
-                ))}
-                {events.length === 0 && (
-                  <div className="px-5 py-13.5 text-center text-subtle">No events.</div>
-                )}
-              </div>
-            </TabsContent>
-            <TabsContent value="context">
-              <div className="px-4.5 py-2">
-                <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs">
-                  <div className="text-[11px] text-tertiary">type</div>
-                  <div className="break-all font-medium text-muted">{issue.type}</div>
+                    {replays.map((replay) => (
+                      <option key={replay.id} value={replay.id}>
+                        {new Date(replay.receivedAt).toLocaleString()} · {replay.eventCount} events
+                      </option>
+                    ))}
+                  </select>
+                  {activeReplay && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-success/15 px-2 py-0.5 text-[10px] font-[600] text-success">
+                      {formatBytes(activeReplay.sizeBytes)}
+                    </span>
+                  )}
                 </div>
-                <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs">
-                  <div className="text-[11px] text-tertiary">fingerprint</div>
-                  <div className="break-all font-medium text-muted">{issue.fingerprint}</div>
+              )}
+              {replayLoading && (
+                <div className="px-5 py-12 text-center text-[12px] text-tertiary">
+                  Loading replay…
                 </div>
-                <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs last:border-b-0">
-                  <div className="text-[11px] text-tertiary">context</div>
-                  <div className="break-all font-medium text-muted">
-                    {JSON.stringify(issue.metadata.context ?? {})}
-                  </div>
+              )}
+              {!replayLoading && replays.length === 0 && (
+                <div className="px-5 py-12 text-center text-[12px] text-tertiary">
+                  No replay captured for this issue.
                 </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="breadcrumbs">
-              <div className="px-5 py-13.5 text-center text-subtle">
-                Breadcrumbs are captured inside each event envelope (see Events tab).
-              </div>
-            </TabsContent>
-            <TabsContent value="replay">
-              <div className="px-4.5 pt-3.5 pb-4.5">
-                {replays.length > 0 && (
-                  <div className="mb-3.5 flex items-center gap-2.5">
-                    <Select
-                      value={selectedReplayId}
-                      onValueChange={(v) => setSelectedReplayId(v)}
-                      items={replayItems}
-                    >
-                      <SelectTrigger className="min-w-[min(420px,100%)]">
-                        <SelectValue placeholder="Select a replay" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {replays.map((replay) => (
-                          <SelectItem key={replay.id} value={replay.id}>
-                            {new Date(replay.receivedAt).toLocaleString()} · {replay.eventCount}{" "}
-                            events
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {activeReplay && (
-                      <Badge variant="fixed">{formatBytes(activeReplay.sizeBytes)}</Badge>
-                    )}
-                  </div>
-                )}
-                {replayLoading && (
-                  <div className="px-5 py-13.5 text-center text-subtle">Loading replay…</div>
-                )}
-                {!replayLoading && replays.length === 0 && (
-                  <div className="px-5 py-13.5 text-center text-subtle">
-                    No replay captured for this issue.
-                  </div>
-                )}
-                {!replayLoading && activeReplay && activeReplay.events.length === 0 && (
-                  <div className="px-5 py-13.5 text-center text-subtle">
-                    Replay is still uploading.
-                  </div>
-                )}
-                {!replayLoading && activeReplay && activeReplay.events.length > 0 && (
-                  <RrwebReplayPlayer replay={activeReplay} />
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </Card>
-        <aside className="h-max order-first overflow-hidden rounded-xl border border-hairline bg-surface-1 desktop:order-none">
+              )}
+              {!replayLoading && activeReplay && activeReplay.events.length === 0 && (
+                <div className="px-5 py-12 text-center text-[12px] text-tertiary">
+                  Replay is still uploading.
+                </div>
+              )}
+              {!replayLoading && activeReplay && activeReplay.events.length > 0 && (
+                <RrwebReplayPlayer replay={activeReplay} />
+              )}
+            </div>
+          )}
+        </section>
+
+        <aside className="h-max overflow-hidden rounded-2xl border border-hairline bg-white/[0.025]">
           <div className="border-b border-hairline p-4 last:border-b-0">
-            <div className="mb-2 text-[11px] text-tertiary">Status</div>
-            <Badge
-              variant={
-                issue.status === "open" ? "open" : issue.status === "fixed" ? "fixed" : "fixing"
-              }
-            >
-              {issue.status}
-            </Badge>
-            <div className="mb-2 mt-4 text-[11px] text-tertiary">First seen</div>
-            <div className="text-xs font-medium text-muted">
-              {new Date(issue.firstSeen).toLocaleString()}
+            <div className="mb-1.5 text-[10px] font-[660] uppercase tracking-[0.08em] text-tertiary">
+              Status
             </div>
-            <div className="mb-2 mt-4 text-[11px] text-tertiary">Last seen</div>
-            <div className="text-xs font-medium text-muted">
-              {new Date(issue.lastSeen).toLocaleString()}
+            <StatusBadge group={statusGroup(issue.status)} />
+            <SideRow label="First seen" value={relativeTime(issue.firstSeen)} />
+            <SideRow label="Last seen" value={relativeTime(issue.lastSeen)} />
+            <SideRow label="Total events" value={`${issue.count} events`} />
+          </div>
+          <div className="p-4">
+            <div className="mb-1.5 text-[10px] font-[660] uppercase tracking-[0.08em] text-tertiary">
+              Likely source
             </div>
-            <div className="mb-2 mt-4 text-[11px] text-tertiary">Total events</div>
-            <div className="text-xs font-medium text-muted">{issue.count} events</div>
+            <div className="font-mono text-[10px] leading-[1.55] text-primary-hover">
+              {issueSource(issue)}
+            </div>
           </div>
         </aside>
       </div>
     </div>
+  );
+}
+
+function InfoRow({ k, v, last }: { k: string; v: string; last?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-[134px_1fr] gap-3.5 py-3 text-[12px]",
+        !last && "border-b border-hairline",
+      )}
+    >
+      <div className="text-[11px] text-tertiary">{k}</div>
+      <div className="break-all text-muted">{v}</div>
+    </div>
+  );
+}
+
+function SideRow({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <div className="mb-1.5 mt-4 text-[10px] font-[660] uppercase tracking-[0.08em] text-tertiary">
+        {label}
+      </div>
+      <div className="text-[12px] text-muted">{value}</div>
+    </>
+  );
+}
+
+function StatusBadge({ group }: { group: "open" | "investigating" | "fixed" }) {
+  const dot = group === "open" ? "bg-danger" : group === "investigating" ? "bg-info" : "bg-success";
+  const label = statusLabel(group === "open" ? "open" : group === "fixed" ? "fixed" : "fixing");
+  return (
+    <span className="inline-flex h-[22px] items-center gap-1.5 rounded-full border border-hairline bg-white/[0.04] px-2 text-[10px] font-[600] text-muted">
+      <span className={cn("size-1.5 rounded-full", dot)} />
+      {label}
+    </span>
   );
 }
 

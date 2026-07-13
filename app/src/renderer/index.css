@@ -9,22 +9,25 @@
 
   /* Traceability dark palette - used directly by page layout (bg-surface-1,
      text-subtle, border-hairline …). The shadcn semantic tokens below alias
-     these same colors for the ui/ components. */
-  --color-canvas: #010102;
-  --color-surface-1: #0f1011;
-  --color-surface-2: #141516;
-  --color-surface-3: #18191a;
-  --color-hairline: #23252a;
-  --color-hairline-strong: #34343a;
-  --color-ink: #f7f8f8;
-  --color-muted: #d0d6e0;
-  --color-subtle: #8a8f98;
-  --color-tertiary: #62666d;
-  --color-primary: #5e6ad2;
-  --color-primary-hover: #828fff;
-  --color-success: #27a644;
-  --color-warning: #d6a542;
-  --color-danger: #d76363;
+     these same colors for the ui/ components. Aligned to the desktop MVP
+     prototype: lavender accent, soft translucent hairlines, muted secondary
+     text. */
+  --color-canvas: #090a0c;
+  --color-surface-1: #101115;
+  --color-surface-2: #14151a;
+  --color-surface-3: #1a1b21;
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-strong: rgba(255, 255, 255, 0.14);
+  --color-ink: #f5f5f7;
+  --color-muted: #b6b7bc;
+  --color-subtle: #9a9ba3;
+  --color-tertiary: #808189;
+  --color-primary: #8f9cff;
+  --color-primary-hover: #aeb7ff;
+  --color-info: #6db9ff;
+  --color-success: #58c77b;
+  --color-warning: #e4b55a;
+  --color-danger: #f17c7c;
 
   --breakpoint-tablet: 760px;
   --breakpoint-desktop: 1050px;
@@ -63,25 +66,25 @@
 :root {
   color-scheme: dark;
 
-  --background: #010102;
-  --foreground: #f7f8f8;
-  --card: #0f1011;
-  --card-foreground: #f7f8f8;
-  --popover: #141516;
-  --popover-foreground: #f7f8f8;
-  --primary: #5e6ad2;
-  --primary-foreground: #ffffff;
-  --secondary: #141516;
-  --secondary-foreground: #d0d6e0;
-  --muted: #18191a;
-  --muted-foreground: #8a8f98;
-  --accent: #141516;
-  --accent-foreground: #f7f8f8;
-  --destructive: #d76363;
-  --destructive-foreground: #ffffff;
-  --border: #23252a;
-  --input: #23252a;
-  --ring: #5e6ad2;
+  --background: #090a0c;
+  --foreground: #f5f5f7;
+  --card: #101115;
+  --card-foreground: #f5f5f7;
+  --popover: #14151a;
+  --popover-foreground: #f5f5f7;
+  --primary: #8f9cff;
+  --primary-foreground: #111329;
+  --secondary: #14151a;
+  --secondary-foreground: #b6b7bc;
+  --muted: #1a1b21;
+  --muted-foreground: #9a9ba3;
+  --accent: #14151a;
+  --accent-foreground: #f5f5f7;
+  --destructive: #f17c7c;
+  --destructive-foreground: #111329;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #8f9cff;
   --radius: 0.5rem;
 }
 
@@ -103,9 +106,12 @@
 
   body {
     overflow: auto;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    letter-spacing: -0.02em;
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    background:
+      radial-gradient(ellipse at 55% -30%, rgba(90, 101, 195, 0.1), transparent 40%),
+      var(--color-canvas);
   }
 
   button,
@@ -120,7 +126,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid color-mix(in oklab, var(--color-ring) 65%, transparent);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
 }
@@ -135,4 +141,13 @@
    receive utility classes - keep its dark canvas here. */
 .replay-player .replayer-wrapper {
   background: #090a0b;
+}
+
+/* Custom titlebar drag regions (titleBarStyle is "hidden" / "hiddenInset").
+   Drag the bar, but opt interactive children out so buttons/inputs work. */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
 }

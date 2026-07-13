@@ -10,6 +10,7 @@ export function usePerformanceSummary(params: UsePerformanceSummaryParams) {
   return useQuery({
     queryKey: ["performance", { appId: params.appId, hours: params.hours }],
     queryFn: () => getPerformanceSummary(params),
+    enabled: Boolean(params.appId),
     staleTime: 30_000,
   });
 }

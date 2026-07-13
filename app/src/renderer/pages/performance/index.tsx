@@ -1,136 +1,246 @@
-import { Button } from "@renderer/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@renderer/components/ui/select";
-import { ApplicationPerformance } from "@renderer/pages/performance/components/ApplicationPerformance";
+import { NoAppState } from "@renderer/components/NoAppState";
+import { useCurrentApp } from "@renderer/context/current-app";
+import { promptAgent } from "@renderer/lib/agent-events";
+import { cn, relativeTime } from "@renderer/lib/utils";
 import { usePerformanceSummary } from "@renderer/pages/performance/hooks/use-performance";
-import { useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import type { PerformanceMetricSummary, PerformanceMetricName } from "@traceability/protocol";
+import { Activity, Info, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const RANGE_ITEMS: Record<string, string> = {
-  "1": "Last hour",
-  "24": "Last 24 hours",
-  "168": "Last 7 days",
-};
+type Hours = 1 | 24 | 168;
+
+const RANGES: Array<{ hours: Hours; label: string }> = [
+  { hours: 1, label: "Last hour" },
+  { hours: 24, label: "Last 24 hours" },
+  { hours: 168, label: "Last 7 days" },
+];
 
 export function PerformancePage() {
-  const [params, setParams] = useSearchParams();
-  const hours = params.get("hours") ?? "24";
-  const appId = params.get("appId") ?? "";
-  const selectedHours = toHours(hours);
-
-  const { data: summary, error } = usePerformanceSummary({ appId, hours: selectedHours });
+  const { currentApp, appId } = useCurrentApp();
+  const [hours, setHours] = useState<Hours>(24);
+  const { data: summary, error } = usePerformanceSummary({ appId, hours });
 
   useEffect(() => {
     if (error) toast(String(error));
   }, [error]);
 
-  const totals = useMemo(() => {
-    const apps = summary?.apps ?? [];
-    return {
-      apps: apps.length,
-      samples: apps.reduce((total, app) => total + app.samples, 0),
-      metricKinds: new Set(apps.flatMap((app) => Object.keys(app.metrics))).size,
-    };
-  }, [summary]);
+  const app = summary?.apps[0] ?? null;
+  const metrics = app ? Object.entries(app.metrics).sort(([a], [b]) => a.localeCompare(b)) : [];
+  const rangeLabel = RANGES.find((r) => r.hours === hours)!.label;
 
-  const update = (next: Record<string, string>) => setParams(next);
+  const warnings = useMemo(
+    () =>
+      metrics.filter(([name, m]) => metricQuality(name as PerformanceMetricName, m) !== "good")
+        .length,
+    [metrics],
+  );
+  const lastSample = metrics
+    .map(([, m]) => new Date(m.lastSeen).getTime())
+    .filter(Number.isFinite)
+    .sort((a, b) => b - a)[0];
+
+  if (!currentApp) return <NoAppState />;
+
+  const analyzeView = () => {
+    if (!currentApp) return;
+    promptAgent({
+      context: { appId: currentApp.id, source: "performance", hours },
+      prompt: "Analyze the current performance view",
+    });
+  };
+
+  const askMetric = (name: string) => {
+    if (!currentApp) return;
+    promptAgent({
+      context: { appId: currentApp.id, source: "metric", metricName: name, hours },
+      prompt: `Explain ${name}`,
+    });
+  };
 
   return (
-    <div className="mx-auto block min-h-full max-w-[1440px] px-4 pt-5.5 pb-15 tablet:px-8 tablet:pt-7">
-      <div className="mb-7 flex items-start justify-between gap-3.5">
+    <div className="mx-auto block min-h-full max-w-[1260px] px-[22px] pt-[22px] pb-12">
+      <header className="mb-[18px] flex items-start justify-between gap-5">
         <div>
-          <h1 className="m-0 text-2xl leading-tight font-semibold tracking-[-0.7px] tablet:text-[28px]">
+          <div className="mb-1 text-[11px] font-[680] uppercase tracking-[0.07em] text-primary-hover">
+            Monitor
+          </div>
+          <h1 className="m-0 text-[24px] font-[680] leading-[1.12] tracking-[-0.04em]">
             Performance
           </h1>
-          <p className="mt-1.5 text-subtle">
-            Web Vitals and application-defined performance measurements, grouped by application.
+          <p className="mt-1.5 max-w-[620px] text-[12px] text-tertiary">
+            Web Vitals and application-defined metrics for the current application. The agent can
+            only reason over the collected summaries shown here.
           </p>
         </div>
-        {appId && (
-          <Button
-            variant="primary"
-            onClick={() => {
-              window.dispatchEvent(
-                new CustomEvent("traceability:agent-context", {
-                  detail: { appId, source: "performance", hours: selectedHours },
-                }),
-              );
-              toast("Performance context attached to Traceability Agent");
-            }}
+        <div className="flex items-center gap-2 pt-1.5">
+          <button
+            type="button"
+            onClick={analyzeView}
+            className="inline-flex h-8.5 items-center gap-1.5 rounded-[9px] border border-primary/40 bg-primary px-3 text-[12px] font-[590] text-[#111329] transition-colors hover:bg-primary-hover"
           >
-            Analyze with Agent
-          </Button>
-        )}
-      </div>
-      <div className="mb-6 grid grid-cols-1 overflow-hidden rounded-xl border border-hairline bg-surface-1 tablet:grid-cols-2 desktop:grid-cols-4">
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
-          <div className="text-xs text-subtle">Monitored applications</div>
-          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{totals.apps}</div>
+            <Sparkles size={14} /> Analyze this view
+          </button>
         </div>
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
-          <div className="text-xs text-subtle">Metric samples</div>
-          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">{totals.samples}</div>
-        </div>
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
-          <div className="text-xs text-subtle">Metric types</div>
-          <div className="mt-1.5 text-[22px] font-semibold tracking-[-0.5px]">
-            {totals.metricKinds}
-          </div>
-        </div>
-        <div className="px-5 py-4.5 border-hairline border-b last:border-b-0 tablet:[&:nth-child(3)]:border-b-0 desktop:border-b-0 tablet:[&:nth-child(odd)]:border-r desktop:[&:nth-child(2)]:border-r">
-          <div className="text-xs text-subtle">Since</div>
-          <div className="mt-1.5 pt-2 font-semibold text-[13px] tracking-normal">
-            {summary ? new Date(summary.since).toLocaleString() : "-"}
-          </div>
-        </div>
-      </div>
-      <div className="mb-3.5 flex flex-wrap items-center gap-2">
-        <Select
-          value={hours}
-          onValueChange={(v) => update({ ...(appId ? { appId } : {}), hours: String(v ?? "24") })}
-          items={RANGE_ITEMS}
+      </header>
+
+      <div className="mb-3.5 flex items-center gap-2">
+        <div
+          className="inline-flex gap-0.5 rounded-[9px] border border-hairline bg-black/15 p-0.5"
+          role="group"
+          aria-label="Performance time range"
         >
-          <SelectTrigger className="w-auto">
-            <SelectValue placeholder="Last 24 hours" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(RANGE_ITEMS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {appId && (
-          <Button size="sm" onClick={() => update({ hours })}>
-            Clear application filter
-          </Button>
-        )}
-      </div>
-      {!summary && (
-        <div className="px-5 py-13.5 text-center text-subtle">Loading performance data…</div>
-      )}
-      {summary && summary.apps.length === 0 && (
-        <div className="px-5 py-13.5 text-center text-subtle">
-          No performance samples in this time range. The SDK reports FCP, LCP, CLS, INP, TTFB and
-          DOMContentLoaded automatically.
+          {RANGES.map((r) => (
+            <button
+              key={r.hours}
+              type="button"
+              onClick={() => setHours(r.hours)}
+              className={cn(
+                "h-7 rounded-[6px] px-2 text-[11px] text-tertiary transition-colors",
+                hours === r.hours ? "bg-white/[0.09] text-ink" : "hover:text-muted",
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
-      )}
-      <div className="grid gap-3.5">
-        {summary?.apps.map((app) => (
-          <ApplicationPerformance key={app.appId} app={app} hours={selectedHours} />
-        ))}
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-tertiary">
+          <Info size={13} /> Summaries update when the SDK sends a sample.
+        </span>
       </div>
+
+      <div className="mb-[18px] grid grid-cols-4 overflow-hidden rounded-2xl border border-hairline bg-white/[0.025]">
+        <Metric
+          label="Metric samples"
+          value={(app?.samples ?? 0).toLocaleString()}
+          note={rangeLabel}
+        />
+        <Metric label="Metric types" value={metrics.length} note="Collected by the SDK" />
+        <Metric
+          label="Needs attention"
+          value={warnings}
+          note={warnings ? "Outside target range" : "Within target ranges"}
+          noteClass={warnings ? "text-warning" : "text-success"}
+        />
+        <Metric
+          label="Last sample"
+          value={lastSample ? relativeTime(new Date(lastSample).toISOString()) : "-"}
+          note="Production"
+          last
+        />
+      </div>
+
+      <section className="overflow-hidden rounded-2xl border border-hairline bg-white/[0.025]">
+        <div className="flex min-h-12 items-center border-b border-hairline px-4">
+          <span className="text-[12px] font-[630] text-muted">Metric summaries</span>
+          <span className="ml-auto text-[11px] text-tertiary">{rangeLabel}</span>
+        </div>
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr>
+              {["Metric", "Average", "p75", "Samples", "Last seen", ""].map((h) => (
+                <th
+                  key={h}
+                  className="border-b border-hairline px-4 py-2.5 text-[10px] font-[670] uppercase tracking-[0.075em] text-tertiary"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {metrics.map(([name, metric]) => {
+              const quality = metricQuality(name as PerformanceMetricName, metric);
+              return (
+                <tr key={name}>
+                  <td className="border-b border-hairline px-4 py-3">
+                    <span className="inline-flex items-center gap-2 font-mono text-[11px] text-ink">
+                      <Activity size={13} className="text-tertiary" /> {name}
+                    </span>
+                  </td>
+                  <td className="border-b border-hairline px-4 py-3 text-[12px] text-muted tabular-nums">
+                    {formatMetric(name as PerformanceMetricName, metric.average)}
+                  </td>
+                  <td
+                    className={cn(
+                      "border-b border-hairline px-4 py-3 text-[12px] tabular-nums",
+                      quality === "good" && "text-success",
+                      quality === "warn" && "text-warning",
+                      quality === "danger" && "text-danger",
+                    )}
+                  >
+                    {formatMetric(name as PerformanceMetricName, metric.p75)}
+                  </td>
+                  <td className="border-b border-hairline px-4 py-3 text-[12px] text-muted tabular-nums">
+                    {metric.count.toLocaleString()}
+                  </td>
+                  <td className="border-b border-hairline px-4 py-3 text-[12px] text-muted">
+                    {relativeTime(metric.lastSeen)}
+                  </td>
+                  <td className="border-b border-hairline px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => askMetric(name)}
+                      className="rounded-[6px] px-1.5 py-1 text-[11px] text-primary-hover transition-colors hover:bg-primary/15"
+                    >
+                      Ask agent
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+            {metrics.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-5 py-12 text-center text-[12px] text-tertiary">
+                  {summary ? "No performance samples received yet." : "Loading performance data…"}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }
 
-function toHours(value: string): 1 | 24 | 168 {
-  return value === "1" ? 1 : value === "168" ? 168 : 24;
+function Metric({
+  label,
+  value,
+  note,
+  noteClass,
+  last,
+}: {
+  label: string;
+  value: number | string;
+  note: string;
+  noteClass?: string;
+  last?: boolean;
+}) {
+  return (
+    <div className={cn("min-h-[84px] px-4 py-3.5", !last && "border-r border-hairline")}>
+      <div className="text-[11px] font-[570] text-tertiary">{label}</div>
+      <div className="mt-1 text-[22px] font-[660] tracking-[-0.045em] tabular-nums">{value}</div>
+      <div className={cn("mt-0.5 text-[10px] text-tertiary", noteClass)}>{note}</div>
+    </div>
+  );
+}
+
+function formatMetric(name: PerformanceMetricName, value: number): string {
+  if (name === "CLS") return value.toFixed(2);
+  if (value >= 1000) return `${(value / 1000).toFixed(2)} s`;
+  return `${value.toFixed(0)} ms`;
+}
+
+function metricQuality(
+  name: PerformanceMetricName,
+  summary: PerformanceMetricSummary,
+): "good" | "warn" | "danger" {
+  const p75 = summary.p75;
+  if (name === "LCP") return p75 <= 2500 ? "good" : p75 <= 4000 ? "warn" : "danger";
+  if (name === "INP") return p75 <= 200 ? "good" : p75 <= 500 ? "warn" : "danger";
+  if (name === "CLS") return p75 <= 0.1 ? "good" : p75 <= 0.25 ? "warn" : "danger";
+  if (name === "FCP") return p75 <= 1800 ? "good" : p75 <= 3000 ? "warn" : "danger";
+  if (name === "TTFB") return p75 <= 800 ? "good" : p75 <= 1800 ? "warn" : "danger";
+  if (name === "DOMContentLoaded") return p75 <= 2000 ? "good" : p75 <= 4000 ? "warn" : "danger";
+  return "good";
 }

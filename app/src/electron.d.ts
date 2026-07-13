@@ -25,6 +25,11 @@ declare global {
         reloadModels(): Promise<AvailableModel[]>;
         onEvent(listener: (event: AgentRuntimeEvent) => void): () => void;
       };
+      window: {
+        minimize(): Promise<void>;
+        toggleMaximize(): Promise<void>;
+        close(): Promise<void>;
+      };
     };
   }
 }

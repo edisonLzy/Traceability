@@ -23,6 +23,7 @@ export function useIssues(params: UseIssuesParams) {
     queryKey: issuesKey(params),
     queryFn: () =>
       listIssues({ appId: params.appId, status: params.status, limit: params.limit ?? 100 }),
+    enabled: Boolean(params.appId),
     staleTime: 30_000,
   });
 }
