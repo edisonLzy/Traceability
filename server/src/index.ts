@@ -2,50 +2,28 @@ import "dotenv/config";
 import { createServer } from "node:http";
 
 import cors from "cors";
-import express, { type Express } from "express";
+import express from "express";
 
 import { getConfig } from "./config.js";
-import { openDb } from "./db.js";
-import { createAppsRouter } from "./domains/apps/routes.js";
-import { createAppsService } from "./domains/apps/service.js";
-import { createIngestRouter } from "./domains/ingest/routes.js";
-import { createIngestService } from "./domains/ingest/service.js";
-import { createIssuesRouter } from "./domains/issues/routes.js";
-import { createIssuesService } from "./domains/issues/service.js";
-import { createPerformanceRouter } from "./domains/performance/routes.js";
-import { createPerformanceService } from "./domains/performance/service.js";
-import { createReplaysRouter } from "./domains/replays/routes.js";
-import { createReplaysService } from "./domains/replays/service.js";
-import { createSourceMapsService } from "./domains/source-maps/service.js";
+import { router as appsRouter } from "./domains/apps/router.js";
+import { router as ingestRouter } from "./domains/ingest/router.js";
+import { router as issuesRouter } from "./domains/issues/router.js";
+import { router as performanceRouter } from "./domains/performance/router.js";
+import { router as replaysRouter } from "./domains/replays/router.js";
 import { createGlobalErrorHandlerMiddleware } from "./middlewares/error.js";
 import { createResponseMiddleware } from "./middlewares/response.js";
 import { createSwaggerMiddleware } from "./middlewares/swagger.js";
 import { healthRouter } from "./routes/health.js";
 import { createLogger, createRequestLoggerMiddleware, isMainModule } from "./shared/index.js";
-import { createBroadcaster, attachWebSocket } from "./ws/broadcaster.js";
+import { attachWebSocket } from "./ws/broadcaster.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 const logger = createLogger("traceability-server");
+const DEVELOPMENT_API_PATHS = ["./src/domains/**/router.ts", "./src/routes/**/*.ts"];
+const PRODUCTION_API_PATHS = ["./dist/domains/**/router.js", "./dist/routes/**/*.js"];
 
-const DEVELOPMENT_API_PATHS = ["./src/domains/**/routes.ts", "./src/routes/**/*.ts"];
-const PRODUCTION_API_PATHS = ["./dist/domains/**/routes.js", "./dist/routes/**/*.js"];
-
-export function createApp(
-  db: ReturnType<typeof openDb>,
-  broadcaster: ReturnType<typeof createBroadcaster>,
-): Express {
-  const sourceMapsService = createSourceMapsService(db);
-  const appsService = createAppsService(db, sourceMapsService);
-  const issuesService = createIssuesService(db, broadcaster);
-  const replaysService = createReplaysService(db, issuesService);
-  const performanceService = createPerformanceService(db, appsService);
-  const ingestService = createIngestService({
-    issues: issuesService,
-    replays: replaysService,
-    sourceMaps: sourceMapsService,
-    broadcaster,
-  });
-
+function main() {
+  const config = getConfig();
   const app = express();
 
   app.use(createRequestLoggerMiddleware(logger));
@@ -63,26 +41,16 @@ export function createApp(
   })(app);
 
   app.use(healthRouter);
-  app.use(createAppsRouter({ appsService }));
-  app.use(createIssuesRouter({ issuesService }));
-  app.use(createReplaysRouter({ replaysService }));
-  app.use(createPerformanceRouter({ performanceService }));
-  app.use(createIngestRouter({ ingestService }));
+  app.use(appsRouter);
+  app.use(issuesRouter);
+  app.use(replaysRouter);
+  app.use(performanceRouter);
+  app.use(ingestRouter);
 
   app.use(createGlobalErrorHandlerMiddleware());
 
-  return app;
-}
-
-function main() {
-  const config = getConfig();
-  const db = openDb(config.dbPath);
-  const broadcaster = createBroadcaster();
-
-  const app = createApp(db, broadcaster);
   const server = createServer(app);
-
-  attachWebSocket(server, broadcaster);
+  attachWebSocket(server);
 
   server.listen(config.port, "0.0.0.0", () => {
     logger.info(`traceability server on http://0.0.0.0:${config.port}`);

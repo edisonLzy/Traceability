@@ -1,7 +1,15 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { WebSocket } from "ws";
 
-import { createBroadcaster, type IssueEvent } from "../ws/broadcaster.js";
+import {
+  addClient,
+  broadcast,
+  subscriberCount,
+  resetBroadcaster,
+  type IssueEvent,
+} from "../ws/broadcaster.js";
+
+beforeEach(() => resetBroadcaster());
 
 function fakeSocket(open: boolean) {
   return {
@@ -14,18 +22,17 @@ function fakeSocket(open: boolean) {
 
 describe("broadcaster", () => {
   it("broadcasts to open sockets only", () => {
-    const bc = createBroadcaster();
     const open = fakeSocket(true);
     const closed = fakeSocket(false);
-    bc.add(open);
-    bc.add(closed);
+    addClient(open);
+    addClient(closed);
     const event: IssueEvent = { kind: "issue:created", appId: "a", issueId: "i", payload: {} };
-    bc.broadcast(event);
+    broadcast(event);
     expect(open.send).toHaveBeenCalledTimes(1);
     expect(closed.send).not.toHaveBeenCalled();
     expect(JSON.parse((open.send as any).mock.calls[0][0])).toMatchObject({
       kind: "issue:created",
     });
-    expect(bc.size()).toBe(2);
+    expect(subscriberCount()).toBe(2);
   });
 });

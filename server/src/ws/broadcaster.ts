@@ -9,34 +9,36 @@ export interface IssueEvent {
   payload: unknown;
 }
 
-export type Broadcaster = ReturnType<typeof createBroadcaster>;
+const subscribers = new Set<WebSocket>();
 
-export function createBroadcaster() {
-  const subscribers = new Set<WebSocket>();
-  return {
-    add(ws: WebSocket) {
-      subscribers.add(ws);
-      ws.on("close", () => subscribers.delete(ws));
-    },
-    broadcast(event: IssueEvent) {
-      const msg = JSON.stringify(event);
-      for (const ws of subscribers) {
-        if (ws.readyState === WebSocket.OPEN) ws.send(msg);
-      }
-    },
-    size(): number {
-      return subscribers.size;
-    },
-  };
+export function addClient(ws: WebSocket) {
+  subscribers.add(ws);
+  ws.on("close", () => subscribers.delete(ws));
 }
 
-export function attachWebSocket(server: Server, broadcaster: Broadcaster): void {
+export function broadcast(event: IssueEvent) {
+  const msg = JSON.stringify(event);
+  for (const ws of subscribers) {
+    if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+  }
+}
+
+export function subscriberCount() {
+  return subscribers.size;
+}
+
+/** Reset subscriber state — used by tests for isolation. */
+export function resetBroadcaster() {
+  subscribers.clear();
+}
+
+export function attachWebSocket(server: Server): void {
   const wss = new WebSocketServer({ noServer: true });
   server.on("upgrade", (req, socket, head) => {
     const { pathname } = new URL(req.url ?? "", "http://localhost");
     if (pathname === "/api/ws") {
       wss.handleUpgrade(req, socket, head, (ws) => {
-        broadcaster.add(ws);
+        addClient(ws);
         wss.emit("connection", ws, req);
       });
     } else {

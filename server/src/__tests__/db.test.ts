@@ -1,16 +1,12 @@
-import type { Database } from "better-sqlite3";
-import { describe, it, expect, beforeEach } from "vitest";
+import "./test-db.js";
+import { describe, it, expect } from "vitest";
 
-import { openDb } from "../db.js";
+import { createDbClient } from "../db/client.js";
 
-let db: Database;
-beforeEach(() => {
-  db = openDb(":memory:");
-});
-
-describe("openDb", () => {
-  it("runs migrations and creates core tables", () => {
-    const tables = db
+describe("schema", () => {
+  it("creates core tables", () => {
+    const { sqlite } = createDbClient({}, ":memory:");
+    const tables = sqlite
       .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
       .all() as { name: string }[];
     const names = tables.map((t) => t.name);

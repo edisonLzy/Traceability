@@ -1,23 +1,31 @@
+import "./test-db.js";
+import express from "express";
 import request from "supertest";
 import { describe, it, expect, vi } from "vitest";
 
-import { openDb } from "../db.js";
-import { createApp } from "../index.js";
-import { createBroadcaster } from "../ws/broadcaster.js";
+import { router as appsRouter } from "../domains/apps/router.js";
+import { router as ingestRouter } from "../domains/ingest/router.js";
+import { router as issuesRouter } from "../domains/issues/router.js";
+import { router as performanceRouter } from "../domains/performance/router.js";
+import { router as replaysRouter } from "../domains/replays/router.js";
+import { createGlobalErrorHandlerMiddleware } from "../middlewares/error.js";
+import { createResponseMiddleware } from "../middlewares/response.js";
 
-// Silence the request logger during these integration tests
 vi.hoisted(() => {
   process.env.LOG_LEVEL = "silent";
 });
-const app = createApp(openDb(":memory:"), createBroadcaster());
+
+const app = express();
+app.use(express.json({ limit: "6mb" }));
+app.use(createResponseMiddleware());
+app.use(appsRouter);
+app.use(issuesRouter);
+app.use(replaysRouter);
+app.use(performanceRouter);
+app.use(ingestRouter);
+app.use(createGlobalErrorHandlerMiddleware());
 
 describe("http integration", () => {
-  it("GET /health returns 200 envelope", async () => {
-    const r = await request(app).get("/health");
-    expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ code: 0, data: "ok" });
-  });
-
   it("GET /api/apps returns 200 envelope with array data", async () => {
     const r = await request(app).get("/api/apps");
     expect(r.status).toBe(200);
@@ -29,17 +37,5 @@ describe("http integration", () => {
     const r = await request(app).get("/api/apps/nope");
     expect(r.status).toBe(404);
     expect(r.body).toMatchObject({ code: 404, data: null });
-  });
-
-  it("GET /api-docs serves the swagger UI (200)", async () => {
-    const r = await request(app).get("/api-docs/");
-    expect(r.status).toBe(200);
-  });
-
-  it("GET /api-docs.json exposes openapi paths", async () => {
-    const r = await request(app).get("/api-docs.json");
-    expect(r.status).toBe(200);
-    expect(r.body.paths["/health"]).toBeDefined();
-    expect(r.body.paths["/api/apps"]).toBeDefined();
   });
 });

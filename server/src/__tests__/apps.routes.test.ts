@@ -1,25 +1,17 @@
-import type { Database } from "better-sqlite3";
+import "./test-db.js";
 import express from "express";
 import request from "supertest";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
-import { openDb } from "../db.js";
-import { createAppsRouter } from "../domains/apps/routes.js";
-import { createAppsService } from "../domains/apps/service.js";
-import { createSourceMapsService } from "../domains/source-maps/service.js";
+import { router as appsRouter } from "../domains/apps/router.js";
 import { createGlobalErrorHandlerMiddleware } from "../middlewares/error.js";
 import { createResponseMiddleware } from "../middlewares/response.js";
 
-let app: express.Express;
-beforeEach(() => {
-  const db: Database = openDb(":memory:");
-  const appsService = createAppsService(db, createSourceMapsService(db));
-  app = express();
-  app.use(express.json());
-  app.use(createResponseMiddleware());
-  app.use(createAppsRouter({ appsService }));
-  app.use(createGlobalErrorHandlerMiddleware());
-});
+const app = express();
+app.use(express.json());
+app.use(createResponseMiddleware());
+app.use(appsRouter);
+app.use(createGlobalErrorHandlerMiddleware());
 
 describe("apps routes", () => {
   it("POST /api/apps validates and returns 201 envelope", async () => {
@@ -40,7 +32,16 @@ describe("apps routes", () => {
     expect(r.body).toMatchObject({ code: 400, data: null });
   });
 
-  it("GET /api/apps/:id 404 envelope", async () => {
+  it("GET /api/apps/:id returns 200 when found", async () => {
+    const created = await request(app)
+      .post("/api/apps")
+      .send({ name: "A", repoUrl: "git@x:a", defaultBranch: "main" });
+    const r = await request(app).get(`/api/apps/${created.body.data.id}`);
+    expect(r.status).toBe(200);
+    expect(r.body.data.name).toBe("A");
+  });
+
+  it("GET /api/apps/:id returns 404 envelope", async () => {
     const r = await request(app).get("/api/apps/nope");
     expect(r.status).toBe(404);
     expect(r.body).toMatchObject({ code: 404, data: null });
