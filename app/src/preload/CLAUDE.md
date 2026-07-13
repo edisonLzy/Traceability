@@ -8,21 +8,17 @@ The **only** bridge between the main process and the renderer. One file: `index.
 
 ## Structure
 
-The `api` object is grouped by domain, mirroring the IPC channels registered in `main/index.ts`:
+The `api` exposes two typed, allowlisted entry points that mirror main's split shared contracts:
 
-- `clipboard.writeText`
-- `window.minimize` / `toggleMaximize` / `close`
-- `sessions.list|create|get|rename|delete|setModel`
-- `agent.prompt|abort|listModels|reloadModels|onEvent`
-
-`onEvent` uses the internal `listen()` helper to wrap `ipcRenderer.on` and return an unsubscribe function - the convention for every main->renderer subscription.
+- `invoke(channel, ...args)` for `AllowedRenderInvokeEvents`, including session persistence, Agent runtime, model, Skill, and window channels.
+- `on(event, handler)` for `AllowedMainExposeEvents`; it wraps `ipcRenderer.on` and returns an unsubscribe function.
 
 ## Rules
 
 - **No business logic.** Each method is a one-line `ipcRenderer.invoke(...)` (or `listen` for subscriptions). Validation, state, and side effects all live in main. If you are tempted to add logic here, it belongs in `main/index.ts` (handler) or `main/agent/` (behavior) instead.
-- **Types come from `@shared/ipc`.** `import type { ... } from "../shared/ipc.js"`. Every method's return type is asserted against the shared contract (`as Promise<...>`).
-- **Every channel here must have a zod-validated handler in `main/index.ts`.** Adding a method here without a matching `ipcMain.handle` (or removing the handler) breaks the bridge. The two files change together.
-- **Keep the surface narrow.** Do not expose `ipcRenderer` directly, do not add generic `invoke(channel, ...)` escape hatches. Each capability is a named method with a typed signature.
+- **Types come from split shared contracts.** Use relative `.js` imports such as `../shared/events-ipc.js` and `../shared/session-ipc.js`. The preload declaration must expose the corresponding typed `window.traceability` API to the renderer.
+- **Every allowlisted channel must have a validated handler in main.** Adding an invoke union member without a matching `ipcMain.handle` (or removing the handler) breaks the bridge.
+- **Keep the surface narrow.** Do not expose `ipcRenderer` directly. `invoke` is safe only because its channel is a compile-time allowlist; never widen it to arbitrary strings.
 - Import specifiers use the `.js` suffix (this is a `tsc`-emitted ESM build, see `app/CLAUDE.md`).
 
 ## Security posture

@@ -4,7 +4,7 @@ import { Command, Radio, RefreshCw } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
-import { AgentPanel } from "./_components/AgentPanel";
+import { AgentPanel } from "./_agent";
 import { CommandPalette } from "./_components/CommandPalette";
 import { Sidebar } from "./_components/Sidebar";
 import { Titlebar } from "./_components/Titlebar";

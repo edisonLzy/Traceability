@@ -1,8 +1,8 @@
-import type { AgentPromptInput } from "@shared/ipc";
+import type { MonitoringContext } from "@shared/agent-message";
 
 export interface AgentPromptEvent {
   /** Context to pin before running. `source: "general"` clears any pinned object. */
-  context: AgentPromptInput["context"];
+  context: MonitoringContext;
   /** Prompt text to send to the agent. */
   prompt: string;
 }
@@ -13,9 +13,9 @@ export function promptAgent(detail: AgentPromptEvent): void {
 }
 
 /** Pin agent context without sending a prompt. */
-export function setAgentContext(context: AgentPromptInput["context"]): void {
+export function setAgentContext(context: MonitoringContext): void {
   window.dispatchEvent(
-    new CustomEvent<AgentPromptInput["context"]>("traceability:agent-context", { detail: context }),
+    new CustomEvent<MonitoringContext>("traceability:agent-context", { detail: context }),
   );
 }
 

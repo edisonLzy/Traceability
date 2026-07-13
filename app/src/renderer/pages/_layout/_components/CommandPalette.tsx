@@ -1,6 +1,6 @@
 import { useCurrentApp } from "@renderer/context/current-app";
 import { cn } from "@renderer/lib/utils";
-import type { AgentSessionSummary } from "@shared/ipc";
+import type { Session } from "@shared/session-ipc";
 import {
   AlertTriangle,
   AppWindow,
@@ -31,7 +31,7 @@ export function CommandPalette() {
   const [mode, setMode] = useState<Mode>("global");
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [sessions, setSessions] = useState<AgentSessionSummary[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const openPalette = useCallback((m: Mode) => {
@@ -70,8 +70,8 @@ export function CommandPalette() {
   // Load sessions when entering sessions mode.
   useEffect(() => {
     if (!open || mode !== "sessions" || !appId) return;
-    void window.traceability.sessions
-      .list(appId)
+    void window.traceability
+      .invoke("sessions:list", appId)
       .then(setSessions)
       .catch(() => setSessions([]));
   }, [open, mode, appId]);
@@ -86,7 +86,7 @@ export function CommandPalette() {
       return sessions.map((s) => ({
         id: `session:${s.id}`,
         icon: MessageCircle,
-        title: s.title || "New conversation",
+        title: s.name || "New conversation",
         subtitle: relativeUpdated(s.updatedAt),
         key: "",
       }));

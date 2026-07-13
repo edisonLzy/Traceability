@@ -42,7 +42,9 @@ Aliases (`@renderer`, `@shared`) are declared in three places that must stay in 
 
 ## State ownership
 
-The **main process owns all state**: the agent runtime (`src/main/agent/`) and the SQLite database (`src/main/db/`, at `userData/traceability-agent.sqlite`). The renderer is stateless beyond React/query cache and reaches main only through the preload bridge. See `preload/CLAUDE.md` and `shared/CLAUDE.md` for the IPC contract.
+The main process owns the Agent runtime and durable SQLite sessions. The renderer owns only the view-facing Agent state in the vanilla Zustand store at `src/renderer/store/agent/`: hydrated entries, streaming state, the application-scoped session list, and pending `AskUserQuestion` requests. Agent presentation and hooks live exclusively in `src/renderer/pages/_layout/_agent/`.
+
+The renderer reaches main only through the typed preload bridge. It may use the allowlisted `window.traceability.invoke(channel, ...args)` and `window.traceability.on(event, handler)` APIs; it must never recreate a granular bridge or expose Node capabilities.
 
 ## Backend & auth
 
@@ -52,6 +54,6 @@ Auth is **disabled for the MVP** — the server accepts all requests (tokens ign
 
 Tailwind 4 via `@tailwindcss/vite` (no `tailwind.config`). shadcn (new-york style, `components.json`) primitives live in `src/renderer/components/ui/`. Lucide icons. Format/lint run only on commit (husky + lint-staged); VS Code format-on-save is intentionally off.
 
-## In-progress migration
+## Agent migration boundary
 
-An agent-core migration (`docs/superpowers/plans/2026-07-13-agent-core-migration.md`) will flatten `main/agent/*` → `main/agent-*.ts`, dissolve `main/db` → `main/sessions/`, split `shared/ipc.ts` → `shared/*-ipc.ts`, and move the renderer chat UI `features/agent` → `features/agent-panel/` with subdirectories. The current code is mid-migration. **Follow the current layout when editing**; affected subdirectory docs note the planned direction.
+The Agent main migration replaces `shared/ipc.ts` with focused `shared/*-ipc.ts` contracts and supplies the typed preload declaration. The renderer migration targets that completed API directly: it does not carry a compatibility layer for the old `window.traceability.agent/sessions/window` methods. Until both changes are present in one worktree, web type-checking is expected to report missing shared/preload contracts.

@@ -15,17 +15,20 @@ export function Titlebar() {
           <>
             <WindowButton
               title="Minimize"
-              onClick={() => void window.traceability.window.minimize()}
+              onClick={() => void window.traceability.invoke("window:minimize")}
             >
               <Minus size={14} />
             </WindowButton>
             <WindowButton
               title="Maximize"
-              onClick={() => void window.traceability.window.toggleMaximize()}
+              onClick={() => void window.traceability.invoke("window:toggleMaximize")}
             >
               <Square size={11} />
             </WindowButton>
-            <WindowButton title="Close" onClick={() => void window.traceability.window.close()}>
+            <WindowButton
+              title="Close"
+              onClick={() => void window.traceability.invoke("window:close")}
+            >
               <X size={14} />
             </WindowButton>
           </>
