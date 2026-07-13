@@ -2,12 +2,13 @@ import { describe, it, expect, vi } from 'vitest'
 import request from 'supertest'
 import { openDb } from '../db.js'
 import { createApp } from '../index.js'
+import { createBroadcaster } from '../ws/broadcaster.js'
 
 // Silence the request logger during these integration tests
 vi.hoisted(() => {
   process.env.LOG_LEVEL = 'silent'
 })
-const app = createApp(openDb(':memory:'))
+const app = createApp(openDb(':memory:'), createBroadcaster())
 
 describe('http integration', () => {
   it('GET /health returns 200 envelope', async () => {

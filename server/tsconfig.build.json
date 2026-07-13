@@ -3,6 +3,7 @@
   "compilerOptions": {
     "removeComments": false,
     "declaration": false,
+    "declarationMap": false,
     "sourceMap": false
   },
   "include": ["src"],
