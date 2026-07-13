@@ -5,8 +5,9 @@
   "description": "Sentry-based web monitoring + exception-to-fix loop",
   "packageManager": "pnpm@10.30.3",
   "scripts": {
-    "build": "pnpm -r --filter=./packages/* --filter=./server run build",
+    "build": "pnpm -r --filter=./packages/* --filter=./server run build && pnpm --filter ./app build",
     "build:app": "pnpm --filter ./app build",
+    "dev:app": "pnpm --filter ./app dev",
     "test": "pnpm -r run test",
     "typecheck": "pnpm -r run typecheck"
   },
@@ -14,6 +15,6 @@
     "node": ">=20"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
+    "onlyBuiltDependencies": ["better-sqlite3", "electron", "esbuild"]
   }
 }
