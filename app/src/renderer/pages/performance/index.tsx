@@ -2,7 +2,7 @@ import { NoAppState } from "@renderer/components/NoAppState";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { promptAgent } from "@renderer/lib/agent-events";
 import { cn, relativeTime } from "@renderer/lib/utils";
-import { usePerformanceSummary } from "@renderer/pages/performance/hooks/use-performance";
+import { usePerformanceSummary } from "@renderer/pages/performance/_hooks/use-performance";
 import type { PerformanceMetricSummary, PerformanceMetricName } from "@traceability/protocol";
 import { Activity, Info, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
