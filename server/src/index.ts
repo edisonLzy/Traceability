@@ -10,11 +10,6 @@ import { getConfig } from './config.js'
 import { openDb } from './db.js'
 import { createBroadcaster, attachWebSocket } from './ws/broadcaster.js'
 import { healthRouter } from './routes/health.js'
-import { createAppsRepo } from './domains/apps/db.js'
-import { createIssuesRepo } from './domains/issues/db.js'
-import { createRrwebReplaysRepo } from './domains/replays/db.js'
-import { createPerformanceRepo } from './domains/performance/db.js'
-import { createSourceMapsRepo } from './domains/source-maps/db.js'
 import { createAppsService } from './domains/apps/service.js'
 import { createIssuesService } from './domains/issues/service.js'
 import { createReplaysService } from './domains/replays/service.js'
@@ -34,12 +29,6 @@ const DEVELOPMENT_API_PATHS = ['./src/domains/**/routes.ts', './src/routes/**/*.
 const PRODUCTION_API_PATHS = ['./dist/domains/**/routes.js', './dist/routes/**/*.js']
 
 export function createApp(db: ReturnType<typeof openDb>, broadcaster: ReturnType<typeof createBroadcaster>): Express {
-  const appsRepo = createAppsRepo(db)
-  const issuesRepo = createIssuesRepo(db)
-  const replaysRepo = createRrwebReplaysRepo(db)
-  const performanceRepo = createPerformanceRepo(db)
-  const sourceMapsRepo = createSourceMapsRepo(db)
-
   const sourceMapsService = createSourceMapsService(db)
   const appsService = createAppsService(db, sourceMapsService)
   const issuesService = createIssuesService(db, broadcaster)
