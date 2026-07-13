@@ -3,5 +3,5 @@ export default {
     `pnpm oxlint --fix ${filenames.join(" ")}`,
     `pnpm oxfmt --write ${filenames.join(" ")}`,
   ],
-  "*.{json}": (filenames) => [`pnpm oxfmt --write ${filenames.join(" ")}`],
+  "*.json": (filenames) => [`pnpm oxfmt --write ${filenames.join(" ")}`],
 };
