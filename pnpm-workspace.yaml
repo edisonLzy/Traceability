@@ -8,6 +8,7 @@ catalog:
   typescript: ^7.0.2
   vitest: ^4.0.16
   tsx: ^4.21.0
+  "@tiptap/core": ^3.22.5
 
 allowBuilds:
   electron: true
