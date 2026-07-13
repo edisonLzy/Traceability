@@ -15,6 +15,15 @@ Sentry-based web/electron/mf monitoring + exception-to-fix loop.
 | `app`               | Inbox Web UI (React + Vite)                                                      |
 | `server`            | Self-hosted Sentry-envelope ingest + issue store + REST/WS API                   |
 
+## Prerequisites
+
+- Node.js `>=20` (see `engines.node`)
+- [Corepack](https://github.com/nodejs/corepack) — the pnpm version is pinned via the `packageManager` field (`pnpm@10.30.3`), so enable it once and `pnpm` resolves to the right version automatically:
+
+```bash
+corepack enable
+```
+
 ## Quick start
 
 ```bash
