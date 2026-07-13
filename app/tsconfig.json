@@ -9,6 +9,6 @@
       "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src", "electron.vite.config.ts"],
+  "include": ["src", "src/preload/index.d.ts", "electron.vite.config.ts"],
   "exclude": ["src/main/**", "src/preload/**"]
 }

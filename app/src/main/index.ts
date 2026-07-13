@@ -3,17 +3,18 @@ import { join } from "node:path";
 import { app, BrowserWindow, clipboard, ipcMain } from "electron";
 import { z } from "zod";
 
-import { AgentPool } from "./agent/agent-pool.js";
-import { ModelRegistry } from "./agent/model-registry.js";
-import { SessionStore } from "./agent/session-store.js";
+import type { Entry } from "../shared/session-ipc.js";
+import { AgentPool } from "./agent-pool.js";
 import { LocalDatabase } from "./db/database.js";
+import { SessionService } from "./sessions/index.js";
 
 let mainWindow: BrowserWindow | null = null;
 let database: LocalDatabase | null = null;
 let agentPool: AgentPool | null = null;
+let sessionService: SessionService | null = null;
 
-async function createWindow(): Promise<void> {
-  mainWindow = new BrowserWindow({
+function createWindow(): BrowserWindow {
+  const window = new BrowserWindow({
     width: 1440,
     height: 920,
     minWidth: 980,
@@ -24,83 +25,61 @@ async function createWindow(): Promise<void> {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      // electron-vite emits the preload entry as ESM (`index.mjs`). Keeping this
-      // explicit is important in production: without the preload the renderer
-      // cannot reach the deliberately small, validated IPC surface.
       preload: join(__dirname, "../preload/index.mjs"),
     },
   });
+  mainWindow = window;
+  agentPool?.updateBrowserWindow(window);
+  return window;
+}
 
+async function loadWindow(window: BrowserWindow): Promise<void> {
   if (process.env.ELECTRON_RENDERER_URL) {
-    await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+    await window.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    await mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    await window.loadFile(join(__dirname, "../renderer/index.html"));
   }
 }
 
-function requireAgentPool(): AgentPool {
-  if (!agentPool) throw new Error("Agent runtime is unavailable before application readiness");
-  return agentPool;
+function requireSessionService(): SessionService {
+  if (!sessionService)
+    throw new Error("Session service is unavailable before application readiness");
+  return sessionService;
 }
 
 function registerIpc(): void {
-  ipcMain.handle("sessions:list", (_event, appId: unknown) =>
-    requireAgentPool().listSessions(z.string().parse(appId)),
-  );
   ipcMain.handle("sessions:create", (_event, appId: unknown) =>
-    requireAgentPool().createSession(z.string().parse(appId)),
+    requireSessionService().create(z.string().min(1).parse(appId)),
+  );
+  ipcMain.handle("sessions:list", (_event, appId: unknown) =>
+    requireSessionService().list(z.string().min(1).parse(appId)),
   );
   ipcMain.handle("sessions:get", (_event, sessionId: unknown) =>
-    requireAgentPool().getSession(z.string().parse(sessionId)),
+    requireSessionService().get(z.string().uuid().parse(sessionId)),
   );
-  ipcMain.handle("sessions:rename", (_event, input: unknown) => {
-    const value = z
-      .object({ sessionId: z.string(), title: z.string().min(1).max(200) })
-      .parse(input);
-    requireAgentPool().renameSession(value.sessionId, value.title);
-  });
-  ipcMain.handle("sessions:delete", (_event, sessionId: unknown) =>
-    requireAgentPool().deleteSession(z.string().parse(sessionId)),
+  ipcMain.handle("sessions:getEntries", (_event, sessionId: unknown) =>
+    requireSessionService().getEntries(z.string().uuid().parse(sessionId)),
   );
-  ipcMain.handle("sessions:set-model", (_event, input: unknown) => {
-    const value = z
-      .object({
-        sessionId: z.string(),
-        model: z.object({ providerId: z.string(), modelId: z.string() }),
-      })
-      .parse(input);
-    return requireAgentPool().setModel(value.sessionId, value.model);
+  ipcMain.handle("sessions:rename", (_event, sessionId: unknown, name: unknown) => {
+    requireSessionService().rename(
+      z.string().uuid().parse(sessionId),
+      z.string().trim().min(1).max(200).parse(name),
+    );
   });
-  ipcMain.handle("agent:prompt", (_event, input: unknown) => {
-    const value = z
-      .object({
-        sessionId: z.string(),
-        text: z.string().trim().min(1).max(20_000),
-        model: z.object({ providerId: z.string(), modelId: z.string() }).optional(),
-        context: z.object({
-          appId: z.string(),
-          source: z.enum(["general", "issue", "performance", "metric"]),
-          issueId: z.string().optional(),
-          metricName: z.string().optional(),
-          hours: z.union([z.literal(1), z.literal(24), z.literal(168)]).optional(),
-        }),
-      })
-      .parse(input);
-    return requireAgentPool().prompt(value);
+  ipcMain.handle("sessions:delete", (_event, sessionId: unknown) => {
+    requireSessionService().delete(z.string().uuid().parse(sessionId));
   });
-  ipcMain.handle("agent:abort", (_event, sessionId: unknown) =>
-    requireAgentPool().abort(z.string().parse(sessionId)),
-  );
-  ipcMain.handle("agent:list-models", () => requireAgentPool().listModels());
-  ipcMain.handle("agent:reload-models", () => requireAgentPool().reloadModels());
+  ipcMain.handle("sessions:appendEntries", (_event, sessionId: unknown, entries: unknown) => {
+    const parsedSessionId = z.string().uuid().parse(sessionId);
+    const parsedEntries = z.array(z.custom<Entry>()).parse(entries);
+    requireSessionService().appendEntries(parsedSessionId, parsedEntries);
+  });
 
   ipcMain.handle("clipboard:writeText", (_event, text: unknown) => {
     clipboard.writeText(z.string().parse(text));
   });
-
-  // Custom titlebar window controls (titleBarStyle is "hidden" / "hiddenInset").
   ipcMain.handle("window:minimize", () => mainWindow?.minimize());
-  ipcMain.handle("window:toggle-maximize", () => {
+  ipcMain.handle("window:toggleMaximize", () => {
     if (!mainWindow) return;
     if (mainWindow.isMaximized()) mainWindow.unmaximize();
     else mainWindow.maximize();
@@ -110,13 +89,17 @@ function registerIpc(): void {
 
 app.whenReady().then(async () => {
   database = new LocalDatabase(join(app.getPath("userData"), "traceability-agent.sqlite"));
-  agentPool = new AgentPool(new SessionStore(database), new ModelRegistry(), () => mainWindow);
-  await agentPool.initialize();
+  sessionService = new SessionService(database);
+  const initialWindow = createWindow();
+  agentPool = new AgentPool(initialWindow);
   registerIpc();
-  await createWindow();
+  await loadWindow(initialWindow);
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) void createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      const window = createWindow();
+      void loadWindow(window);
+    }
   });
 });
 
@@ -125,6 +108,6 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  agentPool?.dispose();
+  void agentPool?.destroyAll();
   database?.close();
 });

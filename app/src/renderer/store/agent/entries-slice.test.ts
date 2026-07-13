@@ -55,9 +55,9 @@ describe("agent entries slice", () => {
 
     const entry = store.getState().getEntryState("session-a").entries[0];
     expect(entry?.status).toBe(EntryStatus.Synced);
-    expect(entry?.completedAt).toBe(3);
     expect(entry?.type).toBe("message");
     if (entry?.type === "message") {
+      expect(entry.completedAt).toBe(3);
       expect((entry.data as AssistantMessage).content).toEqual([
         { type: "text", text: "Streaming update." },
       ]);

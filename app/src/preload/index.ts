@@ -1,50 +1,46 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type {
-  AgentPromptInput,
-  AgentRuntimeEvent,
-  AgentSessionDetail,
-  AgentSessionSummary,
-  AvailableModel,
-  ModelRef,
-} from "../shared/ipc.js";
+  AllowedMainExposeEvents,
+  AllowedRenderInvokeEvents,
+  TraceabilityInvokeIPC,
+} from "../shared/events-ipc.js";
+import { ALLOWED_MAIN_EXPOSE_EVENTS, ALLOWED_RENDER_INVOKE_EVENTS } from "../shared/events-ipc.js";
 
-function listen<T>(channel: string, listener: (payload: T) => void): () => void {
-  const handler = (_event: Electron.IpcRendererEvent, payload: T) => listener(payload);
-  ipcRenderer.on(channel, handler);
-  return () => ipcRenderer.removeListener(channel, handler);
-}
+type InvokeArgs<C extends keyof TraceabilityInvokeIPC> = Parameters<TraceabilityInvokeIPC[C]>;
 
-const api = {
-  clipboard: {
-    writeText: (text: string) => ipcRenderer.invoke("clipboard:writeText", text),
-  },
-  window: {
-    minimize: () => ipcRenderer.invoke("window:minimize"),
-    toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
-    close: () => ipcRenderer.invoke("window:close"),
-  },
-  sessions: {
-    list: (appId: string) =>
-      ipcRenderer.invoke("sessions:list", appId) as Promise<AgentSessionSummary[]>,
-    create: (appId: string) =>
-      ipcRenderer.invoke("sessions:create", appId) as Promise<AgentSessionSummary>,
-    get: (sessionId: string) =>
-      ipcRenderer.invoke("sessions:get", sessionId) as Promise<AgentSessionDetail | null>,
-    rename: (input: { sessionId: string; title: string }) =>
-      ipcRenderer.invoke("sessions:rename", input) as Promise<void>,
-    delete: (sessionId: string) =>
-      ipcRenderer.invoke("sessions:delete", sessionId) as Promise<void>,
-    setModel: (input: { sessionId: string; model: ModelRef }) =>
-      ipcRenderer.invoke("sessions:set-model", input) as Promise<boolean>,
-  },
-  agent: {
-    prompt: (input: AgentPromptInput) => ipcRenderer.invoke("agent:prompt", input) as Promise<void>,
-    abort: (sessionId: string) => ipcRenderer.invoke("agent:abort", sessionId) as Promise<void>,
-    listModels: () => ipcRenderer.invoke("agent:list-models") as Promise<AvailableModel[]>,
-    reloadModels: () => ipcRenderer.invoke("agent:reload-models") as Promise<AvailableModel[]>,
-    onEvent: (listener: (event: AgentRuntimeEvent) => void) => listen("agent:event", listener),
-  },
-};
+contextBridge.exposeInMainWorld("traceability", {
+  platform: process.platform,
+  invoke: <C extends AllowedRenderInvokeEvents>(
+    channel: C,
+    ...args: InvokeArgs<C>
+  ): Promise<Awaited<ReturnType<TraceabilityInvokeIPC[C]>>> => {
+    if (!(ALLOWED_RENDER_INVOKE_EVENTS as readonly string[]).includes(channel)) {
+      throw new Error(`IPC channel not allowed: ${channel}`);
+    }
 
-contextBridge.exposeInMainWorld("traceability", api);
+    return ipcRenderer.invoke(channel, ...args) as Promise<
+      Awaited<ReturnType<TraceabilityInvokeIPC[C]>>
+    >;
+  },
+  on: <E extends keyof AllowedMainExposeEvents>(
+    event: E,
+    callback: (payload: AllowedMainExposeEvents[E]) => void,
+  ) => {
+    if (!(ALLOWED_MAIN_EXPOSE_EVENTS as readonly string[]).includes(event)) {
+      throw new Error(`IPC event not allowed: ${event}`);
+    }
+
+    const subscription = (
+      _event: Electron.IpcRendererEvent,
+      payload: AllowedMainExposeEvents[E],
+    ) => {
+      callback(payload);
+    };
+    ipcRenderer.on(event, subscription);
+
+    return () => {
+      ipcRenderer.removeListener(event, subscription);
+    };
+  },
+});
