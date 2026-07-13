@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Replayer } from '@rrweb/replay'
+import { Button } from '@renderer/components/ui/button'
 import type { RrwebReplay } from '@traceability/protocol'
 
 interface RrwebReplayPlayerProps {
@@ -7,6 +8,11 @@ interface RrwebReplayPlayerProps {
 }
 
 const SPEEDS = [1, 2, 4, 8]
+
+const seekClass =
+  'h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-surface-3 ' +
+  '[&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-primary ' +
+  '[&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary'
 
 function formatMs(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000))
@@ -159,14 +165,14 @@ export function RrwebReplayPlayer({ replay }: RrwebReplayPlayerProps) {
   }
 
   return (
-    <div className="replay-player-wrap">
-      <div className="replay-player" ref={hostRef} />
-      <div className="replay-controls">
-        <button className="btn btn-sm" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
+    <div className="flex flex-col gap-2.5">
+      <div className="replay-player min-h-50 w-full overflow-hidden rounded-lg border border-hairline bg-[#090a0b]" ref={hostRef} />
+      <div className="flex items-center gap-2.5 px-0.5">
+        <Button size="sm" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
           {playing ? '❚❚' : '▶'}
-        </button>
+        </Button>
         <input
-          className="replay-seek"
+          className={seekClass}
           type="range"
           min={0}
           max={Math.max(total, 1)}
@@ -174,18 +180,19 @@ export function RrwebReplayPlayer({ replay }: RrwebReplayPlayerProps) {
           value={Math.min(current, total || 0)}
           onChange={(e) => seek(Number(e.target.value))}
         />
-        <span className="replay-time muted">
+        <span className="whitespace-nowrap text-xs tabular-nums text-subtle">
           {formatMs(current)} / {formatMs(total)}
         </span>
-        <div className="replay-speeds">
+        <div className="ml-auto flex gap-1">
           {SPEEDS.map((s) => (
-            <button
+            <Button
               key={s}
-              className={`btn btn-sm${speed === s ? ' btn-primary' : ''}`}
+              size="sm"
+              variant={speed === s ? 'primary' : 'default'}
               onClick={() => changeSpeed(s)}
             >
               {s}×
-            </button>
+            </Button>
           ))}
         </div>
       </div>

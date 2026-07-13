@@ -1,15 +1,18 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useApp, useDeleteApp } from '@renderer/hooks/use-apps'
-import { useToast } from '@renderer/components/Toast'
-import { Button } from '@renderer/components/ui/primitives'
+import { Button } from '@renderer/components/ui/button'
+import { Badge } from '@renderer/components/ui/badge'
+import { Card, CardHeader, CardTitle } from '@renderer/components/ui/card'
+import { emptyClass, pageClass, pageHeaderClass, pageTitleClass, pageSubtitleClass } from '@renderer/components/ui/styles'
+import { cn } from '@renderer/lib/utils'
 
 export function AppDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: app } = useApp(id)
   const deleteAppMutation = useDeleteApp()
   const nav = useNavigate()
-  const toast = useToast()
-  if (!app) return <div className="page"><div className="empty">Loading…</div></div>
+  if (!app) return <div className={pageClass}><div className={emptyClass}>Loading…</div></div>
 
   const dsn = `${location.origin.replace(/:\d+$/, ':3000')}/api/ingest/envelope/${app.id}`
 
@@ -25,38 +28,38 @@ export function AppDetailPage() {
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
+    <div className={pageClass}>
+      <div className={pageHeaderClass}>
         <div>
-          <Button sm onClick={() => nav('/apps')}>← Applications</Button>
-          <h1 className="page-title" style={{ marginTop: 18 }}>{app.name}</h1>
-          <p className="page-subtitle">{app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}</p>
+          <Button size="sm" onClick={() => nav('/apps')}>← Applications</Button>
+          <h1 className={cn(pageTitleClass, 'mt-4.5')}>{app.name}</h1>
+          <p className={pageSubtitleClass}>{app.defaultBranch} · created {new Date(app.createdAt).toLocaleDateString()}</p>
         </div>
-        <div className="header-actions">
+        <div className="flex items-center gap-2">
           <Button variant="primary" onClick={() => nav(`/issues?appId=${app.id}`)}>View issues</Button>
           <Button onClick={() => nav(`/performance?appId=${app.id}`)}>View performance</Button>
         </div>
       </div>
-      <div className="detail-grid">
-        <div className="panel">
-          <div className="panel-head">
-            <div className="panel-title">SDK connection</div>
-            <span className="badge fixed" style={{ marginLeft: 'auto' }}><span className="dot"></span>Receiving events</span>
+      <div className="grid grid-cols-1 gap-4.5 desktop:grid-cols-[minmax(0,1fr)_310px]">
+        <Card>
+          <CardHeader>
+            <CardTitle>SDK connection</CardTitle>
+            <Badge variant="fixed" className="ml-auto">Receiving events</Badge>
+          </CardHeader>
+          <div className="px-4.5 py-2">
+            <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs"><div className="text-[11px] text-tertiary">App ID</div><div className="break-all font-medium text-muted">{app.id}</div></div>
+            <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs"><div className="text-[11px] text-tertiary">DSN</div><div className="break-all font-medium text-muted">{dsn}</div></div>
+            <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs"><div className="text-[11px] text-tertiary">Repository</div><div className="break-all font-medium text-muted">{app.repoUrl}</div></div>
+            <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs last:border-b-0"><div className="text-[11px] text-tertiary">Default branch</div><div className="break-all font-medium text-muted">{app.defaultBranch}</div></div>
           </div>
-          <div className="info-list">
-            <div className="info-row"><div className="info-key">App ID</div><div className="info-value">{app.id}</div></div>
-            <div className="info-row"><div className="info-key">DSN</div><div className="info-value">{dsn}</div></div>
-            <div className="info-row"><div className="info-key">Repository</div><div className="info-value">{app.repoUrl}</div></div>
-            <div className="info-row"><div className="info-key">Default branch</div><div className="info-value">{app.defaultBranch}</div></div>
+        </Card>
+        <aside className="h-max order-first overflow-hidden rounded-xl border border-hairline bg-surface-1 desktop:order-none">
+          <div className="border-b border-hairline p-4">
+            <div className="mb-2 text-[11px] text-tertiary">Created</div>
+            <div className="text-xs font-medium text-muted">{new Date(app.createdAt).toLocaleString()}</div>
           </div>
-        </div>
-        <aside className="side-panel">
-          <div className="side-section">
-            <div className="side-label">Created</div>
-            <div className="side-value">{new Date(app.createdAt).toLocaleString()}</div>
-          </div>
-          <div className="side-section">
-            <Button variant="danger" className="full" onClick={del}>Delete application</Button>
+          <div className="p-4">
+            <Button variant="danger" className="w-full" onClick={del}>Delete application</Button>
           </div>
         </aside>
       </div>

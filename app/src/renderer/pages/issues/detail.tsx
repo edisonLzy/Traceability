@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useIssue, useIssueEvents, useIssueReplays, useReplay } from '@renderer/hooks/use-issue'
 import { RrwebReplayPlayer } from '@renderer/components/RrwebReplayPlayer'
-import { useToast } from '@renderer/components/Toast'
-import { Button } from '@renderer/components/ui/primitives'
+import { Button } from '@renderer/components/ui/button'
+import { Badge } from '@renderer/components/ui/badge'
+import { Card } from '@renderer/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@renderer/components/ui/select'
+import { codeClass, emptyClass, pageClass } from '@renderer/components/ui/styles'
+import { cn } from '@renderer/lib/utils'
 import type { Issue, RrwebReplay } from '@traceability/protocol'
 
 type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs' | 'replay'
 
 export function IssueDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const toast = useToast()
   const issueQuery = useIssue(id)
   const eventsQuery = useIssueEvents(id)
   const replaysQuery = useIssueReplays(id)
@@ -29,7 +34,7 @@ export function IssueDetailPage() {
   useEffect(() => {
     if (issueQuery.error) toast(String(issueQuery.error))
     if (replayQuery.error) toast(String(replayQuery.error))
-  }, [issueQuery.error, replayQuery.error, toast])
+  }, [issueQuery.error, replayQuery.error])
 
   const issue = issueQuery.data ?? null
   const events = eventsQuery.data ?? []
@@ -37,7 +42,7 @@ export function IssueDetailPage() {
   const activeReplay: RrwebReplay | null = replayQuery.data ?? null
   const replayLoading = tab === 'replay' && Boolean(selectedReplayId) && replayQuery.isLoading
 
-  if (!issue) return <div className="page"><div className="empty">Loading…</div></div>
+  if (!issue) return <div className={pageClass}><div className={emptyClass}>Loading…</div></div>
 
   const investigate = () => {
     window.dispatchEvent(new CustomEvent('traceability:agent-context', {
@@ -46,103 +51,106 @@ export function IssueDetailPage() {
     toast('Issue context attached to Traceability Agent')
   }
 
+  const replayItems = Object.fromEntries(
+    replays.map((r) => [r.id, `${new Date(r.receivedAt).toLocaleString()} · ${r.eventCount} events`]),
+  )
+
   return (
-    <div className="page">
-      <div className="issue-heading">
-        <span className={`severity ${issue.type === 'error' ? '' : 'warn'}`}></span>
-        <div style={{ flex: 1 }}>
-          <h1>{issue.title}</h1>
-          <div className="issue-id">{issue.id.slice(0, 8)} · {issue.appId.slice(0, 8)} · {issue.type}</div>
+    <div className={pageClass}>
+      <div className="mb-5 flex items-start gap-3">
+        <span className={cn('mt-2.5 size-2.5 shrink-0 rounded-full', issue.type === 'error' ? 'bg-danger' : 'bg-warning')} />
+        <div className="flex-1">
+          <h1 className="mb-2 text-2xl leading-snug tracking-[-0.5px]">{issue.title}</h1>
+          <div className="mt-0.5 font-mono text-[11px] text-tertiary">{issue.id.slice(0, 8)} · {issue.appId.slice(0, 8)} · {issue.type}</div>
         </div>
-        <div className="header-actions">
+        <div className="flex items-center gap-2">
           <Button variant="primary" onClick={investigate}>Investigate with Agent</Button>
         </div>
       </div>
-      <div className="detail-grid">
-        <div className="panel">
-          <div className="tabs">
-            {(['stack', 'events', 'context', 'breadcrumbs', 'replay'] as Tab[]).map((t) => (
-              <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                {t === 'stack'
-                  ? 'Stack trace'
-                  : t === 'events'
-                    ? `Events · ${events.length}`
-                    : t === 'context'
-                      ? 'Context'
-                      : t === 'breadcrumbs'
-                        ? 'Breadcrumbs'
-                        : `Replay · ${replays.length}`}
-              </button>
-            ))}
-          </div>
-          <div className={`tab-pane ${tab === 'stack' ? 'active' : ''}`}>
-            {issue.metadata.source && <SourceLocation location={issue.metadata.source} />}
-            <pre className="code">{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
-          </div>
-          <div className={`tab-pane ${tab === 'events' ? 'active' : ''}`}>
-            <div className="info-list">
-              {events.map((e) => (
-                <div className="info-row" key={e.id}>
-                  <div className="info-key">{new Date(e.receivedAt).toLocaleTimeString()}</div>
-                  <div className="info-value">{e.envelope.slice(0, 120)}…</div>
-                </div>
-              ))}
-              {events.length === 0 && <div className="empty">No events.</div>}
-            </div>
-          </div>
-          <div className={`tab-pane ${tab === 'context' ? 'active' : ''}`}>
-            <div className="info-list">
-              <div className="info-row"><div className="info-key">type</div><div className="info-value">{issue.type}</div></div>
-              <div className="info-row"><div className="info-key">fingerprint</div><div className="info-value">{issue.fingerprint}</div></div>
-              <div className="info-row"><div className="info-key">context</div><div className="info-value">{JSON.stringify(issue.metadata.context ?? {})}</div></div>
-            </div>
-          </div>
-          <div className={`tab-pane ${tab === 'breadcrumbs' ? 'active' : ''}`}>
-            <div className="empty">Breadcrumbs are captured inside each event envelope (see Events tab).</div>
-          </div>
-          <div className={`tab-pane ${tab === 'replay' ? 'active' : ''}`}>
-            <div className="replay-pane">
-              {replays.length > 0 && (
-                <div className="replay-toolbar">
-                  <select
-                    className="select"
-                    value={selectedReplayId ?? ''}
-                    onChange={(e) => {
-                      setSelectedReplayId(e.target.value)
-                    }}
-                  >
-                    {replays.map((replay) => (
-                      <option key={replay.id} value={replay.id}>
-                        {new Date(replay.receivedAt).toLocaleString()} · {replay.eventCount} events
-                      </option>
-                    ))}
-                  </select>
-                  {activeReplay && (
-                    <span className="badge fixed"><span className="dot"></span>{formatBytes(activeReplay.sizeBytes)}</span>
-                  )}
-                </div>
-              )}
-              {replayLoading && <div className="empty">Loading replay…</div>}
-              {!replayLoading && replays.length === 0 && <div className="empty">No replay captured for this issue.</div>}
-              {!replayLoading && activeReplay && activeReplay.events.length === 0 && (
-                <div className="empty">Replay is still uploading.</div>
-              )}
-              {!replayLoading && activeReplay && activeReplay.events.length > 0 && (
-                <RrwebReplayPlayer replay={activeReplay} />
-              )}
-            </div>
-          </div>
-        </div>
-        <aside className="side-panel">
-          <div className="side-section">
-            <div className="side-label">Status</div>
-            <span className={`badge ${issue.status === 'open' ? 'open' : issue.status === 'fixed' ? 'fixed' : 'fixing'}`}><span className="dot"></span>{issue.status}</span>
-            <div className="side-label">First seen</div>
-            <div className="side-value">{new Date(issue.firstSeen).toLocaleString()}</div>
-            <div className="side-label">Last seen</div>
-            <div className="side-value">{new Date(issue.lastSeen).toLocaleString()}</div>
-            <div className="side-label">Total events</div>
-            <div className="side-value">{issue.count} events</div>
+      <div className="grid grid-cols-1 gap-4.5 desktop:grid-cols-[minmax(0,1fr)_310px]">
+        <Card>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+            <TabsList>
+              <TabsTrigger value="stack">Stack trace</TabsTrigger>
+              <TabsTrigger value="events">Events · {events.length}</TabsTrigger>
+              <TabsTrigger value="context">Context</TabsTrigger>
+              <TabsTrigger value="breadcrumbs">Breadcrumbs</TabsTrigger>
+              <TabsTrigger value="replay">Replay · {replays.length}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="stack">
+              {issue.metadata.source && <SourceLocation location={issue.metadata.source} />}
+              <pre className={codeClass}>{issue.metadata.stacktrace ?? issue.metadata.message ?? '(no stacktrace)'}</pre>
+            </TabsContent>
+            <TabsContent value="events">
+              <div className="px-4.5 py-2">
+                {events.map((e) => (
+                  <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs last:border-b-0" key={e.id}>
+                    <div className="text-[11px] text-tertiary">{new Date(e.receivedAt).toLocaleTimeString()}</div>
+                    <div className="break-all font-medium text-muted">{e.envelope.slice(0, 120)}…</div>
+                  </div>
+                ))}
+                {events.length === 0 && <div className={emptyClass}>No events.</div>}
+              </div>
+            </TabsContent>
+            <TabsContent value="context">
+              <div className="px-4.5 py-2">
+                <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs"><div className="text-[11px] text-tertiary">type</div><div className="break-all font-medium text-muted">{issue.type}</div></div>
+                <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs"><div className="text-[11px] text-tertiary">fingerprint</div><div className="break-all font-medium text-muted">{issue.fingerprint}</div></div>
+                <div className="grid grid-cols-[120px_1fr] border-b border-hairline py-2.5 text-xs last:border-b-0"><div className="text-[11px] text-tertiary">context</div><div className="break-all font-medium text-muted">{JSON.stringify(issue.metadata.context ?? {})}</div></div>
+              </div>
+            </TabsContent>
+            <TabsContent value="breadcrumbs">
+              <div className={emptyClass}>Breadcrumbs are captured inside each event envelope (see Events tab).</div>
+            </TabsContent>
+            <TabsContent value="replay">
+              <div className="px-4.5 pt-3.5 pb-4.5">
+                {replays.length > 0 && (
+                  <div className="mb-3.5 flex items-center gap-2.5">
+                    <Select
+                      value={selectedReplayId}
+                      onValueChange={(v) => setSelectedReplayId(v)}
+                      items={replayItems}
+                    >
+                      <SelectTrigger className="min-w-[min(420px,100%)]">
+                        <SelectValue placeholder="Select a replay" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {replays.map((replay) => (
+                          <SelectItem key={replay.id} value={replay.id}>
+                            {new Date(replay.receivedAt).toLocaleString()} · {replay.eventCount} events
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {activeReplay && (
+                      <Badge variant="fixed">{formatBytes(activeReplay.sizeBytes)}</Badge>
+                    )}
+                  </div>
+                )}
+                {replayLoading && <div className={emptyClass}>Loading replay…</div>}
+                {!replayLoading && replays.length === 0 && <div className={emptyClass}>No replay captured for this issue.</div>}
+                {!replayLoading && activeReplay && activeReplay.events.length === 0 && (
+                  <div className={emptyClass}>Replay is still uploading.</div>
+                )}
+                {!replayLoading && activeReplay && activeReplay.events.length > 0 && (
+                  <RrwebReplayPlayer replay={activeReplay} />
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </Card>
+        <aside className="h-max order-first overflow-hidden rounded-xl border border-hairline bg-surface-1 desktop:order-none">
+          <div className="border-b border-hairline p-4 last:border-b-0">
+            <div className="mb-2 text-[11px] text-tertiary">Status</div>
+            <Badge variant={issue.status === 'open' ? 'open' : issue.status === 'fixed' ? 'fixed' : 'fixing'}>
+              {issue.status}
+            </Badge>
+            <div className="mb-2 mt-4 text-[11px] text-tertiary">First seen</div>
+            <div className="text-xs font-medium text-muted">{new Date(issue.firstSeen).toLocaleString()}</div>
+            <div className="mb-2 mt-4 text-[11px] text-tertiary">Last seen</div>
+            <div className="text-xs font-medium text-muted">{new Date(issue.lastSeen).toLocaleString()}</div>
+            <div className="mb-2 mt-4 text-[11px] text-tertiary">Total events</div>
+            <div className="text-xs font-medium text-muted">{issue.count} events</div>
           </div>
         </aside>
       </div>
@@ -152,23 +160,28 @@ export function IssueDetailPage() {
 
 function SourceLocation({ location }: { location: NonNullable<Issue['metadata']['source']> }) {
   return (
-    <div className="source-location">
-      <div className="source-location-head">
+    <div className="border-b border-hairline bg-surface-2">
+      <div className="flex items-start justify-between gap-3 px-4.5 py-3.5">
         <div>
-          <div className="source-location-label">Source map resolved location</div>
-          <div className="source-location-path">{location.file}:{location.line}:{location.column}</div>
+          <div className="text-[11px] uppercase tracking-[0.06em] text-tertiary">Source map resolved location</div>
+          <div className="mt-1 break-all font-mono text-xs text-[#bfc7ff]">{location.file}:{location.line}:{location.column}</div>
         </div>
-        {location.function && <span className="badge fixed">{location.function}</span>}
+        {location.function && <Badge variant="fixed">{location.function}</Badge>}
       </div>
       {location.context && (
-        <pre className="code source-context">
+        <pre className={cn(codeClass, 'max-h-50 border-y border-hairline')}>
           {location.context.lines.map((line, index) => {
             const lineNumber = location.context!.startLine + index
-            return <span className={`line ${lineNumber === location.context!.errorLine ? 'hot' : ''}`} key={lineNumber}><span className="ln">{lineNumber}</span>{line}</span>
+            return (
+              <span className={cn('block', lineNumber === location.context!.errorLine && '-mx-5 bg-primary/15 px-5 text-white')} key={lineNumber}>
+                <span className="inline-block w-7.5 select-none text-[#474b52]">{lineNumber}</span>
+                {line}
+              </span>
+            )
           })}
         </pre>
       )}
-      {location.generated && <div className="source-location-generated">Generated: {location.generated.file}:{location.generated.line}:{location.generated.column}</div>}
+      {location.generated && <div className="px-4.5 py-2 font-mono text-[11px] text-tertiary">Generated: {location.generated.file}:{location.generated.line}:{location.generated.column}</div>}
     </div>
   )
 }

@@ -1,17 +1,17 @@
-import React from 'react'
-import { Panel } from '@renderer/components/ui/primitives'
+import { Panel } from '@renderer/components/ui/card'
+import { codeClass, pageClass, pageHeaderClass, pageTitleClass, pageSubtitleClass } from '@renderer/components/ui/styles'
 
 export function SettingsPage() {
   return (
-    <div className="page">
-      <div className="page-header">
+    <div className={pageClass}>
+      <div className={pageHeaderClass}>
         <div>
-          <h1 className="page-title">SDK setup</h1>
-          <p className="page-subtitle">Connect a web, React, Electron or Module Federation application.</p>
+          <h1 className={pageTitleClass}>SDK setup</h1>
+          <p className={pageSubtitleClass}>Connect a web, React, Electron or Module Federation application.</p>
         </div>
       </div>
       <Panel title="Install @traceability/core">
-        <pre className="code">
+        <pre className={codeClass}>
 {`pnpm add @traceability/core @sentry/browser
 
 import { init } from '@traceability/core'
