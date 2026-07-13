@@ -1,4 +1,4 @@
-import { SERVER_URL } from "@renderer/lib/server";
+import { SERVER_URL } from "@renderer/lib/request";
 
 export interface IssueEvent {
   kind: "issue:created" | "issue:updated" | "issue:status-changed";

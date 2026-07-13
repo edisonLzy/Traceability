@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain } from "electron";
 import { z } from "zod";
 
 import { AgentPool } from "./agent/agent-pool.js";
@@ -93,6 +93,10 @@ function registerIpc(): void {
   );
   ipcMain.handle("agent:list-models", () => requireAgentPool().listModels());
   ipcMain.handle("agent:reload-models", () => requireAgentPool().reloadModels());
+
+  ipcMain.handle("clipboard:writeText", (_event, text: unknown) => {
+    clipboard.writeText(z.string().parse(text));
+  });
 }
 
 app.whenReady().then(async () => {

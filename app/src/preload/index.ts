@@ -16,6 +16,9 @@ function listen<T>(channel: string, listener: (payload: T) => void): () => void 
 }
 
 const api = {
+  clipboard: {
+    writeText: (text: string) => ipcRenderer.invoke("clipboard:writeText", text),
+  },
   sessions: {
     list: (appId: string) =>
       ipcRenderer.invoke("sessions:list", appId) as Promise<AgentSessionSummary[]>,
