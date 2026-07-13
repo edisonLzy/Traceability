@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clearAuth, saveConnection } from '@renderer/store/auth'
-import { apiFetch } from '@renderer/lib/request'
+import { listApps } from '@renderer/apis/apps'
 import { Button, Field } from '@renderer/components/ui/primitives'
 
 export function LoginPage() {
@@ -19,7 +19,7 @@ export function LoginPage() {
     setSaving(true)
     try {
       await saveConnection({ serverUrl: server, token })
-      await apiFetch('/api/apps')
+      await listApps()
       nav('/issues')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))

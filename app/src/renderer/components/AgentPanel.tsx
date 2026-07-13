@@ -1,12 +1,10 @@
 import { type SubmitEvent, useEffect, useState } from 'react'
 import { Streamdown } from 'streamdown'
-import type { Application } from '@traceability/protocol'
-import { apiFetch } from '@renderer/lib/request'
-import { fetchMonitorData } from '@renderer/apis/monitor'
+import { useApps } from '@renderer/hooks/use-apps'
 import type { AgentEntry, AgentPromptInput, AgentSessionDetail, AgentSessionSummary, AvailableModel } from '@shared/ipc'
 
 export function AgentPanel() {
-  const [applications, setApplications] = useState<Application[]>([])
+  const { data: applications, error: appsError } = useApps()
   const [appId, setAppId] = useState('')
   const [sessions, setSessions] = useState<AgentSessionSummary[]>([])
   const [sessionId, setSessionId] = useState('')
@@ -19,12 +17,14 @@ export function AgentPanel() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    void apiFetch<Application[]>('/api/apps')
-      .then((items) => {
-        setApplications(items)
-        setAppId(items[0]?.id ?? '')
-      })
-      .catch((cause) => setError(toError(cause)))
+    if (appsError) setError(toError(appsError))
+  }, [appsError])
+
+  useEffect(() => {
+    if (applications && applications.length && !appId) setAppId(applications[0]!.id)
+  }, [applications, appId])
+
+  useEffect(() => {
     void window.traceability.agent.listModels().then((items) => {
       setModels(items)
       setSelectedModel(items[0] ? modelKey(items[0]) : '')
@@ -74,19 +74,6 @@ export function AgentPanel() {
       }
     })
   }, [sessionId, appId])
-
-  useEffect(() => {
-    return window.traceability.agent.onMonitorDataRequest((request) => {
-      void fetchMonitorData(request, apiFetch).then(async (result) => {
-        await window.traceability.agent.resolveMonitorData({ requestId: request.requestId, result })
-      }).catch(async (cause) => {
-        await window.traceability.agent.rejectMonitorData({
-          requestId: request.requestId,
-          error: { message: toError(cause) },
-        })
-      })
-    })
-  }, [])
 
   const createSession = async () => {
     if (!appId) return
@@ -139,7 +126,7 @@ export function AgentPanel() {
           setContext(event.target.value ? { appId: event.target.value, source: 'general' } : null)
         }} aria-label="Agent application">
           <option value="">Select an application</option>
-          {applications.map((application) => <option key={application.id} value={application.id}>{application.name}</option>)}
+          {(applications ?? []).map((application) => <option key={application.id} value={application.id}>{application.name}</option>)}
         </select>
         <select value={sessionId} onChange={(event) => setSessionId(event.target.value)} aria-label="Agent session" disabled={!appId}>
           <option value="">{sessions.length ? 'Select a conversation' : 'Create a conversation'}</option>

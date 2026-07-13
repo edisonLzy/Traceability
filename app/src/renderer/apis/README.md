@@ -19,7 +19,7 @@ export interface XxxResponse {
 
 /** 发起请求 */
 export function xxx(req: XxxRequest): Promise<XxxResponse> {
-  // 通过 @renderer/lib/request 的 apiFetch 发起调用
+  // 通过 @renderer/lib/request 的 axios 实例 request 发起调用
 }
 ```
 
@@ -27,10 +27,12 @@ export function xxx(req: XxxRequest): Promise<XxxResponse> {
 
 | 文件         | 说明                                                                 |
 | ------------ | -------------------------------------------------------------------- |
-| `monitor.ts` | Agent 监控数据请求（Issue / Performance 工具调用的 REST 端点映射）   |
+| `monitor.ts` | 监控数据请求（Issues / Events / Replays / 性能），按端点拆分为独立函数 |
+| `apps.ts`    | 应用管理请求（列表 / 详情 / 创建 / 删除）                            |
 
 ## 约定
 
-- 所有请求统一走 `@renderer/lib/request` 的 `apiFetch`，不要在此处直接 `fetch`。
-- 鉴权（token / server URL）由 `apiFetch` 内部从 `@renderer/store/auth` 读取，调用方无需关心。
-- 当函数需要可测试时，可像 `fetchMonitorData` 那样把 `apiFetch` 作为依赖注入参数传入，便于在单测中替换。
+- 所有请求统一走 `@renderer/lib/request` 的 axios 实例 `request`，不要在此处直接 `fetch`。
+- 鉴权（token / server URL）由 `request` 的请求拦截器从 `@renderer/store/auth` 读取，调用方无需关心。
+- 测试时通过 `vi.mock('@renderer/lib/request')` 替换 `request`（mock `request.get` 等），函数本身直接 `import { request }` 不接收注入依赖。
+- 这些函数只服务 UI 数据层（页面经 `@renderer/hooks` 的 react-query 封装调用）。**agent 的 monitor 工具不走 renderer**——它在 main 进程自包含取数（见 `built-in/monitor/main.ts` 的 `MonitorClient`），两者各自实现端点映射。

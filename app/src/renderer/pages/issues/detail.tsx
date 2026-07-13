@@ -1,44 +1,41 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { apiFetch } from '@renderer/lib/request'
+import { useIssue, useIssueEvents, useIssueReplays, useReplay } from '@renderer/hooks/use-issue'
 import { RrwebReplayPlayer } from '@renderer/components/RrwebReplayPlayer'
 import { useToast } from '@renderer/components/Toast'
 import { Button } from '@renderer/components/ui/primitives'
-import type { Issue, Event, RrwebReplay, RrwebReplaySummary } from '@traceability/protocol'
+import type { Issue, RrwebReplay } from '@traceability/protocol'
 
 type Tab = 'stack' | 'events' | 'context' | 'breadcrumbs' | 'replay'
 
 export function IssueDetailPage() {
   const { id } = useParams<{ id: string }>()
   const toast = useToast()
-  const [issue, setIssue] = useState<Issue | null>(null)
-  const [events, setEvents] = useState<Event[]>([])
-  const [replays, setReplays] = useState<RrwebReplaySummary[]>([])
+  const issueQuery = useIssue(id)
+  const eventsQuery = useIssueEvents(id)
+  const replaysQuery = useIssueReplays(id)
   const [selectedReplayId, setSelectedReplayId] = useState<string | null>(null)
-  const [activeReplay, setActiveReplay] = useState<RrwebReplay | null>(null)
-  const [replayLoading, setReplayLoading] = useState(false)
   const [tab, setTab] = useState<Tab>('stack')
 
-  const load = () => {
-    if (!id) return
-    apiFetch<Issue>(`/api/issues/${id}`).then(setIssue).catch((e) => toast(String(e)))
-    apiFetch<Event[]>(`/api/issues/${id}/events`).then(setEvents).catch(() => {})
-    apiFetch<RrwebReplaySummary[]>(`/api/issues/${id}/replays`).then((items) => {
-      setReplays(items)
-      setSelectedReplayId(items[0]?.id ?? null)
-      setActiveReplay(null)
-    }).catch(() => {})
-  }
-  useEffect(() => { load() }, [id])
+  // Pick the first replay once the list loads.
+  useEffect(() => {
+    const first = replaysQuery.data?.[0]?.id
+    if (first && selectedReplayId === null) setSelectedReplayId(first)
+    if (replaysQuery.data && replaysQuery.data.length === 0) setSelectedReplayId(null)
+  }, [replaysQuery.data, selectedReplayId])
+
+  const replayQuery = useReplay(id, selectedReplayId, tab === 'replay')
 
   useEffect(() => {
-    if (tab !== 'replay' || !id || !selectedReplayId) return
-    setReplayLoading(true)
-    apiFetch<RrwebReplay>(`/api/issues/${id}/replays/${selectedReplayId}`)
-      .then(setActiveReplay)
-      .catch((e) => toast(String(e)))
-      .finally(() => setReplayLoading(false))
-  }, [id, selectedReplayId, tab])
+    if (issueQuery.error) toast(String(issueQuery.error))
+    if (replayQuery.error) toast(String(replayQuery.error))
+  }, [issueQuery.error, replayQuery.error, toast])
+
+  const issue = issueQuery.data ?? null
+  const events = eventsQuery.data ?? []
+  const replays = replaysQuery.data ?? []
+  const activeReplay: RrwebReplay | null = replayQuery.data ?? null
+  const replayLoading = tab === 'replay' && Boolean(selectedReplayId) && replayQuery.isLoading
 
   if (!issue) return <div className="page"><div className="empty">Loading…</div></div>
 
@@ -112,7 +109,6 @@ export function IssueDetailPage() {
                     value={selectedReplayId ?? ''}
                     onChange={(e) => {
                       setSelectedReplayId(e.target.value)
-                      setActiveReplay(null)
                     }}
                   >
                     {replays.map((replay) => (

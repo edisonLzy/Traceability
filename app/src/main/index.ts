@@ -86,20 +86,12 @@ function registerIpc(): void {
   ipcMain.handle('agent:abort', (_event, sessionId: unknown) => requireAgentPool().abort(z.string().parse(sessionId)))
   ipcMain.handle('agent:list-models', () => requireAgentPool().listModels())
   ipcMain.handle('agent:reload-models', () => requireAgentPool().reloadModels())
-  ipcMain.handle('agent:resolve-monitor-data', (_event, input: unknown) => {
-    const value = z.object({ requestId: z.string(), result: z.unknown() }).parse(input)
-    requireAgentPool().resolveMonitorData(value.requestId, value.result)
-  })
-  ipcMain.handle('agent:reject-monitor-data', (_event, input: unknown) => {
-    const value = z.object({ requestId: z.string(), error: z.object({ message: z.string(), code: z.string().optional() }) }).parse(input)
-    requireAgentPool().rejectMonitorData(value.requestId, value.error)
-  })
 }
 
 app.whenReady().then(async () => {
   database = new LocalDatabase(join(app.getPath('userData'), 'traceability-agent.sqlite'))
   connectionService = new ConnectionService(database)
-  agentPool = new AgentPool(new SessionStore(database), new ModelRegistry(), () => mainWindow)
+  agentPool = new AgentPool(new SessionStore(database), new ModelRegistry(), connectionService, () => mainWindow)
   await agentPool.initialize()
   registerIpc()
   await createWindow()

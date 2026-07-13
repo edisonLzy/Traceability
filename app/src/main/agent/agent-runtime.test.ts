@@ -1,11 +1,11 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fauxAssistantMessage, fauxText, fauxToolCall, registerFauxProvider } from '@earendil-works/pi-ai'
+import type { AxiosInstance } from 'axios'
 import { AgentRuntime } from './agent-runtime.js'
 import { ModelRegistry } from './model-registry.js'
-import { RendererDataBroker } from './renderer-data-broker.js'
 import { SessionStore } from './session-store.js'
 import { LocalDatabase } from '../db/database.js'
 
@@ -16,7 +16,7 @@ describe('AgentRuntime', () => {
     for (const database of databases.splice(0)) database.close()
   })
 
-  it('persists a normal response and resolves an Issue tool call through the renderer bridge', async () => {
+  it('persists a normal response and resolves an Issue tool call through the self-contained monitor client', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'traceability-agent-test-'))
     const modelPath = join(directory, 'models.json')
     await writeFile(modelPath, JSON.stringify({
@@ -44,21 +44,17 @@ describe('AgentRuntime', () => {
       const models = new ModelRegistry(modelPath)
       await models.reload()
 
-      let broker!: RendererDataBroker
-      broker = new RendererDataBroker(() => ({
-        isDestroyed: () => false,
-        webContents: {
-          isDestroyed: () => false,
-          send: (_channel: string, request: { requestId: string; method: string; appId: string }) => {
-            expect(request.method).toBe('getIssue')
-            expect(request.appId).toBe('app-1')
-            queueMicrotask(() => broker.resolve(request.requestId, { id: 'issue-1', appId: 'app-1', title: 'Boom' }))
-          },
-        },
-      }) as any)
+      const http = {
+        get: vi.fn(async (url: string) => {
+          if (url === '/api/issues/issue-1') {
+            return { data: { id: 'issue-1', appId: 'app-1', title: 'Boom' } }
+          }
+          throw new Error(`unexpected GET ${url}`)
+        }),
+      } as unknown as AxiosInstance
 
       const emitted: string[] = []
-      const runtime = new AgentRuntime(created.id, created.appId, sessions, models, broker, (event) => emitted.push(event.type))
+      const runtime = new AgentRuntime(created.id, created.appId, sessions, models, http, (event) => emitted.push(event.type))
       await runtime.setModel({ providerId: 'faux', modelId: 'monitor-test' })
       await runtime.prompt({
         sessionId: created.id,
@@ -67,6 +63,7 @@ describe('AgentRuntime', () => {
       })
       await runtime.waitForIdle()
 
+      expect(http.get).toHaveBeenCalledWith('/api/issues/issue-1')
       const detail = sessions.get(created.id)
       expect(detail?.entries.map((entry) => entry.type)).toEqual(['model_change', 'message', 'message', 'message', 'message'])
       expect(detail?.entries.slice(1).map((entry) => entry.data.role)).toEqual(['user', 'assistant', 'toolResult', 'assistant'])
@@ -106,24 +103,21 @@ describe('AgentRuntime', () => {
       const models = new ModelRegistry(modelPath)
       await models.reload()
 
-      let broker!: RendererDataBroker
-      broker = new RendererDataBroker(() => ({
-        isDestroyed: () => false,
-        webContents: {
-          isDestroyed: () => false,
-          send: (_channel: string, request: { requestId: string; method: string; appId: string; args: { hours?: number } }) => {
-            expect(request.method).toBe('getPerformanceSummary')
-            expect(request.appId).toBe('app-performance')
-            expect(request.args.hours).toBe(24)
-            queueMicrotask(() => broker.resolve(request.requestId, {
-              since: new Date().toISOString(),
-              apps: [{ appId: 'app-performance', appName: 'Checkout', samples: 3, metrics: { LCP: { average: 1200, p75: 1500, count: 3, lastSeen: new Date().toISOString(), unit: 'millisecond' } } }],
-            }))
-          },
-        },
-      }) as any)
+      const http = {
+        get: vi.fn(async (url: string) => {
+          if (url.startsWith('/api/performance')) {
+            return {
+              data: {
+                since: new Date().toISOString(),
+                apps: [{ appId: 'app-performance', appName: 'Checkout', samples: 3, metrics: { LCP: { average: 1200, p75: 1500, count: 3, lastSeen: new Date().toISOString(), unit: 'millisecond' } } }],
+              },
+            }
+          }
+          throw new Error(`unexpected GET ${url}`)
+        }),
+      } as unknown as AxiosInstance
 
-      const runtime = new AgentRuntime(created.id, created.appId, sessions, models, broker, () => {})
+      const runtime = new AgentRuntime(created.id, created.appId, sessions, models, http, () => {})
       await runtime.setModel({ providerId: 'faux', modelId: 'performance-test' })
       await runtime.prompt({
         sessionId: created.id,
@@ -132,6 +126,7 @@ describe('AgentRuntime', () => {
       })
       await runtime.waitForIdle()
 
+      expect(http.get).toHaveBeenCalledWith(expect.stringContaining('/api/performance?appId=app-performance&hours=24'))
       expect(JSON.stringify(sessions.get(created.id)?.entries)).toContain('Performance data shows the requested monitoring summary.')
     } finally {
       faux.unregister()

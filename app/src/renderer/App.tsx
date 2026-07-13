@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastProvider } from '@renderer/components/Toast'
 import { connectWs } from '@renderer/lib/ws'
 import { router } from '@renderer/router'
 import { bootstrapConnection, useAuth } from '@renderer/store/auth'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+})
 
 export function App() {
   const credentials = useAuth()
@@ -21,8 +32,10 @@ export function App() {
   if (!ready) return <div className="boot-screen">Opening Traceability…</div>
 
   return (
-    <ToastProvider>
-      <RouterProvider router={router} />
-    </ToastProvider>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
+    </QueryClientProvider>
   )
 }

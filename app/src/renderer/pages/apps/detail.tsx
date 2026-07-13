@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '@renderer/lib/request'
+import { useApp, useDeleteApp } from '@renderer/hooks/use-apps'
 import { useToast } from '@renderer/components/Toast'
 import { Button } from '@renderer/components/ui/primitives'
-import type { Application } from '@traceability/protocol'
 
 export function AppDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const [app, setApp] = useState<Application | null>(null)
+  const { data: app } = useApp(id)
+  const deleteAppMutation = useDeleteApp()
   const nav = useNavigate()
   const toast = useToast()
-  useEffect(() => {
-    if (id) apiFetch<Application>(`/api/apps/${id}`).then(setApp).catch((e) => toast(String(e)))
-  }, [id])
   if (!app) return <div className="page"><div className="empty">Loading…</div></div>
 
   const dsn = `${location.origin.replace(/:\d+$/, ':3000')}/api/ingest/envelope/${app.id}`
 
   const del = async () => {
     try {
-      await apiFetch(`/api/apps/${app.id}`, { method: 'DELETE' })
+      await deleteAppMutation.mutateAsync(app.id)
     } catch (e) {
       toast(String(e))
       return

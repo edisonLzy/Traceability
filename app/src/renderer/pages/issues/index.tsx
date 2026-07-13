@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '@renderer/lib/request'
 import { onIssueEvent } from '@renderer/lib/ws'
+import { useIssues, useInvalidateIssues } from '@renderer/hooks/use-issues'
 import { Button } from '@renderer/components/ui/primitives'
-import type { Issue, IssueStatus } from '@traceability/protocol'
+import type { IssueStatus } from '@traceability/protocol'
 
 export function IssuesPage() {
   const [params, setParams] = useSearchParams()
@@ -11,16 +11,14 @@ export function IssuesPage() {
   const appId = params.get('appId') ?? ''
   const status = (params.get('status') ?? 'all') as 'all' | IssueStatus
   const [q, setQ] = useState('')
-  const [issues, setIssues] = useState<Issue[]>([])
 
-  const load = () => {
-    const qs = new URLSearchParams()
-    if (appId) qs.set('appId', appId)
-    qs.set('limit', '100')
-    apiFetch<{ items: Issue[] }>(`/api/issues?${qs}`).then((r) => setIssues(r.items))
-  }
-  useEffect(() => { load() }, [appId])
-  useEffect(() => onIssueEvent(() => load()), [appId])
+  const invalidateIssues = useInvalidateIssues()
+  const { data, isLoading } = useIssues({ appId, limit: 100 })
+  const issues = data?.items ?? []
+
+  useEffect(() => {
+    return onIssueEvent(() => { void invalidateIssues() })
+  }, [invalidateIssues])
 
   const filtered = useMemo(() => {
     return issues.filter((i) => {
@@ -94,7 +92,7 @@ export function IssuesPage() {
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <div className="empty">No issues match these filters.</div>}
+        {filtered.length === 0 && <div className="empty">{isLoading ? 'Loading issues…' : 'No issues match these filters.'}</div>}
       </div>
     </div>
   )

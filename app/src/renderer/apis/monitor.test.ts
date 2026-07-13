@@ -1,43 +1,51 @@
-import { describe, expect, it, vi } from 'vitest'
-import { fetchMonitorData } from './monitor'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-describe('fetchMonitorData', () => {
-  it('maps Issue and Performance tools to the existing renderer REST endpoints', async () => {
-    const apiFetch = vi.fn().mockResolvedValue({ ok: true })
+const requestGet = vi.hoisted(() => vi.fn())
 
-    await fetchMonitorData({
-      requestId: 'issue-request',
-      sessionId: 'session-1',
-      method: 'getIssue',
-      appId: 'app-1',
-      args: { issueId: 'issue / 1' },
-    }, apiFetch)
-    await fetchMonitorData({
-      requestId: 'performance-request',
-      sessionId: 'session-1',
-      method: 'getPerformanceSummary',
-      appId: 'app-1',
-      args: { hours: 168 },
-    }, apiFetch)
+vi.mock('@renderer/lib/request', () => ({
+  request: { get: requestGet },
+}))
 
-    expect(apiFetch).toHaveBeenNthCalledWith(1, '/api/issues/issue%20%2F%201')
-    expect(apiFetch).toHaveBeenNthCalledWith(2, '/api/performance?appId=app-1&hours=168')
+import { getIssue, getIssueEvents, getPerformanceSummary, getReplay, listIssues } from './monitor'
+
+describe('monitor apis', () => {
+  beforeEach(() => {
+    requestGet.mockReset()
   })
 
-  it('checks an Issue belongs to the session application before loading its events', async () => {
-    const apiFetch = vi.fn()
-      .mockResolvedValueOnce({ appId: 'app-1' })
-      .mockResolvedValueOnce([{ id: 'event-1', issueId: 'issue-1' }])
+  it('listIssues builds the issues query with appId and a clamped limit', async () => {
+    requestGet.mockResolvedValue({ data: { items: [], nextCursor: null } })
+    await listIssues({ appId: 'app-1', limit: 999 })
+    expect(requestGet).toHaveBeenCalledWith('/api/issues?appId=app-1&limit=100')
+  })
 
-    await fetchMonitorData({
-      requestId: 'events-request',
-      sessionId: 'session-1',
-      method: 'getIssueEvents',
-      appId: 'app-1',
-      args: { issueId: 'issue-1' },
-    }, apiFetch)
+  it('listIssues forwards status when provided', async () => {
+    requestGet.mockResolvedValue({ data: { items: [], nextCursor: null } })
+    await listIssues({ appId: 'app-1', status: 'open' })
+    expect(requestGet).toHaveBeenCalledWith('/api/issues?appId=app-1&limit=20&status=open')
+  })
 
-    expect(apiFetch).toHaveBeenNthCalledWith(1, '/api/issues/issue-1')
-    expect(apiFetch).toHaveBeenNthCalledWith(2, '/api/issues/issue-1/events')
+  it('getIssue URL-encodes the issue id', async () => {
+    requestGet.mockResolvedValue({ data: { ok: true } })
+    await getIssue('issue / 1')
+    expect(requestGet).toHaveBeenCalledWith('/api/issues/issue%20%2F%201')
+  })
+
+  it('getIssueEvents hits the events endpoint', async () => {
+    requestGet.mockResolvedValue({ data: [{ id: 'event-1', issueId: 'issue-1' }] })
+    await getIssueEvents('issue-1')
+    expect(requestGet).toHaveBeenCalledWith('/api/issues/issue-1/events')
+  })
+
+  it('getReplay encodes both the issue and replay ids', async () => {
+    requestGet.mockResolvedValue({ data: { events: [] } })
+    await getReplay('issue / 1', 'replay / 2')
+    expect(requestGet).toHaveBeenCalledWith('/api/issues/issue%20%2F%201/replays/replay%20%2F%202')
+  })
+
+  it('getPerformanceSummary builds the performance query', async () => {
+    requestGet.mockResolvedValue({ data: { apps: [] } })
+    await getPerformanceSummary({ appId: 'app-1', hours: 168 })
+    expect(requestGet).toHaveBeenCalledWith('/api/performance?appId=app-1&hours=168')
   })
 })

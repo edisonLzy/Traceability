@@ -7,7 +7,6 @@ import type {
   ConnectionCredentials,
   ConnectionStatus,
   ModelRef,
-  MonitorDataRequest,
 } from './shared/ipc'
 
 declare global {
@@ -32,10 +31,7 @@ declare global {
         abort(sessionId: string): Promise<void>
         listModels(): Promise<AvailableModel[]>
         reloadModels(): Promise<AvailableModel[]>
-        resolveMonitorData(input: { requestId: string; result: unknown }): Promise<void>
-        rejectMonitorData(input: { requestId: string; error: { message: string; code?: string } }): Promise<void>
         onEvent(listener: (event: AgentRuntimeEvent) => void): () => void
-        onMonitorDataRequest(listener: (request: MonitorDataRequest) => void): () => void
       }
     }
   }

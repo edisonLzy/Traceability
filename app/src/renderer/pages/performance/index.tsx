@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { apiFetch } from '@renderer/lib/request'
+import { usePerformanceSummary } from '@renderer/hooks/use-performance'
 import { useToast } from '@renderer/components/Toast'
 import type { PerformanceAppSummary, PerformanceMetricSummary, PerformanceSummary } from '@traceability/protocol'
 
@@ -13,15 +13,15 @@ const rangeOptions = [
 export function PerformancePage() {
   const [params, setParams] = useSearchParams()
   const toast = useToast()
-  const [summary, setSummary] = useState<PerformanceSummary | null>(null)
   const hours = params.get('hours') ?? '24'
   const appId = params.get('appId') ?? ''
+  const selectedHours = toHours(hours)
+
+  const { data: summary, error } = usePerformanceSummary({ appId, hours: selectedHours })
 
   useEffect(() => {
-    const query = new URLSearchParams({ hours })
-    if (appId) query.set('appId', appId)
-    apiFetch<PerformanceSummary>(`/api/performance?${query}`).then(setSummary).catch((error) => toast(String(error)))
-  }, [hours, appId])
+    if (error) toast(String(error))
+  }, [error, toast])
 
   const totals = useMemo(() => {
     const apps = summary?.apps ?? []
@@ -33,7 +33,6 @@ export function PerformancePage() {
   }, [summary])
 
   const update = (next: Record<string, string>) => setParams(next)
-  const selectedHours = toHours(hours)
 
   return (
     <div className="page">

@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import type { AxiosInstance } from 'axios'
 import type {
   AgentPromptInput,
   AgentSessionDetail,
@@ -6,21 +7,23 @@ import type {
   AvailableModel,
   ModelRef,
 } from '../../shared/ipc.js'
+import { createMonitorHttp } from '../../built-in/monitor/main.js'
 import { AgentRuntime } from './agent-runtime.js'
 import { ModelRegistry } from './model-registry.js'
-import { RendererDataBroker } from './renderer-data-broker.js'
 import { SessionStore } from './session-store.js'
+import type { ConnectionService } from '../connection-service.js'
 
 export class AgentPool {
   private readonly runtimes = new Map<string, AgentRuntime>()
-  readonly dataBroker: RendererDataBroker
+  private readonly monitorHttp: AxiosInstance
 
   constructor(
     private readonly sessions: SessionStore,
     private readonly models: ModelRegistry,
+    connectionService: ConnectionService,
     private readonly getWindow: () => BrowserWindow | null,
   ) {
-    this.dataBroker = new RendererDataBroker(this.getWindow)
+    this.monitorHttp = createMonitorHttp(() => connectionService.getCredentials())
   }
 
   async initialize(): Promise<void> {
@@ -71,18 +74,9 @@ export class AgentPool {
     return this.models.reload()
   }
 
-  resolveMonitorData(requestId: string, result: unknown): void {
-    this.dataBroker.resolve(requestId, result)
-  }
-
-  rejectMonitorData(requestId: string, error: { message: string; code?: string }): void {
-    this.dataBroker.reject(requestId, error)
-  }
-
   dispose(): void {
     for (const runtime of this.runtimes.values()) runtime.dispose()
     this.runtimes.clear()
-    this.dataBroker.dispose()
   }
 
   private getOrCreateRuntime(sessionId: string): AgentRuntime {
@@ -96,7 +90,7 @@ export class AgentPool {
       detail.appId,
       this.sessions,
       this.models,
-      this.dataBroker,
+      this.monitorHttp,
       (event) => this.sendEvent(event),
     )
     runtime.hydrate(detail)

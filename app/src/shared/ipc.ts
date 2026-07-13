@@ -94,22 +94,6 @@ export interface AgentSessionDetail extends AgentSessionSummary {
   latestRun: AgentRun | null
 }
 
-export type MonitorToolMethod =
-  | 'listIssues'
-  | 'getIssue'
-  | 'getIssueEvents'
-  | 'getIssueReplays'
-  | 'getReplay'
-  | 'getPerformanceSummary'
-
-export interface MonitorDataRequest {
-  requestId: string
-  sessionId: string
-  method: MonitorToolMethod
-  appId: string
-  args: Record<string, unknown>
-}
-
 export interface AskUserQuestionOption {
   label: string
   description: string

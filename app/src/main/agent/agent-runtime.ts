@@ -1,5 +1,6 @@
 import { Agent } from '@earendil-works/pi-agent-core'
 import type { AgentEvent, AgentMessage } from '@earendil-works/pi-agent-core'
+import type { AxiosInstance } from 'axios'
 import type { Message } from '@earendil-works/pi-ai'
 import type {
   AgentPromptInput,
@@ -8,9 +9,8 @@ import type {
   AgentSessionDetail,
   ModelRef,
 } from '../../shared/ipc.js'
-import { createMonitorTools } from '../../built-in/monitor/main.js'
+import { createMonitorTools, MonitorClient } from '../../built-in/monitor/main.js'
 import { ModelRegistry } from './model-registry.js'
-import { RendererDataBroker } from './renderer-data-broker.js'
 import { SessionStore } from './session-store.js'
 
 export class AgentRuntime {
@@ -25,7 +25,7 @@ export class AgentRuntime {
     private readonly appId: string,
     private readonly store: SessionStore,
     private readonly models: ModelRegistry,
-    private readonly dataBroker: RendererDataBroker,
+    private readonly monitorHttp: AxiosInstance,
     private readonly emit: (event: AgentRuntimeEvent) => void,
   ) {
     this.agent = this.createAgent()
@@ -75,7 +75,6 @@ export class AgentRuntime {
   abort(): void {
     if (!this.activeRun) return
     this.aborted = true
-    this.dataBroker.cancelSession(this.sessionId)
     this.agent.abort()
   }
 
@@ -95,9 +94,7 @@ export class AgentRuntime {
       getApiKey: (providerId) => this.models.getApiKey(providerId),
       initialState: {
         systemPrompt: buildSystemPrompt(this.appId, { appId: this.appId, source: 'general' }),
-        tools: createMonitorTools({
-          request: (method, args) => this.dataBroker.request(this.sessionId, method, this.appId, args),
-        }),
+        tools: createMonitorTools(new MonitorClient(this.monitorHttp, this.appId)),
       },
     })
 

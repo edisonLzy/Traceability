@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiFetch } from '@renderer/lib/request'
+import { useApps, useCreateApp } from '@renderer/hooks/use-apps'
 import { useToast } from '@renderer/components/Toast'
 import { Button, Panel, Modal, Field } from '@renderer/components/ui/primitives'
-import type { Application } from '@traceability/protocol'
 
 export function AppsPage() {
-  const [apps, setApps] = useState<Application[]>([])
+  const { data } = useApps()
+  const apps = data ?? []
+  const createAppMutation = useCreateApp()
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState('')
   const [repoUrl, setRepoUrl] = useState('')
@@ -14,15 +15,10 @@ export function AppsPage() {
   const nav = useNavigate()
   const toast = useToast()
 
-  const load = () => apiFetch<Application[]>('/api/apps').then(setApps).catch((e) => toast(String(e)))
-  useEffect(() => { load() }, [])
-
   const create = async () => {
     if (!name.trim()) { toast('Enter an application name'); return }
     try {
-      const app = await apiFetch<Application>('/api/apps', {
-        method: 'POST', body: JSON.stringify({ name, repoUrl, defaultBranch: branch }),
-      })
+      const app = await createAppMutation.mutateAsync({ name, repoUrl, defaultBranch: branch })
       setShowCreate(false); setName(''); setRepoUrl(''); setBranch('master')
       toast('Application created')
       nav(`/apps/${app.id}`)
