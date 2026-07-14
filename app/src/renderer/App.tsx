@@ -1,5 +1,6 @@
 import { Toaster } from "@renderer/components/ui/sonner";
 import { CurrentAppProvider } from "@renderer/context/current-app";
+import { ElectronIPCProvider } from "@renderer/context/ElectronIPCProvider";
 import { connectWs } from "@renderer/lib/ws";
 import { router } from "@renderer/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -23,10 +24,12 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CurrentAppProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-      </CurrentAppProvider>
+      <ElectronIPCProvider>
+        <CurrentAppProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+        </CurrentAppProvider>
+      </ElectronIPCProvider>
     </QueryClientProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { useCurrentApp } from "@renderer/context/current-app";
+import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
 import { cn } from "@renderer/lib/utils";
-import type { Session } from "@shared/session-ipc";
+import type { Session } from "@renderer/store/agent";
 import {
   AlertTriangle,
   AppWindow,
@@ -25,6 +26,7 @@ interface Entry {
 }
 
 export function CommandPalette() {
+  const { invoke } = useElectronIPC();
   const { currentApp, appId } = useCurrentApp();
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
@@ -40,6 +42,15 @@ export function CommandPalette() {
     setActiveIndex(0);
     setOpen(true);
   }, []);
+  const invokeSession = useCallback(
+    <T,>(channel: string, ...args: unknown[]): Promise<T> => {
+      return (invoke as unknown as (name: string, ...parameters: unknown[]) => Promise<T>)(
+        channel,
+        ...args,
+      );
+    },
+    [invoke],
+  );
 
   // Open via ⌘K (global) / ⌘G (sessions), or via the layout command trigger.
   useEffect(() => {
@@ -70,11 +81,10 @@ export function CommandPalette() {
   // Load sessions when entering sessions mode.
   useEffect(() => {
     if (!open || mode !== "sessions" || !appId) return;
-    void window.traceability
-      .invoke("sessions:list", appId)
+    void invokeSession<Session[]>("sessions:list", appId)
       .then(setSessions)
       .catch(() => setSessions([]));
-  }, [open, mode, appId]);
+  }, [open, mode, appId, invokeSession]);
 
   // Focus input on open.
   useEffect(() => {

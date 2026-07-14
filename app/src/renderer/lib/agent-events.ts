@@ -1,4 +1,6 @@
-import type { MonitoringContext } from "@shared/agent-message";
+import type { MonitoringContext } from "@renderer/store/agent";
+
+export type { MonitoringContext } from "@renderer/store/agent";
 
 export interface AgentPromptEvent {
   /** Context to pin before running. `source: "general"` clears any pinned object. */
