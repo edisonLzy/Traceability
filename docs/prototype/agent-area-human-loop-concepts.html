@@ -1,0 +1,2349 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traceability · Agent 区域交互稿</title>
+    <style>
+      :root {
+        --canvas: #090a0c;
+        --surface: #101115;
+        --surface-raised: #15161b;
+        --surface-hover: #1b1c23;
+        --surface-subtle: rgba(255, 255, 255, 0.035);
+        --line: rgba(255, 255, 255, 0.085);
+        --line-strong: rgba(255, 255, 255, 0.16);
+        --ink: #f5f5f7;
+        --muted: #b6b7bc;
+        --tertiary: #808189;
+        --primary: #8f9cff;
+        --primary-ink: #cbd1ff;
+        --primary-soft: rgba(143, 156, 255, 0.15);
+        --success: #58c77b;
+        --success-soft: rgba(88, 199, 123, 0.12);
+        --warning: #e4b55a;
+        --warning-soft: rgba(228, 181, 90, 0.12);
+        --danger: #f17c7c;
+        --danger-soft: rgba(241, 124, 124, 0.12);
+        --radius: 11px;
+        color-scheme: dark;
+        font-family:
+          Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse at 50% -10%, rgba(91, 102, 200, 0.16), transparent 34rem),
+          var(--canvas);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      .gallery {
+        width: min(1480px, calc(100vw - 48px));
+        margin: 0 auto;
+        padding: 40px 0 72px;
+      }
+
+      .eyebrow,
+      .caption,
+      .section-label,
+      .micro-label {
+        color: var(--tertiary);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .gallery-header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 28px;
+        padding: 0 4px 24px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 7px;
+        font-size: clamp(26px, 3vw, 36px);
+        line-height: 1.15;
+        letter-spacing: -0.045em;
+      }
+
+      .gallery-header p {
+        max-width: 580px;
+        margin-top: 10px;
+        color: var(--muted);
+      }
+
+      .coverage {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 7px;
+        max-width: 460px;
+      }
+
+      .coverage span,
+      .chip,
+      .status,
+      .tag,
+      .timing {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 22px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        background: var(--surface-subtle);
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .coverage i,
+      .chip i,
+      .status i,
+      .tag i,
+      .button-icon i {
+        width: 12px;
+        height: 12px;
+      }
+
+      .coverage span:nth-child(1),
+      .chip.primary,
+      .tag.primary {
+        border-color: rgba(143, 156, 255, 0.32);
+        color: var(--primary-ink);
+        background: var(--primary-soft);
+      }
+
+      .version-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .version-tab {
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr);
+        gap: 10px;
+        min-height: 66px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px;
+        text-align: left;
+        background: rgba(16, 17, 21, 0.72);
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .version-tab:hover {
+        border-color: var(--line-strong);
+        background: var(--surface-raised);
+        transform: translateY(-1px);
+      }
+
+      .version-tab.active {
+        border-color: rgba(143, 156, 255, 0.45);
+        background: linear-gradient(135deg, rgba(143, 156, 255, 0.17), rgba(143, 156, 255, 0.045));
+      }
+
+      .version-number {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        color: var(--tertiary);
+        background: rgba(0, 0, 0, 0.18);
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .version-tab.active .version-number {
+        border-color: rgba(143, 156, 255, 0.4);
+        color: var(--primary-ink);
+        background: var(--primary-soft);
+      }
+
+      .version-tab strong {
+        display: block;
+        font-size: 12px;
+      }
+
+      .version-tab small {
+        display: block;
+        margin-top: 2px;
+        color: var(--tertiary);
+        font-size: 10px;
+        line-height: 1.35;
+      }
+
+      .concept-note {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 41px;
+        margin-bottom: 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 11px;
+        color: var(--muted);
+        background: rgba(16, 17, 21, 0.56);
+        font-size: 11px;
+      }
+
+      .concept-note i {
+        width: 14px;
+        height: 14px;
+        flex: 0 0 auto;
+        color: var(--primary-ink);
+      }
+
+      .prototype {
+        display: none;
+      }
+
+      .prototype.active {
+        display: block;
+      }
+
+      .app-frame {
+        position: relative;
+        display: grid;
+        min-height: 780px;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 16px;
+        background:
+          radial-gradient(ellipse at 82% 2%, rgba(91, 102, 200, 0.11), transparent 26rem),
+          #0e0f12;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+      }
+
+      .global-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        border-right: 1px solid var(--line);
+        padding: 17px 10px;
+        background: rgba(8, 9, 11, 0.62);
+      }
+
+      .brand {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border: 1px solid rgba(143, 156, 255, 0.32);
+        border-radius: 10px;
+        color: var(--primary-ink);
+        background: var(--primary-soft);
+      }
+
+      .brand i,
+      .rail-button i {
+        width: 16px;
+        height: 16px;
+      }
+
+      .rail-button {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border-radius: 9px;
+        color: var(--tertiary);
+        background: transparent;
+      }
+
+      .rail-button.active {
+        color: var(--primary-ink);
+        background: var(--primary-soft);
+      }
+
+      .rail-spacer {
+        flex: 1;
+      }
+
+      .monitor-surface {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        background: rgba(11, 12, 15, 0.43);
+      }
+
+      .titlebar {
+        display: flex;
+        height: 50px;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 0 22px;
+      }
+
+      .breadcrumb {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 8px;
+        color: var(--tertiary);
+        font-size: 11px;
+      }
+
+      .breadcrumb strong {
+        overflow: hidden;
+        color: var(--muted);
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .titlebar-actions,
+      .row,
+      .header-actions,
+      .run-meta,
+      .tool-title,
+      .composer-actions,
+      .agent-row,
+      .decision-actions {
+        display: flex;
+        align-items: center;
+      }
+
+      .titlebar-actions {
+        gap: 10px;
+      }
+
+      .live {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .live::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 100%;
+        background: var(--success);
+        box-shadow: 0 0 0 3px var(--success-soft);
+        content: "";
+      }
+
+      .monitor-content {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.1fr);
+        gap: 16px;
+        padding: 22px;
+      }
+
+      .monitor-card {
+        min-height: 154px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.018);
+      }
+
+      .monitor-card.wide {
+        grid-column: 1 / -1;
+        min-height: 266px;
+      }
+
+      .monitor-card h3 {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .ghost-lines {
+        display: grid;
+        gap: 9px;
+        margin-top: 20px;
+      }
+
+      .ghost-lines span {
+        display: block;
+        height: 8px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.065);
+      }
+
+      .ghost-lines span:nth-child(2) {
+        width: 72%;
+      }
+
+      .ghost-lines span:nth-child(3) {
+        width: 48%;
+      }
+
+      .agent-header {
+        position: relative;
+        display: flex;
+        min-height: 61px;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+        background: rgba(18, 19, 23, 0.78);
+      }
+
+      .agent-symbol {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 9px;
+        color: var(--primary-ink);
+        background: var(--primary-soft);
+      }
+
+      .agent-symbol i {
+        width: 15px;
+        height: 15px;
+      }
+
+      .session-trigger {
+        min-width: 0;
+        flex: 1;
+        border-radius: 8px;
+        padding: 3px 5px;
+        text-align: left;
+        background: transparent;
+      }
+
+      .session-trigger:hover {
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .session-title {
+        display: block;
+        overflow: hidden;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .session-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 2px;
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .session-subtitle i {
+        width: 11px;
+        height: 11px;
+      }
+
+      .icon-button {
+        display: grid;
+        width: 29px;
+        height: 29px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 8px;
+        color: var(--tertiary);
+        background: transparent;
+      }
+
+      .icon-button:hover {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .icon-button i {
+        width: 15px;
+        height: 15px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 5px 9px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.035);
+        font-size: 10px;
+        font-weight: 650;
+      }
+
+      .button:hover {
+        border-color: var(--line-strong);
+        background: rgba(255, 255, 255, 0.075);
+      }
+
+      .button.primary {
+        border-color: rgba(143, 156, 255, 0.4);
+        color: #16182f;
+        background: var(--primary);
+      }
+
+      .button.primary:hover {
+        background: #aeb7ff;
+      }
+
+      .button.ghost-primary {
+        border-color: rgba(143, 156, 255, 0.3);
+        color: var(--primary-ink);
+        background: var(--primary-soft);
+      }
+
+      .button.danger {
+        border-color: rgba(241, 124, 124, 0.32);
+        color: #ffb9b9;
+        background: var(--danger-soft);
+      }
+
+      .button i {
+        width: 13px;
+        height: 13px;
+      }
+
+      .session-popover {
+        position: absolute;
+        top: calc(100% + 7px);
+        right: 10px;
+        left: 10px;
+        z-index: 8;
+        display: none;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 12px;
+        background: rgba(29, 30, 36, 0.96);
+        box-shadow: 0 18px 52px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(20px);
+      }
+
+      .session-popover.open {
+        display: block;
+      }
+
+      .popover-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 9px 10px;
+        color: var(--tertiary);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .session-option {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        color: var(--muted);
+        text-align: left;
+        background: transparent;
+      }
+
+      .session-option:hover {
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .session-option.active {
+        color: var(--ink);
+        background: var(--primary-soft);
+      }
+
+      .session-option i {
+        width: 13px;
+        height: 13px;
+        color: var(--tertiary);
+      }
+
+      .session-option.active i {
+        color: var(--primary-ink);
+      }
+
+      .session-option strong {
+        display: block;
+        overflow: hidden;
+        font-size: 11px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .session-option small {
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .popover-footer {
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid var(--line);
+        padding: 7px;
+      }
+
+      .new-session-dialog {
+        position: absolute;
+        top: 70px;
+        right: 12px;
+        left: 12px;
+        z-index: 10;
+        display: none;
+        border: 1px solid rgba(143, 156, 255, 0.38);
+        border-radius: 12px;
+        padding: 12px;
+        background: #20212a;
+        box-shadow: 0 22px 60px rgba(0, 0, 0, 0.48);
+      }
+
+      .new-session-dialog.open {
+        display: block;
+      }
+
+      .new-session-dialog h3 {
+        font-size: 12px;
+      }
+
+      .new-session-dialog p {
+        margin-top: 3px;
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .new-session-dialog input {
+        width: 100%;
+        margin-top: 10px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 8px;
+        color: var(--ink);
+        background: rgba(0, 0, 0, 0.23);
+        font-size: 11px;
+      }
+
+      .new-session-dialog .decision-actions {
+        justify-content: flex-end;
+        gap: 7px;
+        margin-top: 9px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .message {
+        position: relative;
+      }
+
+      .agent-message {
+        padding-right: 18px;
+      }
+
+      .message-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        color: var(--tertiary);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .message-label i {
+        width: 12px;
+        height: 12px;
+        color: var(--primary-ink);
+      }
+
+      .agent-copy {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.56;
+      }
+
+      .user-message {
+        display: flex;
+        justify-content: flex-end;
+        padding-left: 64px;
+      }
+
+      .user-message p {
+        max-width: 100%;
+        border: 1px solid rgba(143, 156, 255, 0.28);
+        border-radius: 13px 13px 4px 13px;
+        padding: 9px 11px;
+        color: #e5e7ff;
+        background: var(--primary-soft);
+        font-size: 11px;
+        line-height: 1.48;
+      }
+
+      .tool-fold {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: rgba(0, 0, 0, 0.14);
+      }
+
+      .tool-fold summary {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 9px;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 650;
+        list-style: none;
+      }
+
+      .tool-fold summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .tool-fold summary i {
+        width: 13px;
+        height: 13px;
+        color: var(--tertiary);
+      }
+
+      .tool-fold summary span:last-child {
+        margin-left: auto;
+        color: var(--tertiary);
+        font-weight: 500;
+      }
+
+      .tool-fold .fold-body {
+        border-top: 1px solid var(--line);
+        padding: 9px;
+        color: #acafbf;
+        font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+        line-height: 1.55;
+      }
+
+      .tool-fold .fold-body p + p {
+        margin-top: 5px;
+      }
+
+      .subagent-row {
+        display: grid;
+        grid-template-columns: 23px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        border-top: 1px solid var(--line);
+        padding: 8px 9px;
+      }
+
+      .subagent-row:first-child {
+        border-top: 0;
+      }
+
+      .agent-avatar {
+        display: grid;
+        width: 22px;
+        height: 22px;
+        place-items: center;
+        border-radius: 7px;
+        color: var(--primary-ink);
+        background: rgba(143, 156, 255, 0.18);
+        font-size: 9px;
+        font-weight: 800;
+      }
+
+      .subagent-row strong {
+        display: block;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .subagent-row small {
+        display: block;
+        overflow: hidden;
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status.running {
+        border-color: rgba(88, 199, 123, 0.24);
+        color: #a2e2b6;
+        background: var(--success-soft);
+      }
+
+      .status.waiting {
+        border-color: rgba(228, 181, 90, 0.3);
+        color: #f3ce86;
+        background: var(--warning-soft);
+      }
+
+      .status.done {
+        color: var(--tertiary);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .status .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .subagent-toggle {
+        border-radius: 5px;
+        padding: 3px 5px;
+        color: var(--tertiary);
+        background: transparent;
+        font-size: 9px;
+      }
+
+      .subagent-toggle:hover {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .subagent-toggle[data-state="paused"] {
+        color: var(--warning);
+      }
+
+      .human-loop {
+        border: 1px solid rgba(228, 181, 90, 0.36);
+        border-radius: 12px;
+        padding: 11px;
+        background: linear-gradient(140deg, rgba(228, 181, 90, 0.13), rgba(228, 181, 90, 0.035));
+      }
+
+      .human-loop.resolved {
+        border-color: rgba(88, 199, 123, 0.32);
+        background: linear-gradient(140deg, rgba(88, 199, 123, 0.11), rgba(88, 199, 123, 0.025));
+      }
+
+      .human-loop.resolved .human-form {
+        display: none;
+      }
+
+      .human-loop.resolved .resolved-copy {
+        display: block;
+      }
+
+      .resolved-copy {
+        display: none;
+        margin-top: 5px;
+        color: #a2e2b6;
+        font-size: 10px;
+      }
+
+      .loop-heading {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .loop-heading i {
+        width: 15px;
+        height: 15px;
+        color: #f3ce86;
+      }
+
+      .human-loop.resolved .loop-heading i {
+        color: #a2e2b6;
+      }
+
+      .loop-heading strong {
+        font-size: 11px;
+      }
+
+      .loop-heading span {
+        margin-left: auto;
+        color: #e5c375;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .human-loop p {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .choice-grid {
+        display: grid;
+        gap: 6px;
+        margin-top: 9px;
+      }
+
+      .choice {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 16px minmax(0, 1fr);
+        gap: 7px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 7px;
+        color: var(--muted);
+        text-align: left;
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      .choice:hover,
+      .choice.selected {
+        border-color: rgba(143, 156, 255, 0.46);
+        color: var(--ink);
+        background: rgba(143, 156, 255, 0.13);
+      }
+
+      .choice .radio {
+        display: grid;
+        width: 14px;
+        height: 14px;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+      }
+
+      .choice.selected .radio::after {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--primary);
+        content: "";
+      }
+
+      .choice strong {
+        display: block;
+        font-size: 10px;
+      }
+
+      .choice small {
+        display: block;
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .human-form textarea {
+        width: 100%;
+        min-height: 42px;
+        margin-top: 7px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 7px;
+        color: var(--ink);
+        background: rgba(0, 0, 0, 0.14);
+        font-size: 10px;
+      }
+
+      .decision-actions {
+        gap: 7px;
+        margin-top: 8px;
+      }
+
+      .composer {
+        border-top: 1px solid var(--line);
+        padding: 10px 12px 11px;
+        background: rgba(13, 14, 17, 0.8);
+      }
+
+      .composer-context {
+        display: flex;
+        gap: 5px;
+        overflow: auto;
+        padding-bottom: 8px;
+      }
+
+      .composer-box {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        border: 1px solid var(--line-strong);
+        border-radius: 11px;
+        padding: 6px;
+        background: rgba(255, 255, 255, 0.038);
+      }
+
+      .composer-box textarea {
+        min-height: 28px;
+        flex: 1;
+        resize: none;
+        border: 0;
+        padding: 5px 4px;
+        color: var(--ink);
+        outline: none;
+        background: transparent;
+        font-size: 11px;
+      }
+
+      .send-button {
+        display: grid;
+        width: 29px;
+        height: 29px;
+        place-items: center;
+        border-radius: 8px;
+        color: #15172d;
+        background: var(--primary);
+      }
+
+      .send-button i {
+        width: 15px;
+        height: 15px;
+      }
+
+      .composer-footnote {
+        margin-top: 6px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      /* ── Direction A: mission timeline ── */
+
+      #mission .app-frame {
+        grid-template-columns: 54px minmax(0, 1fr) minmax(440px, 0.82fr);
+      }
+
+      .mission-agent {
+        display: grid;
+        min-width: 0;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        border-left: 1px solid var(--line);
+        background: rgba(18, 19, 23, 0.76);
+      }
+
+      .mission-scroll {
+        overflow: auto;
+        padding: 12px;
+      }
+
+      .run-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 13px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 9px;
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      .run-banner strong {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .run-banner small {
+        display: block;
+        margin-top: 2px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .timeline-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 14px 0 8px;
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .timeline-label::after {
+        height: 1px;
+        flex: 1;
+        background: var(--line);
+        content: "";
+      }
+
+      .task-cluster {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.018);
+      }
+
+      .cluster-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px;
+      }
+
+      .cluster-header i {
+        width: 14px;
+        height: 14px;
+        color: var(--primary-ink);
+      }
+
+      .cluster-header strong {
+        font-size: 10px;
+      }
+
+      .cluster-header small {
+        margin-left: auto;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .timeline-signal {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 8px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .timeline-signal .line {
+        width: 17px;
+        height: 1px;
+        background: var(--line-strong);
+      }
+
+      .mission-note {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        margin-top: 12px;
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .mission-note strong {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      /* ── Direction B: decision-first board ── */
+
+      #decision .app-frame {
+        grid-template-columns: 54px minmax(0, 1fr) minmax(510px, 0.94fr);
+      }
+
+      .decision-agent {
+        display: grid;
+        min-width: 0;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        border-left: 1px solid var(--line);
+        background: rgba(18, 19, 23, 0.76);
+      }
+
+      .run-rail {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        border-bottom: 1px solid var(--line);
+        background: var(--line);
+      }
+
+      .run-stage {
+        min-height: 57px;
+        padding: 9px 10px;
+        background: rgba(12, 13, 16, 0.75);
+      }
+
+      .run-stage .row {
+        gap: 6px;
+      }
+
+      .stage-number {
+        display: grid;
+        width: 17px;
+        height: 17px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .run-stage.active .stage-number {
+        border-color: rgba(228, 181, 90, 0.4);
+        color: #f3ce86;
+        background: var(--warning-soft);
+      }
+
+      .run-stage.done .stage-number {
+        border-color: rgba(88, 199, 123, 0.32);
+        color: #a2e2b6;
+        background: var(--success-soft);
+      }
+
+      .run-stage strong {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .run-stage small {
+        display: block;
+        margin-top: 2px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .decision-scroll {
+        overflow: auto;
+        padding: 12px;
+      }
+
+      .executive-summary {
+        border-left: 2px solid var(--primary);
+        padding: 2px 0 2px 10px;
+      }
+
+      .executive-summary h3 {
+        font-size: 12px;
+      }
+
+      .executive-summary p {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .evidence-board {
+        display: grid;
+        grid-template-columns: 1.04fr 0.96fr;
+        gap: 8px;
+        margin-top: 13px;
+      }
+
+      .evidence-card {
+        min-height: 112px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 9px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .evidence-card h4 {
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .evidence-card strong {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .evidence-card p {
+        margin-top: 4px;
+        color: var(--tertiary);
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .evidence-card .tag {
+        margin-top: 9px;
+      }
+
+      .ledger {
+        margin-top: 10px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .ledger-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px;
+      }
+
+      .ledger-head strong {
+        font-size: 10px;
+      }
+
+      .ledger-head span {
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 7px;
+        border-top: 1px solid var(--line);
+        padding: 7px 9px;
+      }
+
+      .ledger-row i {
+        width: 13px;
+        height: 13px;
+        color: var(--tertiary);
+      }
+
+      .ledger-row strong {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .ledger-row small {
+        display: block;
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .ledger-row button {
+        color: var(--primary-ink);
+        background: transparent;
+        font-size: 9px;
+      }
+
+      .decision-dock {
+        margin: 0 12px 12px;
+        border: 1px solid rgba(228, 181, 90, 0.38);
+        border-radius: 12px;
+        padding: 11px;
+        background:
+          linear-gradient(145deg, rgba(228, 181, 90, 0.12), rgba(18, 19, 23, 0.94) 58%),
+          #17181d;
+        box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.18);
+      }
+
+      .decision-dock.resolved {
+        border-color: rgba(88, 199, 123, 0.38);
+        background:
+          linear-gradient(145deg, rgba(88, 199, 123, 0.12), rgba(18, 19, 23, 0.94) 58%),
+          #17181d;
+      }
+
+      .decision-dock.resolved .human-form {
+        display: none;
+      }
+
+      .decision-dock.resolved .resolved-copy {
+        display: block;
+      }
+
+      .decision-dock .choice-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .decision-dock .choice {
+        min-height: 52px;
+      }
+
+      .decision-dock .human-form textarea {
+        min-height: 34px;
+      }
+
+      .decision-dock .loop-heading span {
+        margin-left: 0;
+      }
+
+      .decision-dock .loop-heading .timing {
+        margin-left: auto;
+        color: #e5c375;
+      }
+
+      /* ── Direction C: split desk ── */
+
+      #desk .app-frame {
+        grid-template-columns: 54px minmax(280px, 0.5fr) minmax(400px, 0.8fr) minmax(250px, 0.44fr);
+      }
+
+      .session-desk {
+        display: grid;
+        grid-template-rows: 61px auto minmax(0, 1fr) auto;
+        min-width: 0;
+        border-left: 1px solid var(--line);
+        background: rgba(15, 16, 19, 0.8);
+      }
+
+      .desk-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+      }
+
+      .desk-heading h3 {
+        font-size: 12px;
+      }
+
+      .session-filter {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        padding: 8px 10px;
+      }
+
+      .session-filter i {
+        width: 13px;
+        height: 13px;
+        color: var(--tertiary);
+      }
+
+      .session-filter input {
+        width: 100%;
+        border: 0;
+        color: var(--muted);
+        outline: none;
+        background: transparent;
+        font-size: 10px;
+      }
+
+      .session-groups {
+        overflow: auto;
+        padding: 7px;
+      }
+
+      .session-group + .session-group {
+        margin-top: 13px;
+      }
+
+      .session-group .section-label {
+        display: block;
+        margin: 0 5px 5px;
+        font-size: 9px;
+      }
+
+      .desk-session {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 7px;
+        align-items: center;
+        border-radius: 8px;
+        padding: 8px 6px;
+        color: var(--muted);
+        text-align: left;
+        background: transparent;
+      }
+
+      .desk-session:hover {
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .desk-session.active {
+        color: var(--ink);
+        background: var(--primary-soft);
+      }
+
+      .desk-session i {
+        width: 13px;
+        height: 13px;
+        color: var(--tertiary);
+      }
+
+      .desk-session.active i {
+        color: var(--primary-ink);
+      }
+
+      .desk-session strong {
+        display: block;
+        overflow: hidden;
+        font-size: 10px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .desk-session small {
+        display: block;
+        overflow: hidden;
+        margin-top: 2px;
+        color: var(--tertiary);
+        font-size: 9px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .desk-session time {
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .session-desk-footer {
+        border-top: 1px solid var(--line);
+        padding: 8px;
+      }
+
+      .session-desk-footer .button {
+        width: 100%;
+      }
+
+      .desk-chat {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        min-width: 0;
+        border-left: 1px solid var(--line);
+        background: rgba(18, 19, 23, 0.7);
+      }
+
+      .desk-chat .agent-header {
+        padding-left: 12px;
+      }
+
+      .chat-scroll {
+        overflow: auto;
+        padding: 14px 13px;
+      }
+
+      .chat-scroll .stack {
+        gap: 15px;
+      }
+
+      .thinking-block {
+        overflow: hidden;
+        border-left: 2px solid rgba(143, 156, 255, 0.5);
+        padding: 7px 9px;
+        background: rgba(143, 156, 255, 0.055);
+      }
+
+      .thinking-block summary {
+        color: var(--primary-ink);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 650;
+      }
+
+      .thinking-block p {
+        margin-top: 7px;
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .run-inspector {
+        display: grid;
+        grid-template-rows: 61px minmax(0, 1fr) auto;
+        min-width: 0;
+        border-left: 1px solid var(--line);
+        background: rgba(13, 14, 17, 0.85);
+      }
+
+      .inspector-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 10px 11px;
+      }
+
+      .inspector-head h3 {
+        font-size: 11px;
+      }
+
+      .inspector-scroll {
+        overflow: auto;
+        padding: 10px;
+      }
+
+      .inspector-section + .inspector-section {
+        margin-top: 14px;
+      }
+
+      .inspector-section h4 {
+        margin-bottom: 7px;
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .tree {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+      }
+
+      .tree-root {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 650;
+      }
+
+      .tree-root i {
+        width: 13px;
+        height: 13px;
+        color: var(--primary-ink);
+      }
+
+      .tree-children {
+        margin-left: 15px;
+        border-left: 1px solid var(--line);
+      }
+
+      .tree .subagent-row {
+        grid-template-columns: 22px minmax(0, 1fr);
+      }
+
+      .tree .status {
+        grid-column: 2;
+        width: max-content;
+        margin-top: 3px;
+      }
+
+      .inspector-loop {
+        border-top: 1px solid var(--line);
+        padding: 10px;
+      }
+
+      .inspector-loop .human-loop {
+        padding: 9px;
+      }
+
+      .inspector-loop .choice-grid {
+        gap: 5px;
+      }
+
+      .inspector-loop .choice {
+        padding: 6px;
+      }
+
+      .inspector-loop .human-loop p {
+        font-size: 10px;
+      }
+
+      .inspector-loop .decision-actions {
+        flex-wrap: wrap;
+      }
+
+      .desk-agent-name {
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .footer-notes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .footer-note {
+        min-height: 104px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 12px;
+        background: rgba(16, 17, 21, 0.58);
+      }
+
+      .footer-note h3 {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .footer-note p {
+        margin-top: 5px;
+        color: var(--tertiary);
+        font-size: 10px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 1200px) {
+        .gallery {
+          width: min(100% - 28px, 960px);
+          padding-top: 25px;
+        }
+
+        .gallery-header {
+          align-items: start;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .coverage {
+          justify-content: flex-start;
+          max-width: none;
+        }
+
+        #mission .app-frame,
+        #decision .app-frame {
+          grid-template-columns: 54px minmax(0, 1fr);
+        }
+
+        #desk .app-frame {
+          grid-template-columns: 54px minmax(250px, 0.5fr) minmax(360px, 0.8fr);
+        }
+
+        #mission .mission-agent,
+        #decision .decision-agent {
+          grid-column: 2;
+          min-height: 680px;
+          border-top: 1px solid var(--line);
+          border-left: 0;
+        }
+
+        #mission .monitor-surface,
+        #decision .monitor-surface {
+          min-height: 420px;
+        }
+
+        #desk .run-inspector {
+          display: none;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .gallery {
+          width: min(100% - 20px, 620px);
+        }
+
+        .version-tabs,
+        .footer-notes {
+          grid-template-columns: 1fr;
+        }
+
+        .app-frame,
+        #mission .app-frame,
+        #decision .app-frame,
+        #desk .app-frame {
+          grid-template-columns: 1fr;
+          min-height: 0;
+        }
+
+        .global-rail {
+          display: none;
+        }
+
+        .monitor-surface {
+          display: none;
+        }
+
+        #mission .mission-agent,
+        #decision .decision-agent,
+        #desk .session-desk,
+        #desk .desk-chat {
+          grid-column: 1;
+          border-left: 0;
+        }
+
+        #desk .session-desk {
+          max-height: 275px;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .evidence-board {
+          grid-template-columns: 1fr;
+        }
+
+        .decision-dock .choice-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="gallery">
+      <header class="gallery-header">
+        <div>
+          <span class="eyebrow">Traceability · agent workspace exploration</span>
+          <h1>Agent 区域：三种可协作的工作流结构</h1>
+          <p>
+            目标不是把 thinking、tool call、子代理和人工确认堆进聊天流，而是让用户随时知道：谁在做什么、当前卡在哪一步、我需要决定什么。
+          </p>
+        </div>
+        <div class="coverage" aria-label="本稿覆盖的能力">
+          <span><i data-lucide="circle-user-round"></i>Human loop</span>
+          <span><i data-lucide="git-fork"></i>Sub-agent</span>
+          <span><i data-lucide="messages-square"></i>会话切换</span>
+          <span><i data-lucide="square-pen"></i>新建会话</span>
+          <span><i data-lucide="blocks"></i>Thinking / tool call</span>
+        </div>
+      </header>
+
+      <nav class="version-tabs" aria-label="选择交互方向">
+        <button class="version-tab active" data-version-target="mission" type="button">
+          <span class="version-number">A</span>
+          <span>
+            <strong>任务时间线</strong>
+            <small>一条对话，多个并行任务，以运行过程为主线。</small>
+          </span>
+        </button>
+        <button class="version-tab" data-version-target="decision" type="button">
+          <span class="version-number">B</span>
+          <span>
+            <strong>决策优先</strong>
+            <small>结论和人工决策压过过程，适合高风险修复。</small>
+          </span>
+        </button>
+        <button class="version-tab" data-version-target="desk" type="button">
+          <span class="version-number">C</span>
+          <span>
+            <strong>分栏调度台</strong>
+            <small>会话、对话、子代理同时可见，适合高频切换。</small>
+          </span>
+        </button>
+      </nav>
+
+      <div class="concept-note" id="concept-note">
+        <i data-lucide="route"></i>
+        <span><strong>方向 A：</strong>把并行工作编进对话时间线，用户只在任务真的需要介入时被打断。</span>
+      </div>
+
+      <!-- Direction A -->
+      <section class="prototype active" id="mission" aria-label="方向 A：任务时间线">
+        <div class="app-frame">
+          <aside class="global-rail" aria-label="主导航">
+            <span class="brand"><i data-lucide="radar"></i></span>
+            <button class="rail-button active" aria-label="Issues"><i data-lucide="triangle-alert"></i></button>
+            <button class="rail-button" aria-label="Performance"><i data-lucide="chart-no-axes-combined"></i></button>
+            <button class="rail-button" aria-label="Apps"><i data-lucide="app-window"></i></button>
+            <span class="rail-spacer"></span>
+            <button class="rail-button" aria-label="Settings"><i data-lucide="settings-2"></i></button>
+          </aside>
+
+          <section class="monitor-surface" aria-label="监控上下文">
+            <header class="titlebar">
+              <div class="breadcrumb">
+                <span>Storefront Web</span><span>/</span><strong>Issues / checkout blank screen</strong>
+              </div>
+              <div class="titlebar-actions">
+                <span class="live">Live updates</span>
+                <button class="icon-button" aria-label="刷新"><i data-lucide="refresh-cw"></i></button>
+              </div>
+            </header>
+            <div class="monitor-content">
+              <article class="monitor-card">
+                <span class="caption">Issue status</span>
+                <h3>Checkout blank screen</h3>
+                <div class="ghost-lines"><span></span><span></span><span></span></div>
+              </article>
+              <article class="monitor-card">
+                <span class="caption">Most recent replay</span>
+                <h3>Safari · macOS · 11:02</h3>
+                <div class="ghost-lines"><span></span><span></span><span></span></div>
+              </article>
+              <article class="monitor-card wide">
+                <span class="caption">Event trail</span>
+                <div class="ghost-lines"><span></span><span></span><span></span></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="mission-agent" aria-label="Agent 任务时间线">
+            <header class="agent-header">
+              <span class="agent-symbol"><i data-lucide="sparkles"></i></span>
+              <button class="session-trigger" data-popover-target="mission-sessions" type="button">
+                <span class="session-title">定位 checkout 空白页根因</span>
+                <span class="session-subtitle"><i data-lucide="git-fork"></i>3 个任务 · 等待你的决策</span>
+              </button>
+              <button class="icon-button" data-new-session type="button" aria-label="重新创建会话"><i data-lucide="square-pen"></i></button>
+
+              <div class="session-popover" id="mission-sessions">
+                <div class="popover-title"><span>切换会话</span><span>⌘ G</span></div>
+                <button class="session-option active" data-session-pick="定位 checkout 空白页根因" type="button">
+                  <i data-lucide="message-square"></i><span><strong>定位 checkout 空白页根因</strong><small>3 个任务 · 等待决策</small></span><small>现在</small>
+                </button>
+                <button class="session-option" data-session-pick="回归 7 月性能下降" type="button">
+                  <i data-lucide="message-square"></i><span><strong>回归 7 月性能下降</strong><small>已归档 4 条证据</small></span><small>16m</small>
+                </button>
+                <button class="session-option" data-session-pick="分析 API 超时峰值" type="button">
+                  <i data-lucide="message-square"></i><span><strong>分析 API 超时峰值</strong><small>无运行中的任务</small></span><small>昨天</small>
+                </button>
+                <div class="popover-footer"><button class="button ghost-primary" data-new-session type="button"><i data-lucide="plus"></i>重新创建会话</button></div>
+              </div>
+
+              <div class="new-session-dialog">
+                <h3>重新创建会话</h3>
+                <p>创建干净上下文。当前会话和所有并行任务会继续保留。</p>
+                <input aria-label="新会话名称" value="重新检查 checkout 空白页" />
+                <div class="decision-actions">
+                  <button class="button" data-close-new-session type="button">取消</button>
+                  <button class="button primary" data-confirm-new-session type="button">创建并切换</button>
+                </div>
+              </div>
+            </header>
+
+            <div class="mission-scroll">
+              <div class="run-banner">
+                <div>
+                  <strong>当前运行：从 replay 到修复建议</strong>
+                  <small>主代理会在关键分歧处请求你确认；其余工作留在后台。</small>
+                </div>
+                <span class="status waiting"><span class="dot"></span>你的回合</span>
+              </div>
+
+              <div class="stack">
+                <article class="user-message"><p>为什么用户在 Safari 里提交订单后会看到空白页？给我可执行的修复路径。</p></article>
+
+                <article class="agent-message">
+                  <div class="message-label"><i data-lucide="sparkles"></i>Traceability Agent</div>
+                  <p class="agent-copy">我把排查拆成了可独立验证的三件事，主对话继续汇总，不让每个子任务打断你。</p>
+                </article>
+
+                <div class="task-cluster">
+                  <div class="cluster-header">
+                    <i data-lucide="git-fork"></i>
+                    <strong>排查 checkout 空白页</strong>
+                    <small>主代理 · 2m 14s</small>
+                  </div>
+                  <div class="subagent-row">
+                    <span class="agent-avatar">R1</span>
+                    <span><strong>复现路径</strong><small>正在比对 Safari replay 与 breadcrumbs</small></span>
+                    <span class="status running"><span class="dot"></span>运行中</span>
+                  </div>
+                  <div class="subagent-row">
+                    <span class="agent-avatar">R2</span>
+                    <span><strong>代码归因</strong><small>已定位到 payment redirect 的空状态分支</small></span>
+                    <span class="status done"><i data-lucide="check"></i>完成</span>
+                  </div>
+                  <div class="subagent-row">
+                    <span class="agent-avatar">R3</span>
+                    <span><strong>影响评估</strong><small>等待确认是否允许降级跳转</small></span>
+                    <button class="subagent-toggle" data-subagent-toggle type="button">暂停</button>
+                  </div>
+                </div>
+
+                <details class="tool-fold">
+                  <summary><i data-lucide="brain"></i>已压缩 4 条推理与 2 次检索<span>展开过程</span></summary>
+                  <div class="fold-body">
+                    <p>观察：错误只发生在 payment redirect 之后，且 92% 为 Safari 17。</p>
+                    <p>检索：getIssueEvents → getReplayMetadata → searchSourceMap。</p>
+                  </div>
+                </details>
+
+                <section class="human-loop" data-human-loop>
+                  <div class="loop-heading"><i data-lucide="circle-user-round"></i><strong>需要你决定修复策略</strong><span>阻塞 R3</span></div>
+                  <p>证据已足够。你想先减少本周损失，还是直接推进根因修复？</p>
+                  <div class="human-form">
+                    <div class="choice-grid">
+                      <button class="choice selected" data-human-choice type="button">
+                        <span class="radio"></span><span><strong>先止血</strong><small>Safari 跳回 checkout，并记录诊断事件</small></span>
+                      </button>
+                      <button class="choice" data-human-choice type="button">
+                        <span class="radio"></span><span><strong>根因修复</strong><small>修复 redirect state 缺失，预计需完整回归</small></span>
+                      </button>
+                    </div>
+                    <textarea aria-label="补充说明" placeholder="可选：写下发布窗口或额外约束"></textarea>
+                    <div class="decision-actions"><button class="button primary" data-human-submit type="button">确认并继续</button><button class="button" type="button">查看证据</button></div>
+                  </div>
+                  <p class="resolved-copy">已选择“先止血”。R3 正在根据该约束评估影响范围。</p>
+                </section>
+
+                <article class="agent-message">
+                  <div class="message-label"><i data-lucide="sparkles"></i>Traceability Agent</div>
+                  <p class="agent-copy">我会在 R3 返回前继续准备补丁建议。你仍可以切换会话，运行状态会保留在这条任务线上。</p>
+                </article>
+              </div>
+
+              <div class="mission-note"><span><strong>Thinking 的角色</strong>收敛为“过程摘要”，需要时展开，不伪装成对话内容。</span><span><strong>Tool call 的角色</strong>归入产生它的任务，而不是散落在消息间。</span></div>
+            </div>
+
+            <footer class="composer">
+              <div class="composer-context"><span class="chip primary"><i data-lucide="triangle-alert"></i>ISS-204 · checkout blank screen</span><span class="chip"><i data-lucide="app-window"></i>Storefront Web</span></div>
+              <div class="composer-box">
+                <textarea aria-label="给 Agent 的消息" placeholder="补充约束，或继续追问…"></textarea>
+                <button class="send-button" aria-label="发送"><i data-lucide="arrow-up"></i></button>
+              </div>
+              <p class="composer-footnote">运行中可继续追问；消息会进入主代理队列，不会打断子代理。</p>
+            </footer>
+          </section>
+        </div>
+      </section>
+
+      <!-- Direction B -->
+      <section class="prototype" id="decision" aria-label="方向 B：决策优先">
+        <div class="app-frame">
+          <aside class="global-rail" aria-label="主导航">
+            <span class="brand"><i data-lucide="radar"></i></span>
+            <button class="rail-button active" aria-label="Issues"><i data-lucide="triangle-alert"></i></button>
+            <button class="rail-button" aria-label="Performance"><i data-lucide="chart-no-axes-combined"></i></button>
+            <button class="rail-button" aria-label="Apps"><i data-lucide="app-window"></i></button>
+            <span class="rail-spacer"></span>
+            <button class="rail-button" aria-label="Settings"><i data-lucide="settings-2"></i></button>
+          </aside>
+
+          <section class="monitor-surface" aria-label="监控上下文">
+            <header class="titlebar">
+              <div class="breadcrumb"><span>Storefront Web</span><span>/</span><strong>Issues / checkout blank screen</strong></div>
+              <div class="titlebar-actions"><span class="live">Live updates</span><button class="icon-button" aria-label="刷新"><i data-lucide="refresh-cw"></i></button></div>
+            </header>
+            <div class="monitor-content">
+              <article class="monitor-card"><span class="caption">Affected users</span><h3>18.4% Safari checkout</h3><div class="ghost-lines"><span></span><span></span><span></span></div></article>
+              <article class="monitor-card"><span class="caption">First seen</span><h3>今天 09:13</h3><div class="ghost-lines"><span></span><span></span><span></span></div></article>
+              <article class="monitor-card wide"><span class="caption">Replays & stack trace</span><div class="ghost-lines"><span></span><span></span><span></span></div></article>
+            </div>
+          </section>
+
+          <section class="decision-agent" aria-label="Agent 决策优先工作区">
+            <header class="agent-header">
+              <span class="agent-symbol"><i data-lucide="sparkles"></i></span>
+              <button class="session-trigger" data-popover-target="decision-sessions" type="button">
+                <span class="session-title">决定 checkout 的修复路径</span>
+                <span class="session-subtitle"><i data-lucide="circle-user-round"></i>1 个待决策 · 2 条可行路径</span>
+              </button>
+              <button class="icon-button" data-new-session type="button" aria-label="重新创建会话"><i data-lucide="square-pen"></i></button>
+
+              <div class="session-popover" id="decision-sessions">
+                <div class="popover-title"><span>切换会话</span><span>⌘ G</span></div>
+                <button class="session-option active" data-session-pick="决定 checkout 的修复路径" type="button"><i data-lucide="message-square"></i><span><strong>决定 checkout 的修复路径</strong><small>1 个待决策</small></span><small>现在</small></button>
+                <button class="session-option" data-session-pick="确认 source map 上传失败" type="button"><i data-lucide="message-square"></i><span><strong>确认 source map 上传失败</strong><small>已完成</small></span><small>29m</small></button>
+                <button class="session-option" data-session-pick="复核 Web Vitals 预警" type="button"><i data-lucide="message-square"></i><span><strong>复核 Web Vitals 预警</strong><small>无待办</small></span><small>周一</small></button>
+                <div class="popover-footer"><button class="button ghost-primary" data-new-session type="button"><i data-lucide="plus"></i>重新创建会话</button></div>
+              </div>
+
+              <div class="new-session-dialog">
+                <h3>重新创建会话</h3><p>在不带历史推理的上下文中重新分析同一 Issue。</p>
+                <input aria-label="新会话名称" value="从头审查 checkout 失败" />
+                <div class="decision-actions"><button class="button" data-close-new-session type="button">取消</button><button class="button primary" data-confirm-new-session type="button">创建并切换</button></div>
+              </div>
+            </header>
+
+            <div class="run-rail" aria-label="当前工作阶段">
+              <div class="run-stage done"><div class="row"><span class="stage-number">1</span><strong>发现</strong></div><small>根因和影响已归纳</small></div>
+              <div class="run-stage active"><div class="row"><span class="stage-number">2</span><strong>决定</strong></div><small>需要你选择发布策略</small></div>
+              <div class="run-stage"><div class="row"><span class="stage-number">3</span><strong>执行</strong></div><small>子代理将验证结果</small></div>
+            </div>
+
+            <div class="decision-scroll">
+              <section class="executive-summary">
+                <h3>Safari payment redirect 丢失了恢复 checkout 的 state</h3>
+                <p>主代理已整合 3 个子代理的发现。以下信息只保留会影响你决定的证据。</p>
+              </section>
+
+              <div class="evidence-board">
+                <article class="evidence-card">
+                  <h4>用户影响</h4><strong>本周约 1,840 次失败提交</strong><p>Safari 17 占全部相关异常的 92%，其他浏览器未复现。</p><span class="tag primary">已由 replay 复现</span>
+                </article>
+                <article class="evidence-card">
+                  <h4>技术判断</h4><strong>可安全做前端降级</strong><p>保留失败 payload 并返回 checkout，可避免订单状态悬空。</p><span class="tag">R2 · 代码归因</span>
+                </article>
+              </div>
+
+              <div class="ledger">
+                <div class="ledger-head"><strong>工作账本</strong><span>过程默认收起</span></div>
+                <div class="ledger-row"><i data-lucide="brain"></i><span><strong>主代理推理</strong><small>4 条假设已压缩为上方结论</small></span><button data-ledger-button type="button">查看</button></div>
+                <div class="ledger-row"><i data-lucide="wrench"></i><span><strong>工具与证据</strong><small>replay、event query、source map · 6 次</small></span><button data-ledger-button type="button">查看</button></div>
+                <div class="ledger-row"><i data-lucide="git-fork"></i><span><strong>子代理</strong><small>R1 完成 · R2 完成 · R3 等待路线</small></span><button data-ledger-button type="button">展开</button></div>
+              </div>
+            </div>
+
+            <section class="decision-dock" data-human-loop>
+              <div class="loop-heading"><i data-lucide="circle-user-round"></i><strong>现在由你决定</strong><span>子代理 R3 正在等待</span><span class="timing">预计 3 分钟</span></div>
+              <p>选择后，Agent 会自动向验证子代理下发对应的范围和完成条件。</p>
+              <div class="human-form">
+                <div class="choice-grid">
+                  <button class="choice selected" data-human-choice type="button"><span class="radio"></span><span><strong>立刻降级并发布</strong><small>最小改动，先将用户送回 checkout</small></span></button>
+                  <button class="choice" data-human-choice type="button"><span class="radio"></span><span><strong>修根因后一起发布</strong><small>增加测试时间，减少后续再修复</small></span></button>
+                </div>
+                <textarea aria-label="给决策补充限制" placeholder="可选：如“只允许灰度 10%”"></textarea>
+                <div class="decision-actions"><button class="button primary" data-human-submit type="button">确认路线</button><button class="button" type="button">回到对话</button></div>
+              </div>
+              <p class="resolved-copy">已确认“立刻降级并发布”。R3 已开始回归影响范围，完成后会把执行结果写回该决策节点。</p>
+            </section>
+          </section>
+        </div>
+      </section>
+
+      <!-- Direction C -->
+      <section class="prototype" id="desk" aria-label="方向 C：分栏调度台">
+        <div class="app-frame">
+          <aside class="global-rail" aria-label="主导航">
+            <span class="brand"><i data-lucide="radar"></i></span>
+            <button class="rail-button active" aria-label="Issues"><i data-lucide="triangle-alert"></i></button>
+            <button class="rail-button" aria-label="Performance"><i data-lucide="chart-no-axes-combined"></i></button>
+            <button class="rail-button" aria-label="Apps"><i data-lucide="app-window"></i></button>
+            <span class="rail-spacer"></span>
+            <button class="rail-button" aria-label="Settings"><i data-lucide="settings-2"></i></button>
+          </aside>
+
+          <aside class="session-desk" aria-label="会话列表">
+            <header class="desk-heading"><h3>Agent 会话</h3><button class="icon-button" data-new-session type="button" aria-label="重新创建会话"><i data-lucide="square-pen"></i></button></header>
+            <label class="session-filter"><i data-lucide="search"></i><input placeholder="筛选会话" aria-label="筛选会话" /></label>
+            <div class="session-groups">
+              <section class="session-group">
+                <span class="section-label">进行中</span>
+                <button class="desk-session active" data-session-pick="定位 checkout 空白页根因" type="button"><i data-lucide="message-square"></i><span><strong>定位 checkout 空白页根因</strong><small>R1 运行中 · 等待你的决策</small></span><time>现在</time></button>
+                <button class="desk-session" data-session-pick="回归 7 月性能下降" type="button"><i data-lucide="message-square"></i><span><strong>回归 7 月性能下降</strong><small>2 个子代理正在运行</small></span><time>3m</time></button>
+              </section>
+              <section class="session-group">
+                <span class="section-label">最近</span>
+                <button class="desk-session" data-session-pick="分析 API 超时峰值" type="button"><i data-lucide="message-square"></i><span><strong>分析 API 超时峰值</strong><small>已生成排查摘要</small></span><time>16m</time></button>
+                <button class="desk-session" data-session-pick="确认 sourcemap 失配" type="button"><i data-lucide="message-square"></i><span><strong>确认 sourcemap 失配</strong><small>无活动运行</small></span><time>昨天</time></button>
+                <button class="desk-session" data-session-pick="归纳 iOS 崩溃趋势" type="button"><i data-lucide="message-square"></i><span><strong>归纳 iOS 崩溃趋势</strong><small>已存档</small></span><time>周一</time></button>
+              </section>
+            </div>
+            <footer class="session-desk-footer"><button class="button ghost-primary" data-new-session type="button"><i data-lucide="plus"></i>重新创建会话</button></footer>
+            <div class="new-session-dialog">
+              <h3>重新创建会话</h3><p>一个会话是一份独立的上下文与运行树。</p>
+              <input aria-label="新会话名称" value="新的调查" />
+              <div class="decision-actions"><button class="button" data-close-new-session type="button">取消</button><button class="button primary" data-confirm-new-session type="button">创建并切换</button></div>
+            </div>
+          </aside>
+
+          <section class="desk-chat" aria-label="当前会话">
+            <header class="agent-header">
+              <span class="agent-symbol"><i data-lucide="sparkles"></i></span>
+              <span class="session-trigger"><span class="session-title">定位 checkout 空白页根因</span><span class="session-subtitle"><i data-lucide="triangle-alert"></i>ISS-204 · Storefront Web</span></span>
+              <span class="desk-agent-name">主代理</span>
+            </header>
+            <div class="chat-scroll">
+              <div class="stack">
+                <article class="user-message"><p>为什么用户在 Safari 里提交订单后会看到空白页？</p></article>
+                <article class="agent-message"><div class="message-label"><i data-lucide="sparkles"></i>Traceability Agent</div><p class="agent-copy">我已将复现、代码归因、影响评估并行处理。右侧能看到每个任务的当前状态。</p></article>
+                <details class="thinking-block">
+                  <summary>思考摘要 · 4 个假设已收敛为 1 个</summary>
+                  <p>Safari 在 redirect 返回时没有读取 sessionStorage 的 checkout state；当前异常栈与 6 个 replay 的行为一致。</p>
+                </details>
+                <details class="tool-fold">
+                  <summary><i data-lucide="wrench"></i>证据采集 · 6 次工具调用<span>展开</span></summary>
+                  <div class="fold-body"><p>queryIssueEvents({ browser: "Safari" })</p><p>inspectReplay("replay_7d3")</p><p>searchSourceMap("restoreCheckout")</p></div>
+                </details>
+                <article class="agent-message"><div class="message-label"><i data-lucide="sparkles"></i>Traceability Agent</div><p class="agent-copy">证据充分。我需要你确定：优先降低损失，还是把测试窗口留给根因修复？</p></article>
+              </div>
+            </div>
+            <footer class="composer">
+              <div class="composer-context"><span class="chip primary"><i data-lucide="triangle-alert"></i>ISS-204</span><span class="chip"><i data-lucide="git-fork"></i>3 个并行任务</span></div>
+              <div class="composer-box"><textarea aria-label="给 Agent 的消息" placeholder="继续追问，或说明你的约束…"></textarea><button class="send-button" aria-label="发送"><i data-lucide="arrow-up"></i></button></div>
+              <p class="composer-footnote">对话保持轻量；过程和执行状态都在右侧调度台。</p>
+            </footer>
+          </section>
+
+          <aside class="run-inspector" aria-label="运行调度台">
+            <header class="inspector-head"><h3>本次运行</h3><span class="status waiting"><span class="dot"></span>需要决策</span></header>
+            <div class="inspector-scroll">
+              <section class="inspector-section">
+                <h4>任务树</h4>
+                <div class="tree">
+                  <div class="tree-root"><i data-lucide="sparkles"></i><span>主代理 · 排查 checkout</span></div>
+                  <div class="tree-children">
+                    <div class="subagent-row"><span class="agent-avatar">R1</span><span><strong>复现路径</strong><small>正在读取第 7 个 replay</small><span class="status running"><span class="dot"></span>运行中</span></span></div>
+                    <div class="subagent-row"><span class="agent-avatar">R2</span><span><strong>代码归因</strong><small>发现空状态分支</small><span class="status done"><i data-lucide="check"></i>完成</span></span></div>
+                    <div class="subagent-row"><span class="agent-avatar">R3</span><span><strong>影响评估</strong><small>等你的修复路线</small><span class="status waiting"><span class="dot"></span>等待</span></span></div>
+                  </div>
+                </div>
+              </section>
+              <section class="inspector-section">
+                <h4>聚焦中的工作</h4>
+                <details class="tool-fold" open>
+                  <summary><i data-lucide="wrench"></i>R1 · 比对 Safari replay<span>查看日志</span></summary>
+                  <div class="fold-body"><p>第 7 / 9 个 replay 存在相同 redirect 空状态。</p></div>
+                </details>
+              </section>
+              <section class="inspector-section">
+                <h4>会话切换原则</h4>
+                <p class="agent-copy" style="font-size: 10px;">运行留在各自会话中继续；切走后不丢失，返回时恢复对话和任务树。</p>
+              </section>
+            </div>
+            <div class="inspector-loop">
+              <section class="human-loop" data-human-loop>
+                <div class="loop-heading"><i data-lucide="circle-user-round"></i><strong>需要你的选择</strong></div>
+                <p>R3 的影响评估会依据此策略继续。</p>
+                <div class="human-form">
+                  <div class="choice-grid">
+                    <button class="choice selected" data-human-choice type="button"><span class="radio"></span><span><strong>先止血</strong><small>安全回退 checkout</small></span></button>
+                    <button class="choice" data-human-choice type="button"><span class="radio"></span><span><strong>修根因</strong><small>延长回归时间</small></span></button>
+                  </div>
+                  <div class="decision-actions"><button class="button primary" data-human-submit type="button">确认</button><button class="button" type="button">证据</button></div>
+                </div>
+                <p class="resolved-copy">已确认“先止血”。R3 正在恢复并评估风险。</p>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="footer-notes" aria-label="方案对比">
+        <article class="footer-note"><h3>方向 A · 任务时间线</h3><p>最贴近现有右侧 Agent Panel。适合逐步演进：任务群组承载子代理，human loop 只作为时间线中的“路障”。</p></article>
+        <article class="footer-note"><h3>方向 B · 决策优先</h3><p>适合生产事故或高风险变更。先展示可决定的结论，thinking/tool call 收束为可审计的工作账本，减少阅读噪音。</p></article>
+        <article class="footer-note"><h3>方向 C · 分栏调度台</h3><p>最适合长期并发调查，但需要更宽的 Agent 区域。会话切换、持续运行和子代理状态始终可见，密度也最高。</p></article>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script>
+      const notes = {
+        mission: "方向 A：把并行工作编进对话时间线，用户只在任务真的需要介入时被打断。",
+        decision: "方向 B：把 human loop 提升为运行的下一步；thinking 与工具过程退到可审计的工作账本。",
+        desk: "方向 C：把会话、对话和并行运行拆成稳定列，适合持续调度多个正在运行的调查。",
+      };
+
+      function refreshIcons() {
+        if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.8 } });
+      }
+
+      document.querySelectorAll("[data-version-target]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const target = button.getAttribute("data-version-target");
+          document.querySelectorAll("[data-version-target]").forEach(function (item) {
+            item.classList.toggle("active", item === button);
+          });
+          document.querySelectorAll(".prototype").forEach(function (prototype) {
+            prototype.classList.toggle("active", prototype.id === target);
+          });
+          document.querySelector("#concept-note span").innerHTML = "<strong>" + notes[target].slice(0, 4) + "</strong>" + notes[target].slice(5);
+          refreshIcons();
+        });
+      });
+
+      document.querySelectorAll("[data-popover-target]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const popover = document.getElementById(button.getAttribute("data-popover-target"));
+          document.querySelectorAll(".session-popover").forEach(function (item) {
+            if (item !== popover) item.classList.remove("open");
+          });
+          popover.classList.toggle("open");
+        });
+      });
+
+      document.querySelectorAll("[data-session-pick]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const section = button.closest(".prototype");
+          const name = button.getAttribute("data-session-pick");
+          section.querySelectorAll(".session-title").forEach(function (title) {
+            title.textContent = name;
+          });
+          section.querySelectorAll(".session-option, .desk-session").forEach(function (item) {
+            item.classList.toggle("active", item === button);
+          });
+          section.querySelectorAll(".session-popover").forEach(function (popover) {
+            popover.classList.remove("open");
+          });
+        });
+      });
+
+      document.querySelectorAll("[data-new-session]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const section = button.closest(".prototype");
+          section.querySelectorAll(".new-session-dialog").forEach(function (dialog) {
+            dialog.classList.add("open");
+          });
+          section.querySelectorAll(".session-popover").forEach(function (popover) {
+            popover.classList.remove("open");
+          });
+        });
+      });
+
+      document.querySelectorAll("[data-close-new-session]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          button.closest(".new-session-dialog").classList.remove("open");
+        });
+      });
+
+      document.querySelectorAll("[data-confirm-new-session]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const section = button.closest(".prototype");
+          const dialog = button.closest(".new-session-dialog");
+          const input = dialog.querySelector("input");
+          const name = input.value.trim() || "新的调查";
+          section.querySelectorAll(".session-title").forEach(function (title) {
+            title.textContent = name;
+          });
+          dialog.classList.remove("open");
+        });
+      });
+
+      document.querySelectorAll("[data-human-choice]").forEach(function (choice) {
+        choice.addEventListener("click", function () {
+          const loop = choice.closest("[data-human-loop]");
+          loop.querySelectorAll("[data-human-choice]").forEach(function (item) {
+            item.classList.toggle("selected", item === choice);
+          });
+        });
+      });
+
+      document.querySelectorAll("[data-human-submit]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const loop = button.closest("[data-human-loop]");
+          loop.classList.add("resolved");
+          refreshIcons();
+        });
+      });
+
+      document.querySelectorAll("[data-subagent-toggle]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const paused = button.getAttribute("data-state") === "paused";
+          button.setAttribute("data-state", paused ? "running" : "paused");
+          button.textContent = paused ? "暂停" : "继续";
+        });
+      });
+
+      document.querySelectorAll("[data-ledger-button]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          button.textContent = button.textContent === "收起" ? "查看" : "收起";
+        });
+      });
+
+      refreshIcons();
+    </script>
+  </body>
+</html>
