@@ -2,8 +2,6 @@ import type { AgentMessage, AppUserMessage } from "@earendil-works/pi-agent-core
 
 import type { AskUserQuestionResolution } from "./ask-user-question-ipc";
 import type { AgentSessionScope } from "./events-ipc";
-import type { AvailableModel } from "./models-ipc";
-import type { PermissionMode, PermissionResolution } from "./permissions-ipc";
 
 // ── Persistence shapes (handoff "Session and Entry shapes") ────────────────
 
@@ -62,12 +60,6 @@ export interface AgentSessionIPC {
   setSessionId: (sessionId: string, appId: string) => Promise<void>;
   setSessionScope: (sessionId: string, scope: AgentSessionScope) => Promise<void>;
   destroySession: (sessionId: string) => Promise<void>;
-  setPermissionMode: (sessionId: string, mode: PermissionMode) => Promise<void>;
-  resolvePermissionRequest: (
-    sessionId: string,
-    requestId: string,
-    resolution: PermissionResolution,
-  ) => Promise<void>;
   resolveAskUserQuestion: (
     sessionId: string,
     requestId: string,

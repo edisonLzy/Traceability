@@ -4,7 +4,7 @@ The typed IPC contract between the main process and the renderer.
 
 ## Responsibility
 
-Focused modules hold the shared request/response types, persisted session records, and Agent stream-event shapes. `events-ipc.ts` also exports the runtime allowlist constants used by preload; no contract may import app-specific main or renderer code. The Agent contracts are `agent-message.ts`, `ask-user-question-ipc.ts`, `events-ipc.ts`, `models-ipc.ts`, `permissions-ipc.ts`, `session-ipc.ts`, and `skills-ipc.ts`.
+Focused modules hold the shared request/response types, persisted session records, and Agent stream-event shapes. `events-ipc.ts` also exports the runtime allowlist constants used by preload; no contract may import app-specific main or renderer code. The Agent contracts are `agent-message.ts`, `ask-user-question-ipc.ts`, `events-ipc.ts`, `models-ipc.ts`, `session-ipc.ts`, and `skills-ipc.ts`.
 
 Three processes import it, each differently:
 

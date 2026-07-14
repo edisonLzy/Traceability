@@ -47,21 +47,6 @@ export class AgentPool
     await this.getOrCreateRuntime(sessionId).setHistoryMessages(messages);
   }
 
-  public async setPermissionMode(
-    sessionId: string,
-    mode: Parameters<AgentSessionIPC["setPermissionMode"]>[1],
-  ): Promise<void> {
-    await this.getOrCreateRuntime(sessionId).setPermissionMode(mode);
-  }
-
-  public async resolvePermissionRequest(
-    sessionId: string,
-    requestId: string,
-    resolution: Parameters<AgentSessionIPC["resolvePermissionRequest"]>[2],
-  ): Promise<void> {
-    await this.getOrCreateRuntime(sessionId).resolvePermissionRequest(requestId, resolution);
-  }
-
   public async resolveAskUserQuestion(
     sessionId: string,
     requestId: string,
@@ -150,8 +135,6 @@ export class AgentPool
       "setSessionId",
       "setSessionScope",
       "destroySession",
-      "setPermissionMode",
-      "resolvePermissionRequest",
       "resolveAskUserQuestion",
       "listSkills",
       "setSkillEnabled",

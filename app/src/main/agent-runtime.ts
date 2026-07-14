@@ -133,19 +133,6 @@ export class AgentRuntime extends Emittery<AgentRuntimeEvents> {
     this.agent.abort();
   }
 
-  public async setPermissionMode(
-    _mode: Parameters<AgentSessionIPC["setPermissionMode"]>[1],
-  ): Promise<void> {
-    // No-op: this agent has no tools and therefore no permission requests.
-  }
-
-  public async resolvePermissionRequest(
-    _requestId: string,
-    _resolution: Parameters<AgentSessionIPC["resolvePermissionRequest"]>[2],
-  ): Promise<void> {
-    throw new Error("Permission requests are unavailable because this Agent has no tools");
-  }
-
   public async askUserQuestion(input: AskUserQuestionInput): Promise<AskUserQuestionResult> {
     if (!this.sessionId || !this.appId) {
       throw new Error("Ask user question is not configured for this Agent runtime");

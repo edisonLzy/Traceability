@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import type { Entry, Session } from "../../shared/session-ipc.js";
+import type { BrowserWindow } from "electron";
+import { z } from "zod";
+
+import type { Entry, Session, SessionPersistenceIPC } from "../../shared/session-ipc.js";
+import { AbstractAgentIPCHandler } from "../agent-ipc.js";
 import { LocalDatabase } from "../db/database.js";
 
 interface SessionRow {
@@ -24,15 +28,58 @@ interface EntryRow {
 /**
  * Durable session history for the read-only Agent.
  *
- * The renderer owns optimistic entry state while a reply is streaming and
- * flushes completed entries through `appendEntries`. This service deliberately
- * stores only messages and model selections; artifacts, runs, and permissions
- * are not part of the Traceability Agent contract.
+ * This class owns the session IPC registration just as `AgentPool` owns the
+ * runtime IPC registration. The renderer owns optimistic state while a reply
+ * is streaming and flushes completed entries through `appendEntries`.
  */
-export class SessionService {
-  constructor(private readonly db: LocalDatabase) {}
+export class SessionService
+  extends AbstractAgentIPCHandler<SessionPersistenceIPC>
+  implements SessionPersistenceIPC
+{
+  public ["sessions:create"]: SessionPersistenceIPC["sessions:create"] = async (appId) => {
+    return this.create(z.string().min(1).parse(appId));
+  };
 
-  public create(appId: string): Session {
+  public ["sessions:list"]: SessionPersistenceIPC["sessions:list"] = async (appId) => {
+    return this.list(z.string().min(1).parse(appId));
+  };
+
+  public ["sessions:get"]: SessionPersistenceIPC["sessions:get"] = async (sessionId) => {
+    return this.get(z.string().uuid().parse(sessionId));
+  };
+
+  public ["sessions:getEntries"]: SessionPersistenceIPC["sessions:getEntries"] = async (
+    sessionId,
+  ) => {
+    return this.getEntries(z.string().uuid().parse(sessionId));
+  };
+
+  public ["sessions:rename"]: SessionPersistenceIPC["sessions:rename"] = async (sessionId, name) =>
+    this.rename(z.string().uuid().parse(sessionId), z.string().trim().min(1).max(200).parse(name));
+
+  public ["sessions:delete"]: SessionPersistenceIPC["sessions:delete"] = async (sessionId) => {
+    await this.delete(z.string().uuid().parse(sessionId));
+  };
+
+  public ["sessions:appendEntries"]: SessionPersistenceIPC["sessions:appendEntries"] = async (
+    sessionId,
+    entries,
+  ) => {
+    await this.appendEntries(
+      z.string().uuid().parse(sessionId),
+      z.array(z.custom<Entry>()).parse(entries),
+    );
+  };
+
+  constructor(
+    private readonly db: LocalDatabase,
+    browserWindow: BrowserWindow,
+  ) {
+    super(browserWindow);
+    this.unbind = this.bind();
+  }
+
+  public async create(appId: string): Promise<Session> {
     const now = Date.now();
     const row: SessionRow = {
       id: randomUUID(),
@@ -52,7 +99,7 @@ export class SessionService {
     return toSession(row, null);
   }
 
-  public list(appId: string): Session[] {
+  public async list(appId: string): Promise<Session[]> {
     const rows = this.db.raw
       .prepare(`
         SELECT id, app_id, title, created_at, updated_at
@@ -65,7 +112,7 @@ export class SessionService {
     return rows.map((row) => toSession(row, null));
   }
 
-  public get(sessionId: string): Session | null {
+  public async get(sessionId: string): Promise<Session | null> {
     const row = this.db.raw
       .prepare(`
         SELECT id, app_id, title, created_at, updated_at
@@ -78,7 +125,7 @@ export class SessionService {
     return toSession(row, this.getLeafEntryId(sessionId));
   }
 
-  public getEntries(sessionId: string): Entry[] {
+  public async getEntries(sessionId: string): Promise<Entry[]> {
     this.assertSession(sessionId);
     const rows = this.db.raw
       .prepare(`
@@ -107,7 +154,7 @@ export class SessionService {
     });
   }
 
-  public rename(sessionId: string, name: string): void {
+  public async rename(sessionId: string, name: string): Promise<void> {
     const normalized = name.trim();
     if (!normalized) throw new Error("Session name cannot be empty");
 
@@ -117,11 +164,11 @@ export class SessionService {
     if (result.changes === 0) throw new Error("Conversation not found");
   }
 
-  public delete(sessionId: string): void {
+  public async delete(sessionId: string): Promise<void> {
     this.db.raw.prepare("DELETE FROM agent_sessions WHERE id = ?").run(sessionId);
   }
 
-  public appendEntries(sessionId: string, entries: Entry[]): void {
+  public async appendEntries(sessionId: string, entries: Entry[]): Promise<void> {
     this.assertSession(sessionId);
 
     this.db.transaction(() => {
@@ -162,6 +209,33 @@ export class SessionService {
         .prepare("UPDATE agent_sessions SET updated_at = ? WHERE id = ?")
         .run(Date.now(), sessionId);
     });
+  }
+
+  public destroy(): void {
+    this.unbind?.();
+    this.unbind = null;
+  }
+
+  protected override bind(): VoidFunction {
+    const channels = [
+      "sessions:create",
+      "sessions:list",
+      "sessions:get",
+      "sessions:getEntries",
+      "sessions:rename",
+      "sessions:delete",
+      "sessions:appendEntries",
+    ] as const;
+
+    for (const channel of channels) {
+      const handler = (this as unknown as Record<string, (...args: unknown[]) => unknown>)[channel];
+      if (!handler) throw new Error(`Missing session IPC handler: ${channel}`);
+      this.typedIpcMain.handle(channel, handler.bind(this) as never);
+    }
+
+    return () => {
+      for (const channel of channels) this.typedIpcMain.removeHandler(channel);
+    };
   }
 
   private assertSession(sessionId: string): void {

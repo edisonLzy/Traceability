@@ -10,5 +10,5 @@
     }
   },
   "include": ["src", "src/preload/index.d.ts", "electron.vite.config.ts"],
-  "exclude": ["src/main/**", "src/preload/**"]
+  "exclude": ["src/main/**", "src/preload/index.ts"]
 }

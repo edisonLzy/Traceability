@@ -8,11 +8,11 @@ This is the authoritative package-level guide. Each subdirectory under `src/` ha
 
 electron-vite produces three independent builds from one config (`electron.vite.config.ts`):
 
-| Process | Source | Runtime | `.js` import suffix? | Path alias |
-|---------|--------|---------|----------------------|------------|
-| **main** | `src/main/` | Node (Electron main) | **Yes** — relative `./x.js` | none (relative imports) |
-| **preload** | `src/preload/` | isolated browser context | **Yes** — relative `../x.js` | none (relative imports) |
-| **renderer** | `src/renderer/` | browser | **No** | `@renderer/*`, `@shared/*` |
+| Process      | Source          | Runtime                  | `.js` import suffix?         | Path alias                 |
+| ------------ | --------------- | ------------------------ | ---------------------------- | -------------------------- |
+| **main**     | `src/main/`     | Node (Electron main)     | **Yes** — relative `./x.js`  | none (relative imports)    |
+| **preload**  | `src/preload/`  | isolated browser context | **Yes** — relative `../x.js` | none (relative imports)    |
+| **renderer** | `src/renderer/` | browser                  | **No**                       | `@renderer/*`, `@shared/*` |
 
 The `.js`-suffix rule is load-bearing: `main`/`preload`/`shared` are emitted by `tsc` as ESM and `tsc` does not rewrite specifiers, so source must already use `.js`. The renderer is bundled by Vite, which rewrites specifiers, so no suffix. **Match the surrounding file.** See `shared/CLAUDE.md` for how `shared/` is imported from each process.
 
@@ -32,7 +32,7 @@ From the repo root these are surfaced as `pnpm dev:app`, `pnpm build`, etc.
 
 `typecheck` runs **two** projects — both must pass:
 
-- `tsconfig.json` — web/shared. `include: src`, `exclude: src/main/**, src/preload/**`. Defines the `@renderer/*` and `@shared/*` path aliases. `jsx: react-jsx`.
+- `tsconfig.json` — web/shared plus the ambient `src/preload/index.d.ts`. It excludes `src/main/**` and the executable preload entry (`src/preload/index.ts`), and defines the `@renderer/*` and `@shared/*` path aliases. `jsx: react-jsx`.
 - `tsconfig.node.json` — main/preload/shared + `electron.vite.config.ts`. `moduleResolution: Bundler`, `types: node, electron, electron-vite/node`. No path aliases (main/preload import shared via relative paths).
 - `tsconfig.web.json` — extends `tsconfig.json` (separate project ref target for the typecheck script).
 
@@ -48,7 +48,7 @@ The renderer reaches main only through the typed preload bridge. It may use the 
 
 ## Backend & auth
 
-Auth is **disabled for the MVP** — the server accepts all requests (tokens ignored). The backend address comes from `VITE_SERVER_URL` (build-time). The renderer's `lib/request.ts` and the main process's `agent/monitor.ts` each read it independently (two separate axios instances, two separate endpoint maps — see `renderer/apis/CLAUDE.md` and `main/agent/CLAUDE.md`).
+Auth is **disabled for the MVP** — the server accepts all requests (tokens ignored). The backend address comes from `VITE_SERVER_URL` (build-time). The current read-only Agent phase has no monitoring tools; the renderer reads monitoring data through `lib/request.ts`.
 
 ## Styling
 

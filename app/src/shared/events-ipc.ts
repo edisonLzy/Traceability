@@ -2,13 +2,12 @@ import type { AgentEvent } from "@earendil-works/pi-agent-core";
 
 import type { AskUserQuestionRequestedEvent } from "./ask-user-question-ipc";
 import type { AgentModelsIPC } from "./models-ipc";
-import type { PermissionRequestedEvent } from "./permissions-ipc";
 import type { AgentSessionIPC, SessionPersistenceIPC } from "./session-ipc";
 import type { AgentSkillsIPC } from "./skills-ipc";
 
 export type AgentSessionScope = "main" | "side-chat";
 type SessionTagged<T> = T & { scope: AgentSessionScope; sessionId: string };
-type AgentRuntimeEvent = AgentEvent | PermissionRequestedEvent | AskUserQuestionRequestedEvent;
+type AgentRuntimeEvent = AgentEvent | AskUserQuestionRequestedEvent;
 
 // main -> renderer events (handoff allowlist; app_update excluded — out of scope).
 export const ALLOWED_MAIN_EXPOSE_EVENTS = [
@@ -22,7 +21,6 @@ export const ALLOWED_MAIN_EXPOSE_EVENTS = [
   "tool_execution_start",
   "tool_execution_update",
   "tool_execution_end",
-  "permission_requested",
   "ask_user_question_requested",
 ] as const;
 
@@ -64,8 +62,6 @@ export const ALLOWED_RENDER_INVOKE_EVENTS: (keyof TraceabilityInvokeIPC)[] = [
   "setSessionId",
   "setSessionScope",
   "destroySession",
-  "setPermissionMode",
-  "resolvePermissionRequest",
   "resolveAskUserQuestion",
   // AgentModelsIPC
   "setModel",
