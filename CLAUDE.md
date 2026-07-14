@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-pnpm 10 workspace (`packageManager` pinned → `corepack enable` once). Node >= 20.
+pnpm 10 workspace (`packageManager` pinned → `corepack enable` once). Node 22 LTS (pinned via `.node-version` + `engines`; better-sqlite3 11.10.0 ships prebuilt binaries for Node 22's ABI 127, so installs skip source compilation).
 
 ```bash
 pnpm install
