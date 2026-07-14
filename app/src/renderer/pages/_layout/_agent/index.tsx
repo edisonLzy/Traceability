@@ -1,40 +1,23 @@
 import "@shared/agent-message";
-import type { AppUserMessage } from "@earendil-works/pi-agent-core";
 import { useCurrentApp } from "@renderer/context/current-app";
-import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
-import type { AgentPromptEvent } from "@renderer/lib/agent-events";
 import { agentStore, type MonitoringContext } from "@renderer/store/agent";
-import type { AvailableModel } from "@shared/models-ipc";
 import { AlertTriangle, AppWindow, BarChart3, Sparkles, SquarePlus, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useStore } from "zustand";
 
+import { useActiveSessionChat } from "./hooks/use-active-session-chat";
+import { useAgentExternalEvents } from "./hooks/use-agent-external-events";
 import { useAgentMessages } from "./hooks/use-agent-messages";
 import { useAgentTokenUsage } from "./hooks/use-agent-token-usage";
 import { AskUserQuestionPanel } from "./human-in-the-loop";
 import { ChatMessages } from "./messages";
-import { isMessageEntry } from "./messages/types";
 import { PendingMessages } from "./pending-messages";
-import { PromptInput, type PromptSubmission } from "./prompt-input";
-import { createTextDocument } from "./prompt-input/rich-text";
-import { createSessionTitleFromPrompt, shouldAutoRenameSession } from "./session-title";
+import { PromptInput } from "./prompt-input";
 import { SessionMenu } from "./session/session-menu";
 import { useAgentSession } from "./session/use-agent-session";
 
-function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/**
- * Traceability's divisor-derived Agent panel.
- *
- * The source project's `chat/index.tsx` and `active-session-content.tsx` are
- * intentionally composed here: this app has a single fixed right-side panel,
- * rather than a workspace chat route and an artifact split pane.
- */
 export function AgentPanel() {
-  const { invoke } = useElectronIPC();
   const { appId, currentApp } = useCurrentApp();
   const location = useLocation();
   const {
@@ -44,196 +27,23 @@ export function AgentPanel() {
     renameSession,
     selectSession,
   } = useAgentSession(appId || undefined);
-  const [models, setModels] = useState<AvailableModel[]>([]);
   const [panelError, setPanelError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const sessions = useStore(agentStore, (state) => state.sessions);
-  const activeSessionId = useStore(agentStore, (state) => state.activeSessionId);
-  const activeSession = useStore(agentStore, (state) =>
-    state.activeSessionId ? state.getSession(state.activeSessionId) : undefined,
-  );
-  const entryState = useStore(agentStore, (state) =>
-    state.activeSessionId ? state.getEntryState(state.activeSessionId) : undefined,
-  );
-  const pendingQuestion = useStore(agentStore, (state) =>
-    state.activeSessionId
-      ? state.getHumanInTheLoopState(state.activeSessionId).requests[0]
-      : undefined,
-  );
-
+  const chat = useActiveSessionChat({ appId, createSession, renameSession, setPanelError });
+  useAgentExternalEvents({
+    activeSessionId: chat.activeSessionId,
+    activeSession: chat.activeSession,
+    submitPrompt: chat.submitPrompt,
+    createSession,
+    refreshSessions,
+    selectSession,
+    setPanelError,
+  });
   useAgentMessages();
   useAgentTokenUsage();
 
-  useEffect(() => {
-    let active = true;
-    void invoke("getAvailableModels")
-      .then((nextModels) => {
-        if (active) setModels(nextModels);
-      })
-      .catch((cause) => {
-        if (active) setPanelError(toErrorMessage(cause));
-      });
-    return () => {
-      active = false;
-    };
-  }, [invoke]);
-
-  useEffect(() => {
-    if (!activeSession || activeSession.model || models.length === 0) return;
-    agentStore.getState().setModel(activeSession.id, models[0]!);
-  }, [activeSession, models]);
-
-  const context: MonitoringContext | null = useMemo(() => {
-    if (activeSession?.monitoringContext) return activeSession.monitoringContext;
-    return appId ? { appId, source: "general" } : null;
-  }, [activeSession?.monitoringContext, appId]);
-  const isRunning = entryState?.status === "running";
-  const streamingEntryId = activeSessionId
-    ? agentStore.getState().streamingEntryIds.get(activeSessionId)
-    : undefined;
-
-  const send = useCallback(
-    async (
-      submission: PromptSubmission,
-      kind: AppUserMessage["kind"] = "prompt",
-      contextOverride?: MonitoringContext,
-    ) => {
-      let sessionId = agentStore.getState().activeSessionId;
-      let session = sessionId ? agentStore.getState().getSession(sessionId) : undefined;
-      if (!session || session.appId !== appId) {
-        const created = await createSession();
-        sessionId = created?.id ?? null;
-        session = sessionId ? agentStore.getState().getSession(sessionId) : undefined;
-      }
-      if (!sessionId || !session || !appId) return;
-
-      const monitoringContext = contextOverride ??
-        session.monitoringContext ?? {
-          appId,
-          source: "general" as const,
-        };
-      if (monitoringContext.appId !== appId) {
-        setPanelError("The selected context belongs to a different application.");
-        return;
-      }
-      agentStore.getState().setMonitoringContext(sessionId, monitoringContext);
-
-      const hasMessages = agentStore
-        .getState()
-        .getEntryState(sessionId)
-        .entries.some(isMessageEntry);
-      if (kind === "prompt" && !hasMessages && shouldAutoRenameSession(session.name)) {
-        const title = createSessionTitleFromPrompt(submission.content);
-        if (title) void renameSession(sessionId, title);
-      }
-
-      const message = createAppUserMessage(submission, kind, monitoringContext);
-      try {
-        setPanelError(null);
-        if (kind === "prompt") agentStore.getState().setSessionStatus(sessionId, "running");
-        agentStore.getState().setModel(sessionId, submission.model);
-        if (kind !== "prompt") agentStore.getState().addPendingMessage(sessionId, message);
-        await invoke("prompt", sessionId, message);
-      } catch (cause) {
-        if (kind === "prompt") agentStore.getState().setSessionStatus(sessionId, "idle");
-        else agentStore.getState().removePendingMessageByTimestamp(sessionId, message.timestamp);
-        setPanelError(toErrorMessage(cause));
-      }
-    },
-    [appId, createSession, invoke, renameSession],
-  );
-
-  const submitPrompt = useCallback(
-    (submission: PromptSubmission, contextOverride?: MonitoringContext) =>
-      send(submission, "prompt", contextOverride),
-    [send],
-  );
-  const steerPrompt = useCallback(
-    (submission: PromptSubmission) => send(submission, "steering"),
-    [send],
-  );
-  const followUpPrompt = useCallback(
-    (submission: PromptSubmission) => send(submission, "follow-up"),
-    [send],
-  );
-
-  useEffect(() => {
-    const onPrompt = (event: Event) => {
-      const detail = (event as CustomEvent<AgentPromptEvent>).detail;
-      if (!detail || detail.context.appId !== appId) return;
-      const model = activeSession?.appId === appId ? (activeSession.model ?? models[0]) : models[0];
-      if (!model) {
-        setPanelError("No compatible model is configured.");
-        return;
-      }
-      if (activeSessionId && activeSession?.appId === appId) {
-        agentStore.getState().setMonitoringContext(activeSessionId, detail.context);
-      }
-      void submitPrompt(
-        {
-          content: detail.prompt,
-          jsonContent: createTextDocument(detail.prompt),
-          model,
-          skillIds: [],
-        },
-        detail.context,
-      );
-    };
-    const onContext = (event: Event) => {
-      const detail = (event as CustomEvent<MonitoringContext>).detail;
-      if (!detail || detail.appId !== appId || !activeSessionId || activeSession?.appId !== appId)
-        return;
-      agentStore.getState().setMonitoringContext(activeSessionId, detail);
-    };
-    const onNew = () => void createSession();
-    const onSessionUpdated = () => void refreshSessions();
-    const onSelect = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId: string }>).detail;
-      if (detail?.sessionId) void selectSession(detail.sessionId);
-    };
-
-    window.addEventListener("traceability:agent-prompt", onPrompt);
-    window.addEventListener("traceability:agent-context", onContext);
-    window.addEventListener("traceability:agent-new-session", onNew);
-    window.addEventListener("traceability:agent-session-updated", onSessionUpdated);
-    window.addEventListener("traceability:agent-select-session", onSelect);
-    return () => {
-      window.removeEventListener("traceability:agent-prompt", onPrompt);
-      window.removeEventListener("traceability:agent-context", onContext);
-      window.removeEventListener("traceability:agent-new-session", onNew);
-      window.removeEventListener("traceability:agent-session-updated", onSessionUpdated);
-      window.removeEventListener("traceability:agent-select-session", onSelect);
-    };
-  }, [
-    activeSession,
-    activeSessionId,
-    appId,
-    createSession,
-    models,
-    refreshSessions,
-    selectSession,
-    submitPrompt,
-  ]);
-
-  const changeModel = async (model: AvailableModel | null) => {
-    if (!activeSessionId || !model || activeSession?.appId !== appId) return;
-    const previous = agentStore.getState().getSession(activeSessionId)?.model ?? null;
-    agentStore.getState().setModel(activeSessionId, model);
-    try {
-      const applied = await invoke("setModel", activeSessionId, model);
-      if (!applied) throw new Error("The selected model is unavailable.");
-    } catch (cause) {
-      agentStore.getState().setModel(activeSessionId, previous);
-      setPanelError(toErrorMessage(cause));
-    }
-  };
-
-  const clearContext = () => {
-    if (activeSessionId && appId) {
-      agentStore.getState().setMonitoringContext(activeSessionId, { appId, source: "general" });
-    }
-  };
+  const sessions = useStore(agentStore, (state) => state.sessions);
 
   return (
     <aside
@@ -251,10 +61,10 @@ export function AgentPanel() {
           type="button"
         >
           <strong className="block truncate text-[12px] font-[650] text-ink">
-            {activeSession?.name || "New conversation"}
+            {chat.activeSession?.name || "New conversation"}
           </strong>
           <small className="mt-0.5 flex items-center gap-1.5 text-[10px] text-tertiary">
-            <span>{isRunning ? "Investigating" : "Traceability Agent"}</span>
+            <span>{chat.isRunning ? "Investigating" : "Traceability Agent"}</span>
             <span className="font-mono">⌘G</span>
           </small>
         </button>
@@ -268,7 +78,7 @@ export function AgentPanel() {
         </button>
         {menuOpen ? (
           <SessionMenu
-            activeSessionId={activeSessionId}
+            activeSessionId={chat.activeSessionId}
             onClose={() => setMenuOpen(false)}
             onCreate={() => void createSession()}
             onSelect={(sessionId) => void selectSession(sessionId)}
@@ -280,15 +90,15 @@ export function AgentPanel() {
       <section className="border-b border-hairline bg-black/10 px-2.5 py-2">
         <div className="mb-1 flex items-center justify-between text-[10px] font-[660] uppercase tracking-[0.08em] text-tertiary">
           <span>Context</span>
-          <span>{context?.source === "general" ? "Automatic" : "Pinned"}</span>
+          <span>{chat.context?.source === "general" ? "Automatic" : "Pinned"}</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           <ContextChip icon={AppWindow} text={currentApp?.name ?? appId ?? "No application"} />
-          {context && context.source !== "general" ? (
+          {chat.context && chat.context.source !== "general" ? (
             <ContextChip
-              icon={context.source === "issue" ? AlertTriangle : BarChart3}
-              onRemove={clearContext}
-              text={contextLabel(context)}
+              icon={chat.context.source === "issue" ? AlertTriangle : BarChart3}
+              onRemove={chat.clearContext}
+              text={contextLabel(chat.context)}
             />
           ) : (
             <ContextChip
@@ -302,27 +112,30 @@ export function AgentPanel() {
       </section>
 
       <section className="min-h-0 flex-1 overflow-hidden">
-        <ChatMessages entries={entryState?.entries ?? []} streamingEntryId={streamingEntryId} />
+        <ChatMessages
+          entries={chat.entryState?.entries ?? []}
+          streamingEntryId={chat.streamingEntryId}
+          toolStates={chat.entryState?.toolStates ?? new Map()}
+          sessionId={chat.activeSessionId ?? ""}
+        />
       </section>
 
       <section className="shrink-0 border-t border-hairline bg-[rgba(14,15,18,0.86)] px-2.5 py-2.5">
-        {activeSessionId ? <PendingMessages sessionId={activeSessionId} /> : null}
-        <div className={activeSessionId ? "mt-2" : ""}>
-          {pendingQuestion && activeSessionId ? (
-            <AskUserQuestionPanel request={pendingQuestion} sessionId={activeSessionId} />
+        {chat.activeSessionId ? <PendingMessages sessionId={chat.activeSessionId} /> : null}
+        <div className={chat.activeSessionId ? "mt-2" : ""}>
+          {chat.pendingQuestion && chat.activeSessionId ? (
+            <AskUserQuestionPanel request={chat.pendingQuestion} sessionId={chat.activeSessionId} />
           ) : (
             <PromptInput
-              disabled={!activeSessionId || !appId}
-              isRunning={Boolean(isRunning)}
-              model={activeSession?.model ?? null}
-              models={models}
-              onFollowUp={followUpPrompt}
-              onModelChange={(model) => void changeModel(model)}
-              onSteer={steerPrompt}
-              onStop={() => {
-                if (activeSessionId) void invoke("abortPrompt", activeSessionId);
-              }}
-              onSubmit={submitPrompt}
+              disabled={!chat.activeSessionId || !appId}
+              isRunning={Boolean(chat.isRunning)}
+              model={chat.activeSession?.model ?? null}
+              models={chat.models}
+              onFollowUp={chat.followUpPrompt}
+              onModelChange={(model) => void chat.changeModel(model)}
+              onSteer={chat.steerPrompt}
+              onStop={chat.stopPrompt}
+              onSubmit={chat.submitPrompt}
             />
           )}
         </div>
@@ -335,26 +148,6 @@ export function AgentPanel() {
       </section>
     </aside>
   );
-}
-
-function createAppUserMessage(
-  submission: PromptSubmission,
-  kind: AppUserMessage["kind"],
-  monitoringContext: MonitoringContext,
-): AppUserMessage {
-  const metadata = {
-    model: { providerId: submission.model.providerId, modelId: submission.model.modelId },
-    monitoringContext,
-    skillIds: submission.skillIds,
-  };
-  return {
-    role: "user",
-    content: submission.content,
-    timestamp: Date.now(),
-    kind,
-    jsonContent: submission.jsonContent,
-    metadata,
-  } as AppUserMessage;
 }
 
 function ContextChip({
