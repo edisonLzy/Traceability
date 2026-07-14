@@ -1,0 +1,256 @@
+import type {
+  AskUserQuestionInput,
+  AskUserQuestionResult,
+} from "../shared/ask-user-question-ipc.js";
+import { Agent } from "@earendil-works/pi-agent-core";
+import type { Message } from "@earendil-works/pi-ai";
+import Emittery from "emittery";
+
+import type { AgentSessionScope, AllowedMainExposeEvents } from "../shared/events-ipc.js";
+import type { AgentModelsIPC } from "../shared/models-ipc.js";
+import type { AgentSessionIPC } from "../shared/session-ipc.js";
+import type { AgentSkillsIPC } from "../shared/skills-ipc.js";
+import { AskUserQuestionService } from "./human-in-the-loop/ask-user-question-service.js";
+import { ModelRegistry } from "./models/index.js";
+import { SystemPromptService } from "./prompt/index.js";
+import { SkillService } from "./skills/index.js";
+import { fsReadTextFileTool } from "./tools/index.js";
+
+// ── Derived runtime delegate type ──────────────────────────────────────────
+
+/**
+ * Strips the `sessionId` routing parameter from IPC method signatures.
+ *
+ * IPC:    setHistoryMessages(sessionId, messages) => Promise<void>
+ * Runtime: setHistoryMessages(messages) => void
+ *
+ * Methods without leading `sessionId` param (registry-level config methods) pass through.
+ */
+type StripSessionId<T> = T extends (sessionId: string, ...args: infer A) => infer R
+  ? (...args: A) => R
+  : T;
+
+type CombinedIPC = AgentSessionIPC & AgentModelsIPC & AgentSkillsIPC;
+
+type SessionRoutedMethodNames =
+  | Exclude<
+      keyof AgentSessionIPC,
+      "destroySession" | "runOneTimeAgent" | "setSessionId" | "setSessionScope"
+    >
+  | "setModel";
+
+/**
+ * Contract that AgentRuntime must satisfy, auto-derived from IPC interfaces.
+ *
+ * - Methods where sessionId is a routing parameter -> sessionId is stripped.
+ * - `setSessionId` and registry-level model config methods are excluded.
+ *
+ * Enforcement: AgentPool calls these methods by name - if a method is missing
+ * on AgentRuntime, the delegation call in AgentPool errors at compile time.
+ */
+export type AgentRuntimeDelegate = {
+  [K in SessionRoutedMethodNames]: StripSessionId<CombinedIPC[K]>;
+} & {
+  listSkills: AgentSkillsIPC["listSkills"];
+  setSessionId(sessionId: string): void;
+  setSessionScope(scope: AgentSessionScope): void;
+  setSkillEnabled: AgentSkillsIPC["setSkillEnabled"];
+};
+
+export interface AgentRuntimeOptions {
+  systemPrompt?: string;
+}
+
+// ── Event type map ──────────────────────────────────────────────────────────
+
+/** Derive base events from session-tagged events by stripping sessionId. */
+type AgentRuntimeEvents = {
+  [K in keyof AllowedMainExposeEvents]: Omit<AllowedMainExposeEvents[K], "scope" | "sessionId">;
+};
+
+/**
+ * Per-session runtime that manages a single Agent instance.
+ *
+ * Satisfies AgentRuntimeDelegate (derived from IPC interfaces).
+ * Emits raw AgentEvent-type events without sessionId - AgentPool handles tagging.
+ */
+export class AgentRuntime extends Emittery<AgentRuntimeEvents> implements AgentRuntimeDelegate {
+  private agent!: Agent;
+  private askUserQuestionService: AskUserQuestionService;
+  private scope: AgentSessionScope = "main";
+  private systemPromptService: SystemPromptService;
+  private sessionId: string | undefined;
+
+  constructor(
+    private modelRegistry = new ModelRegistry(),
+    private skillService: SkillService,
+    private options: AgentRuntimeOptions = {},
+  ) {
+    super();
+    this.askUserQuestionService = new AskUserQuestionService();
+    this.systemPromptService = new SystemPromptService();
+    this.systemPromptService.addBuilder(this.skillService);
+
+    this.agent = this.createInternalAgent();
+  }
+
+  private createInternalAgent() {
+    // Read-only runtime: only the text-file read tool is available. No write
+    // or shell-execution tools are registered, so no permission gating is needed.
+    const builtinTools = [fsReadTextFileTool];
+
+    this.askUserQuestionService.on("human-in-the-loop", ({ data: request }) => {
+      this.emit("ask_user_question_requested", {
+        type: "ask_user_question_requested",
+        ...request,
+      });
+    });
+
+    const agent = new Agent({
+      convertToLlm: (messages) => {
+        return messages.flatMap((message): Message[] => {
+          if (message.role === "user") {
+            return [
+              {
+                role: "user",
+                content: message.content,
+                timestamp: message.timestamp,
+              },
+            ];
+          }
+
+          if (message.role === "assistant" || message.role === "toolResult") {
+            return [message];
+          }
+
+          return [];
+        });
+      },
+      getApiKey: (provider) => {
+        return this.modelRegistry.resolveApiKey(provider);
+      },
+      initialState: {
+        systemPrompt: this.systemPromptService.buildSystemPrompt(this.options.systemPrompt ?? ""),
+        tools: builtinTools,
+      },
+    });
+
+    agent.subscribe((event) => {
+      this.emit(event.type, event);
+
+      if (event.type === "agent_end" && this.agent.hasQueuedMessages()) {
+        this.scheduleQueuedContinue();
+      }
+    });
+
+    return agent;
+  }
+
+  // ── AgentRuntimeDelegate implementation ──────────────────────────────────
+
+  public setSessionId: AgentRuntimeDelegate["setSessionId"] = (sessionId) => {
+    this.sessionId = sessionId;
+    this.agent.sessionId = sessionId;
+  };
+
+  public setSessionScope: AgentRuntimeDelegate["setSessionScope"] = (scope) => {
+    this.scope = scope;
+  };
+
+  public getScope() {
+    return this.scope;
+  }
+
+  public async askUserQuestion(input: AskUserQuestionInput): Promise<AskUserQuestionResult> {
+    if (!this.sessionId) {
+      throw new Error("Ask user question is not configured for this agent runtime");
+    }
+    if (this.scope !== "main") {
+      throw new Error("Ask user question is only supported by the main agent");
+    }
+    return this.askUserQuestionService.request(input);
+  }
+
+  public resolveAskUserQuestion = async (
+    requestId: string,
+    resolution: AskUserQuestionResult,
+  ): Promise<void> => {
+    this.askUserQuestionService.resolve(requestId, resolution);
+  };
+
+  public setHistoryMessages: AgentRuntimeDelegate["setHistoryMessages"] = async (messages) => {
+    this.agent.state.messages = messages;
+  };
+
+  public setModel: AgentRuntimeDelegate["setModel"] = async (model) => {
+    const modelInfo = this.modelRegistry.resolveModel(model.providerId, model.modelId);
+    if (!modelInfo) {
+      console.warn(`Model not found: ${model.providerId}/${model.modelId}`);
+      return false;
+    }
+    this.agent.state.model = modelInfo;
+    return true;
+  };
+
+  public prompt: AgentRuntimeDelegate["prompt"] = async (message) => {
+    if (message.metadata?.model) {
+      await this.setModel(message.metadata.model);
+    }
+
+    this.agent.state.systemPrompt = this.systemPromptService.buildSystemPrompt(
+      this.options.systemPrompt ?? "",
+    );
+
+    const content =
+      typeof message.content === "string"
+        ? this.skillService.expandSkillReferences(message.content, message.metadata?.skillIds ?? [])
+        : message.content;
+
+    const routedMessage = { ...message, content };
+    if (message.kind === "steering") {
+      this.agent.steer(routedMessage);
+    } else if (message.kind === "follow-up") {
+      this.agent.followUp(routedMessage);
+    } else {
+      await this.agent.prompt(routedMessage);
+    }
+  };
+
+  public clearAllQueues: AgentRuntimeDelegate["clearAllQueues"] = async () => {
+    this.agent.clearAllQueues();
+  };
+
+  public abortPrompt: AgentRuntimeDelegate["abortPrompt"] = async () => {
+    this.askUserQuestionService.cancelAll("Agent prompt aborted");
+    this.agent.abort();
+  };
+
+  public listSkills: AgentRuntimeDelegate["listSkills"] = async () => {
+    return this.skillService.listSkills();
+  };
+
+  public setSkillEnabled: AgentRuntimeDelegate["setSkillEnabled"] = async (skillId, enabled) => {
+    return this.skillService.setSkillEnabled(skillId, enabled);
+  };
+
+  public destroy() {
+    this.askUserQuestionService.cancelAll("Agent runtime destroyed");
+    this.clearListeners();
+  }
+
+  public waitForIdle() {
+    return this.agent.waitForIdle();
+  }
+
+  private scheduleQueuedContinue() {
+    setTimeout(() => {
+      if (this.agent.state.isStreaming || !this.agent.hasQueuedMessages()) {
+        return;
+      }
+
+      this.agent.continue().catch((error) => {
+        console.error("Failed to continue queued agent messages", error);
+      });
+    }, 0);
+  }
+}
