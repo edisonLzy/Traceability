@@ -66,7 +66,7 @@
 
 | File | Responsibility | Source |
 |---|---|---|
-| `index.ts` | typed allowlisted `window.traceability.invoke()` + `.on()` | edited from divisor (name `traceability`, drop extensions, add sessions channels) |
+| `index.ts` | typed allowlisted `window.electronAPI.invoke()` + `.on()` | edited from divisor (name `electronAPI`, drop extensions, add sessions channels) |
 
 ### `app/src/renderer/` (NOT touched this plan)
 
@@ -1453,11 +1453,11 @@ git commit -m "feat(app/main): port AgentPool (strip extensions + runOneTimeAgen
 - Modify: `app/src/preload/index.ts`
 
 **Interfaces:**
-- Produces: `window.traceability` with typed `invoke<C>(channel, ...args)` + `on<E>(event, callback)` + `platform`.
+- Produces: `window.electronAPI` with typed `invoke<C>(channel, ...args)` + `on<E>(event, callback)` + `platform`.
 
 - [ ] **Step 1: Replace the file**
 
-Overwrite `app/src/preload/index.ts` with this content (divisor's preload structure, renamed `electronAPI`→`traceability`, extensions API dropped, allowlists come from the new shared `events-ipc`):
+Overwrite `app/src/preload/index.ts` with this content (divisor's preload structure, kept as `electronAPI`, extensions API dropped, allowlists come from the new shared `events-ipc`):
 
 ```ts
 import { contextBridge, ipcRenderer } from "electron";
@@ -1471,7 +1471,7 @@ import { ALLOWED_MAIN_EXPOSE_EVENTS, ALLOWED_RENDER_INVOKE_EVENTS } from "../sha
 
 type InvokeArgs<C extends keyof TraceabilityInvokeIPC> = Parameters<TraceabilityInvokeIPC[C]>;
 
-contextBridge.exposeInMainWorld("traceability", {
+contextBridge.exposeInMainWorld("electronAPI", {
   platform: process.platform,
   invoke: <C extends AllowedRenderInvokeEvents>(
     channel: C,
@@ -1510,9 +1510,9 @@ contextBridge.exposeInMainWorld("traceability", {
 });
 ```
 
-- [ ] **Step 2: Add the `traceability` global type declaration**
+- [ ] **Step 2: Add the `electronAPI` global type declaration**
 
-The renderer references `window.traceability`. Add a global declaration. Create `app/src/preload/index.d.ts` (divisor has one too) with:
+The renderer references `window.electronAPI`. Add a global declaration. Create `app/src/preload/index.d.ts` (divisor has one too) with:
 
 ```ts
 import type { AllowedMainExposeEvents, AllowedRenderInvokeEvents, TraceabilityInvokeIPC } from "../shared/events-ipc";
@@ -1521,7 +1521,7 @@ type InvokeArgs<C extends keyof TraceabilityInvokeIPC> = Parameters<Traceability
 
 declare global {
   interface Window {
-    traceability: {
+    electronAPI: {
       platform: string;
       invoke: <C extends AllowedRenderInvokeEvents>(
         channel: C,
@@ -1542,7 +1542,7 @@ export {};
 
 ```bash
 git add app/src/preload/index.ts app/src/preload/index.d.ts
-git commit -m "feat(app/preload): typed allowlisted window.traceability invoke/on"
+git commit -m "feat(app/preload): typed allowlisted window.electronAPI invoke/on"
 ```
 
 ---

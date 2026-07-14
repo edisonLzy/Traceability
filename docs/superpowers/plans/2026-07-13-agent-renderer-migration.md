@@ -1,6 +1,6 @@
 # Agent Renderer Migration Plan
 
-> **Prerequisite:** complete `docs/superpowers/plans/2026-07-13-agent-main-migration.md` through M3 first. This plan targets its final `window.traceability.invoke/on` API and SQLite-backed `SessionService`; it must not retain dependencies on the current legacy `@shared/ipc` or granular `window.traceability.agent/sessions/window` APIs.
+> **Prerequisite:** complete `docs/superpowers/plans/2026-07-13-agent-main-migration.md` through M3 first. This plan targets its final `window.electronAPI.invoke/on` API and SQLite-backed `SessionService`; it must not retain dependencies on the current legacy `@shared/ipc` or granular `window.traceability.agent/sessions/window` APIs.
 
 **Goal:** Replace Traceability's monolithic right-side `AgentPanel` with a divisor-agent-derived renderer that streams messages, persists and restores conversation entries, creates and switches application-scoped sessions, and preserves Traceability monitoring context. The agent stays read-only: no tool UI, artifact UI, permission policy UI, or extension renderer integration is migrated.
 
@@ -27,7 +27,7 @@
 | Divisor renderer area | Traceability decision | Reason |
 | --- | --- | --- |
 | `entries-slice`, message lifecycle, `agent_end` persistence | Port and adapt | This is the required streaming + durable-conversation state machine. |
-| `use-subscribe-agent-events` | Port and replace provider with `window.traceability.on` | The new preload bridge is already typed and allowlisted. |
+| `use-subscribe-agent-events` | Port and replace provider with `window.electronAPI.on` | The new preload bridge is already typed and allowlisted. |
 | `ChatMessages` virtualization | Port, remove tool props and edit/fork affordances | `@tanstack/react-virtual` is already available; session rewinding is not in the Traceability IPC contract. |
 | TipTap input and Skill picker | Port a lean version | Main exposes Skills and accepts `jsonContent`/`skillIds`; extension commands are not available. |
 | Tool/artifact/extension components | Do not port | Contradicts the read-only scope and brings extension-only dependencies. |
@@ -76,7 +76,7 @@ app/src/renderer/
 │   │   └── Titlebar.tsx                 # retained UI; migrated to invoke contract
 │   └── index.tsx                        # imports AgentPanel from ./_agent
 ├── lib/agent-events.ts                  # retains public custom events; uses MonitoringContext
-└── electron.d.ts                         # deleted; preload/index.d.ts owns window.traceability
+└── electron.d.ts                         # deleted; preload/index.d.ts owns window.electronAPI
 ```
 
 Only Zustand implementation files belong in `renderer/store/agent/`; all Agent behavior and presentation belongs in `_layout/_agent/`, as requested.
@@ -90,10 +90,10 @@ Only Zustand implementation files belong in `renderer/store/agent/`; all Agent b
 | Send/stop | `prompt(sessionId, AppUserMessage)`, `abortPrompt(sessionId)` |
 | Persist completed run | `sessions:appendEntries(sessionId, entries)` |
 | Model and Skills | `getAvailableModels`, `setModel`, `listSkills`, `setSkillEnabled` |
-| Main-to-renderer stream | `window.traceability.on("agent_start" | "agent_end" | "turn_*" | "message_*" | "ask_user_question_requested", handler)` |
+| Main-to-renderer stream | `window.electronAPI.on("agent_start" | "agent_end" | "turn_*" | "message_*" | "ask_user_question_requested", handler)` |
 | Answer a conversational question | `resolveAskUserQuestion(sessionId, requestId, answer)` |
 
-The renderer must call `window.traceability.invoke(...)` and `window.traceability.on(...)` exclusively. It must not introduce a generic IPC escape hatch or recreate the old domain-specific preload API.
+The renderer must call `window.electronAPI.invoke(...)` and `window.electronAPI.on(...)` exclusively. It must not introduce a generic IPC escape hatch or recreate the old domain-specific preload API.
 
 ## Session and message lifecycle
 
@@ -170,7 +170,7 @@ Important invariants:
 
 **Files:** create `app/src/renderer/pages/_layout/_agent/hooks/{use-subscribe-agent-events.ts,use-agent-messages.ts}` and `messages/types.ts`
 
-1. Port divisor's handler-map pattern from `use-subscribe-agent-events.ts`, but subscribe directly through `window.traceability.on`. Keep handler refs so renders do not cause re-subscriptions, and add an optional `shouldHandleEvent` predicate.
+1. Port divisor's handler-map pattern from `use-subscribe-agent-events.ts`, but subscribe directly through `window.electronAPI.on`. Keep handler refs so renders do not cause re-subscriptions, and add an optional `shouldHandleEvent` predicate.
 2. Port `useAgentMessages` as the central stream reducer. Handle `agent_start`, `turn_start`, `message_start`, `message_update`, `message_end`, and `agent_end`; restrict it to `scope === "main"`.
 3. Keep divisor's multi-turn content merge around `turnContentStartIndices`, even though tools are currently disabled. It makes the rendering resilient if a single agent turn emits multiple assistant updates.
 4. On a user `message_start`, append prompt/follow-up messages; ignore steering messages only if this first read-only UI does not expose a queue. On assistant start/update/end, create and update one streaming entry.

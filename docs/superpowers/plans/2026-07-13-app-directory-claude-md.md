@@ -57,7 +57,7 @@ Give every directory with a responsibility under `app/` its own `CLAUDE.md` so t
   - `Layout.tsx`: 3-column grid `60px | minmax(0,1fr) | var(--agent-width,360px)` = `Sidebar | <Outlet/> | AgentPanel`, plus `CommandPalette` overlay; `--agent-width` CSS var is mutated by the panel's `Resizer`.
   - Aliases `@renderer/*`, `@shared/*` (synced across `tsconfig.json`, `electron.vite.config.ts`, `vitest.config.ts`).
   - Tailwind 4 via `@tailwindcss/vite` plugin - **no `tailwind.config` file**. shadcn new-york primitives in `components/ui/` (`components.json`).
-  - State ownership: renderer is stateless beyond React/query cache; all persistent state is in main, reached only via `window.traceability` (preload).
+  - State ownership: renderer is stateless beyond React/query cache; all persistent state is in main, reached only via `window.electronAPI` (preload).
   - Cross-feature comms convention: window `CustomEvent` bus (see `lib/CLAUDE.md`) - `Layout` dispatches `traceability:command-palette`; `features/agent` + `features/command-palette` listen.
   - No `.js` suffix (Vite). `import type` for type-only imports.
 

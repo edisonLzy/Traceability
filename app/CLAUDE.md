@@ -44,7 +44,7 @@ Aliases (`@renderer`, `@shared`) are declared in three places that must stay in 
 
 The main process owns the Agent runtime and durable SQLite sessions. The renderer owns only the view-facing Agent state in the vanilla Zustand store at `src/renderer/store/agent/`: hydrated entries, streaming state, the application-scoped session list, and pending `AskUserQuestion` requests. Agent presentation and hooks live exclusively in `src/renderer/pages/_layout/_agent/`.
 
-The renderer reaches main only through the typed preload bridge. It may use the allowlisted `window.traceability.invoke(channel, ...args)` and `window.traceability.on(event, handler)` APIs; it must never recreate a granular bridge or expose Node capabilities.
+The renderer reaches main only through the typed preload bridge. It may use the allowlisted `window.electronAPI.invoke(channel, ...args)` and `window.electronAPI.on(event, handler)` APIs; it must never recreate a granular bridge or expose Node capabilities.
 
 ## Backend & auth
 

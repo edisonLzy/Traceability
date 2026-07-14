@@ -151,7 +151,7 @@ Expose the following typed channels:
 
 - Replace the current narrow `AgentPromptInput` with divisor-compatible `AppUserMessage`: `role`, `content`, `timestamp`, `kind`, `jsonContent`, and metadata for model and Skill IDs.
 - Add `monitoringContext` only as a Traceability metadata extension; preserve the divisor fields and their names unchanged.
-- Expose a typed, allowlisted `window.traceability.invoke()` and `window.traceability.on()` from preload.
+- Expose a typed, allowlisted `window.electronAPI.invoke()` and `window.electronAPI.on()` from preload.
 - Retain only these main-to-renderer events: `agent_start`, `agent_end`, `turn_start`, `turn_end`, `message_start`, `message_update`, `message_end`, `tool_execution_start`, `tool_execution_update`, `tool_execution_end`, `permission_requested`, and `ask_user_question_requested`.
 - Add renderer-to-main HIL resolution channels for permission and structured-question responses.
 
