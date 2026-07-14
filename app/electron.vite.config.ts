@@ -13,6 +13,13 @@ export default defineConfig({
   preload: {
     build: {
       externalizeDeps: true,
+      // Keep preload compatible with Electron's renderer sandbox. The app
+      // package is ESM, so Electron Vite emits this CJS preload as index.cjs.
+      rollupOptions: {
+        output: {
+          format: "cjs",
+        },
+      },
     },
   },
   renderer: {

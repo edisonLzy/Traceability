@@ -10,7 +10,6 @@ import { ALLOWED_MAIN_EXPOSE_EVENTS, ALLOWED_RENDER_INVOKE_EVENTS } from "../sha
 type InvokeArgs<C extends keyof AgentRuntimeIPC> = Parameters<AgentRuntimeIPC[C]>;
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  platform: process.platform,
   invoke: <C extends AllowedRenderInvokeEvents>(
     channel: C,
     ...args: InvokeArgs<C>
