@@ -10,6 +10,7 @@ import { AgentSessionIPC } from "../shared/session-ipc.js";
 import { AgentSkillsIPC } from "../shared/skills-ipc.js";
 import { AbstractAgentIPCHandler } from "./agent-ipc.js";
 import { AgentRuntime } from "./agent-runtime.js";
+import { ExtensionService, ExtensionRuntimeService } from "./extensions/index.js";
 import { ModelRegistry } from "./models/index.js";
 import { SkillService } from "./skills/index.js";
 
@@ -29,6 +30,8 @@ export class AgentPool
   private modelRegistry: ModelRegistry;
   private runtimes: Map<string, AgentRuntime>;
   private skillService: SkillService;
+  private extensionService: ExtensionService;
+  private extensionRuntimeService: ExtensionRuntimeService;
 
   constructor(browserWindow: BrowserWindow) {
     super(browserWindow);
@@ -36,6 +39,19 @@ export class AgentPool
     this.modelRegistry = new ModelRegistry();
     this.runtimes = new Map();
     this.skillService = new SkillService();
+    this.extensionRuntimeService = new ExtensionRuntimeService(
+      this.modelRegistry,
+      this.skillService,
+    );
+    this.extensionRuntimeService.onAny(({ name, data }) => {
+      if (typeof name !== "string") return;
+
+      (this.events.emit as (...args: unknown[]) => Promise<void>)(name, data);
+    });
+    this.extensionService = new ExtensionService(
+      this.extensionRuntimeService,
+      () => this.currentBrowserWindow,
+    );
 
     // Bind IPC channels + Emittery forwarding last, after all internal state is ready.
     this.unbind = this.bind();
@@ -53,7 +69,7 @@ export class AgentPool
   }
 
   private createRuntime(sessionId: string): AgentRuntime {
-    const runtime = new AgentRuntime(this.modelRegistry, this.skillService);
+    const runtime = new AgentRuntime(this.modelRegistry, this.skillService, this.extensionService);
 
     // Re-emit all events tagged with sessionId
     runtime.onAny(({ name, data }) => {
@@ -81,6 +97,7 @@ export class AgentPool
     for (const sessionId of [...this.runtimes.keys()]) {
       await this.destroyAgent(sessionId);
     }
+    this.extensionRuntimeService.destroyAll();
     this.events.clearListeners();
     this.unbind?.();
   }

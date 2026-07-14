@@ -1,3 +1,5 @@
+import { installedRendererExtensions } from "@extensions/builtins/index.renderer";
+import { ExtensionProvider } from "@extensions/core/renderer";
 import { Toaster } from "@renderer/components/ui/sonner";
 import { CurrentAppProvider } from "@renderer/context/current-app";
 import { ElectronIPCProvider } from "@renderer/context/ElectronIPCProvider";
@@ -26,8 +28,10 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ElectronIPCProvider>
         <CurrentAppProvider>
-          <RouterProvider router={router} />
-          <Toaster />
+          <ExtensionProvider extensions={installedRendererExtensions}>
+            <RouterProvider router={router} />
+            <Toaster />
+          </ExtensionProvider>
         </CurrentAppProvider>
       </ElectronIPCProvider>
     </QueryClientProvider>

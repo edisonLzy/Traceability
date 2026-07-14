@@ -9,6 +9,10 @@
     "electron.vite.config.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/shared/**/*.ts"
+    "src/shared/**/*.ts",
+    "src/extensions/core/common/**/*.ts",
+    "src/extensions/core/main/**/*.ts",
+    "src/extensions/builtins/subagents/common/**/*.ts",
+    "src/extensions/builtins/subagents/main/**/*.ts"
   ]
 }

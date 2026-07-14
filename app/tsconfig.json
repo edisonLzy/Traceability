@@ -6,9 +6,15 @@
     "types": ["vite/client"],
     "paths": {
       "@renderer/*": ["./src/renderer/*"],
-      "@shared/*": ["./src/shared/*"]
+      "@shared/*": ["./src/shared/*"],
+      "@extensions/*": ["./src/extensions/*"]
     }
   },
   "include": ["src", "src/preload/index.d.ts", "electron.vite.config.ts"],
-  "exclude": ["src/main/**", "src/preload/index.ts"]
+  "exclude": [
+    "src/main/**",
+    "src/preload/index.ts",
+    "src/extensions/core/main/**",
+    "src/extensions/builtins/subagents/main/**"
+  ]
 }

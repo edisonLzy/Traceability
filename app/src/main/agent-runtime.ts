@@ -1,15 +1,20 @@
-import type {
-  AskUserQuestionInput,
-  AskUserQuestionResult,
-} from "../shared/ask-user-question-ipc.js";
 import { Agent } from "@earendil-works/pi-agent-core";
 import type { Message } from "@earendil-works/pi-ai";
 import Emittery from "emittery";
 
+import type {
+  ExtensionAgentModel,
+  ExtensionAgentToolOptions,
+} from "../extensions/core/main/index.js";
+import type {
+  AskUserQuestionInput,
+  AskUserQuestionResult,
+} from "../shared/ask-user-question-ipc.js";
 import type { AgentSessionScope, AllowedMainExposeEvents } from "../shared/events-ipc.js";
 import type { AgentModelsIPC } from "../shared/models-ipc.js";
 import type { AgentSessionIPC } from "../shared/session-ipc.js";
 import type { AgentSkillsIPC } from "../shared/skills-ipc.js";
+import type { ExtensionService } from "./extensions/index.js";
 import { AskUserQuestionService } from "./human-in-the-loop/ask-user-question-service.js";
 import { ModelRegistry } from "./models/index.js";
 import { SystemPromptService } from "./prompt/index.js";
@@ -58,6 +63,7 @@ export type AgentRuntimeDelegate = {
 };
 
 export interface AgentRuntimeOptions {
+  extensionTools?: ExtensionAgentToolOptions;
   systemPrompt?: string;
 }
 
@@ -84,12 +90,14 @@ export class AgentRuntime extends Emittery<AgentRuntimeEvents> implements AgentR
   constructor(
     private modelRegistry = new ModelRegistry(),
     private skillService: SkillService,
+    private extensionService: ExtensionService,
     private options: AgentRuntimeOptions = {},
   ) {
     super();
     this.askUserQuestionService = new AskUserQuestionService();
     this.systemPromptService = new SystemPromptService();
     this.systemPromptService.addBuilder(this.skillService);
+    this.systemPromptService.addBuilder(this.extensionService);
 
     this.agent = this.createInternalAgent();
   }
@@ -97,7 +105,8 @@ export class AgentRuntime extends Emittery<AgentRuntimeEvents> implements AgentR
   private createInternalAgent() {
     // Read-only runtime: only the text-file read tool is available. No write
     // or shell-execution tools are registered, so no permission gating is needed.
-    const builtinTools = [fsReadTextFileTool];
+    const excludedToolNames = new Set(this.options.extensionTools?.excludeToolNames ?? []);
+    const builtinTools = [fsReadTextFileTool].filter((tool) => !excludedToolNames.has(tool.name));
 
     this.askUserQuestionService.on("human-in-the-loop", ({ data: request }) => {
       this.emit("ask_user_question_requested", {
@@ -131,7 +140,17 @@ export class AgentRuntime extends Emittery<AgentRuntimeEvents> implements AgentR
       },
       initialState: {
         systemPrompt: this.systemPromptService.buildSystemPrompt(this.options.systemPrompt ?? ""),
-        tools: builtinTools,
+        tools: [
+          ...(this.options.extensionTools?.includeBuiltins === false ? [] : builtinTools),
+          ...this.extensionService.getToolsForRuntime(
+            {
+              getModel: () => this.getCurrentModel(),
+              getSessionId: () => this.sessionId,
+              askUserQuestion: (input) => this.askUserQuestion(input),
+            },
+            this.options.extensionTools,
+          ),
+        ],
       },
     });
 
@@ -240,6 +259,18 @@ export class AgentRuntime extends Emittery<AgentRuntimeEvents> implements AgentR
 
   public waitForIdle() {
     return this.agent.waitForIdle();
+  }
+
+  private getCurrentModel(): ExtensionAgentModel | undefined {
+    const model = this.agent?.state.model;
+    if (!model) {
+      return undefined;
+    }
+
+    return {
+      modelId: model.id,
+      providerId: model.provider,
+    };
   }
 
   private scheduleQueuedContinue() {

@@ -1,0 +1,46 @@
+import type { RendererExtensionDefinition } from "./define";
+import { RendererExtensionRegistry } from "./registry";
+
+export class RendererExtensionBridge {
+  private registry = new RendererExtensionRegistry();
+  private initialized = false;
+
+  constructor(private extensions: RendererExtensionDefinition[]) {}
+
+  initialize() {
+    if (this.initialized) return;
+
+    for (const extension of this.extensions) {
+      this.registry.registerExtension(extension);
+      const metadata = { id: extension.id, name: extension.name };
+      extension.setup({
+        extension: metadata,
+        slashCommands: {
+          register: (command) => this.registry.registerSlashCommand(command),
+        },
+        assistantBlocks: {
+          register: (block) => this.registry.registerAssistantBlock(block),
+        },
+        streamdown: {
+          registerComponents: (components) =>
+            this.registry.registerStreamdownComponents(components),
+          registerRehypePlugins: (composer) =>
+            this.registry.registerStreamdownRehypePlugins(composer),
+        },
+        promptInput: {
+          registerExtension: (extension) => this.registry.registerTipTapExtension(extension),
+        },
+      });
+    }
+
+    this.initialized = true;
+  }
+
+  getRegistry() {
+    return this.registry;
+  }
+
+  listExtensions() {
+    return this.registry.listExtensions();
+  }
+}
