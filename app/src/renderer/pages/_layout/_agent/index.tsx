@@ -240,9 +240,8 @@ export function AgentPanel() {
   return (
     <aside
       aria-label="Traceability Agent"
-      className="relative flex min-w-0 flex-col border-l border-hairline bg-[rgba(18,19,23,0.75)] pt-[30px] backdrop-blur-2xl"
+      className="relative flex h-full min-w-0 flex-col bg-[rgba(18,19,23,0.75)] backdrop-blur-2xl"
     >
-      <Resizer />
       <header className="relative flex min-h-12 items-center gap-2 border-b border-hairline px-2.5">
         <span className="grid size-[27px] place-items-center rounded-[9px] bg-primary/15 text-primary-hover">
           <Sparkles size={15} />
@@ -401,28 +400,4 @@ function rangeLabel(hours: MonitoringContext["hours"]): string {
   if (hours === 1) return "Last hour";
   if (hours === 168) return "Last 7 days";
   return "Last 24 hours";
-}
-
-function Resizer() {
-  return (
-    <div
-      aria-hidden="true"
-      className="group absolute -left-[5px] top-[30px] bottom-0 z-10 w-2.5 cursor-col-resize"
-      onPointerDown={(event) => {
-        event.preventDefault();
-        const move = (pointerEvent: PointerEvent) => {
-          const width = Math.max(320, Math.min(560, window.innerWidth - pointerEvent.clientX));
-          document.documentElement.style.setProperty("--agent-width", `${width}px`);
-        };
-        const up = () => {
-          document.removeEventListener("pointermove", move);
-          document.removeEventListener("pointerup", up);
-        };
-        document.addEventListener("pointermove", move);
-        document.addEventListener("pointerup", up);
-      }}
-    >
-      <span className="absolute left-[3px] top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-full bg-primary opacity-0 transition-opacity group-hover:opacity-100" />
-    </div>
-  );
 }

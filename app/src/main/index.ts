@@ -37,8 +37,8 @@ function createWindow() {
       : {
           titleBarOverlay: {
             color: "#00000000",
-            symbolColor: "#141111",
-            height: 48,
+            symbolColor: "#f5f5f7",
+            height: 30,
           },
         }),
     vibrancy: "under-window",
