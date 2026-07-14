@@ -182,13 +182,25 @@ Extension slash commands (e.g. `/subagent`) need the TipTap slash-command sugges
 
 ### TODO D — Integrate extension slash-commands into prompt-input (NEW)
 
+> **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-prompt-input-slash-commands-integration.md`.
+
 Wire `usePluginSlashCommands()` + `usePluginPromptInputExtensions()` into the chat editor so `/subagent` appears and extension TipTap extensions load. The current `_agent/use-chat-editor.ts` is a lean `StarterKit + Placeholder + skillNode` editor; bring it toward divisor's `use-chat-editor.ts` shape (which composes slash-commands + plugin extensions).
 
 **Files:**
 - Modify: `app/src/renderer/pages/_layout/_agent/use-chat-editor.ts` — replace the lean editor with one that composes `useSlashCommandsExtension({commands: [...skillItems, ...pluginItems], ...})` + `usePluginPromptInputExtensions()` + `usePluginSlashCommands()`, mirroring divisor's `pages/workspace/chat/use-chat-editor.ts`.
 - Modify: `app/src/renderer/pages/_layout/_agent/prompt-input/index.tsx` — submit builder must call `getSelectedCommandIds(editor)` (not the old `getSkillNodeIds`) to capture slash-command selections including plugin commands.
+- Modify: `app/src/renderer/pages/_layout/_agent/index.tsx` - remove `skills={skills}` from the `<PromptInput>` call site; `skills` is no longer used (destructure only `error: skillsError` from `useAgentSkills()`, or drop the call if the `skillsError` display is also removed).
+- Delete: `app/src/renderer/pages/_layout/_agent/prompt-input/skill-node.ts` (lean version; replaced by `@renderer/components/richtext/inline/skill-node` from TODO C).
 
 **Reference:** divisor `pages/workspace/chat/use-chat-editor.ts` (read it; its `useSkillsCommandItems` calls `useAgentSkills` — traceability already has `_agent/hooks/use-agent-skills.ts`, reuse it).
+
+**Reconciliation decisions (verified against divisor + traceability baseline):**
+- **Drop the Skills dropdown** (traceability lean `prompt-input/index.tsx` has one; divisor does not). Skills are selected ONLY via `/` slash-command (`useSkillsCommandItems` feeds them as slash commands). Delete the `<details>` Skills block, the `selectedSkillIds` state, the `skills` prop, and the `DiscoveredSkill`/`Wrench` imports; remove `skills={skills}` from the `_agent/index.tsx` call site.
+- **Mount `sharedPromptEditor` inside `prompt-input/index.tsx`** via `useChatEditor`'s `onCreate`/`onDestroy` (`sharedPromptEditor.editor = editor` / `= null`). Divisor mounts it in `active-session-content.tsx`, but traceability's active-session-content is not split until TODO F - mounting in prompt-input avoids touching the monolithic `_agent/index.tsx` for this and does not depend on TODO F.
+- **Path/signature adaptations (NOT verbatim from divisor):** `useAgentSkills` imports from `../hooks/use-agent-skills` (divisor uses `@renderer/hooks/use-agent-skills`); `insertSkillNode` uses divisor's object signature `insertSkillNode({editor, skill, range?})` - but `prompt-input/index.tsx` no longer calls `insertSkillNode` directly (the slash-command `onSelectCommand` in `use-chat-editor.ts` does); `useChatEditor` gains a `getFloatingReference` option (passed `() => containerRef.current`); `UseChatEditorOptions` adds `content?`/`getFloatingReference?`.
+- **keydown must check `slashCommandSuggestionPluginKey.getState(editor.state)?.active`** before submitting on Enter - if the suggestion panel is open, Enter selects a command, it does NOT submit. Do NOT introduce `@tanstack/react-hotkeys` (traceability lacks it; keep the lean native `event.key` check + add the suggestion-active guard).
+- **Keep traceability's placeholder copy + editorProps class** (`"Ask about this application..."` + the existing `ProseMirror` class) - per "keep traceability's editor class/placeholder copy".
+- **`PromptSubmission` shape unchanged** (`{content, jsonContent, model, skillIds}`); `skillIds` now comes from `getSelectedCommandIds(editor)` at submit time.
 
 **Interfaces:**
 - Consumes: `usePluginSlashCommands`, `usePluginPromptInputExtensions`, `useSharedPromptEditor` from `@extensions/core/renderer`; `useSlashCommandsExtension`, `getSelectedCommandIds` from TODO C.

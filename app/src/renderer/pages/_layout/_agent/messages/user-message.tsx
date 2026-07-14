@@ -1,8 +1,7 @@
 import type { AppUserMessage } from "@earendil-works/pi-agent-core";
+import { skillNode } from "@renderer/components/richtext/inline/skill-node";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-
-import { skillNode } from "../prompt-input/skill-node";
 
 export function UserMessage({ message }: { message: AppUserMessage }) {
   const editor = useEditor({

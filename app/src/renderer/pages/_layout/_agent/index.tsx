@@ -11,7 +11,6 @@ import { useLocation } from "react-router-dom";
 import { useStore } from "zustand";
 
 import { useAgentMessages } from "./hooks/use-agent-messages";
-import { useAgentSkills } from "./hooks/use-agent-skills";
 import { useAgentTokenUsage } from "./hooks/use-agent-token-usage";
 import { AskUserQuestionPanel } from "./human-in-the-loop";
 import { ChatMessages } from "./messages";
@@ -45,7 +44,6 @@ export function AgentPanel() {
     renameSession,
     selectSession,
   } = useAgentSession(appId || undefined);
-  const { error: skillsError, skills } = useAgentSkills();
   const [models, setModels] = useState<AvailableModel[]>([]);
   const [panelError, setPanelError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -325,14 +323,11 @@ export function AgentPanel() {
                 if (activeSessionId) void invoke("abortPrompt", activeSessionId);
               }}
               onSubmit={submitPrompt}
-              skills={skills}
             />
           )}
         </div>
-        {sessionError || panelError || skillsError ? (
-          <p className="mt-1.5 text-[10px] text-danger">
-            {panelError ?? sessionError ?? skillsError}
-          </p>
+        {sessionError || panelError ? (
+          <p className="mt-1.5 text-[10px] text-danger">{panelError ?? sessionError}</p>
         ) : null}
         <p className="mt-1.5 px-0.5 text-[10px] leading-[1.35] text-tertiary">
           Read-only access to monitoring data. The agent cannot change code or application settings.
