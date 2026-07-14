@@ -156,6 +156,8 @@ const extensionsContextAPI: ExtensionsContextAPI = {
 
 ### TODO C — Port the richtext slash-commands layer (NEW prerequisite for extension UI)
 
+> **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-richtext-slash-commands.md`.
+
 Extension slash commands (e.g. `/subagent`) need the TipTap slash-command suggestion extension + the `usePluginSlashCommands`/`getSelectedCommandIds` plumbing. This was explicitly excluded by `agent-renderer-migration.md:33,136` but is now required.
 
 **Files (port from divisor, source paths under `/Users/evan/Desktop/coding/divisor-agent/packages/app/src/renderer/`):**
@@ -167,12 +169,12 @@ Extension slash commands (e.g. `/subagent`) need the TipTap slash-command sugges
 - Create: `app/src/renderer/components/richtext/inline/skill-node.tsx` ← divisor `components/richtext/inline/skill-node.tsx` (this **replaces** the existing lean `app/src/renderer/pages/_layout/_agent/prompt-input/skill-node.ts`; the old file is deleted in TODO D after its consumers are rewritten. The two coexist during TODO C with no conflict - the new `skillNode` Mention is not loaded into any editor until TODO D).
 - Create: `app/src/renderer/hooks/use-latest.ts` ← divisor `hooks/use-latest.ts` (verbatim, ~12 lines).
 
-**New npm deps to add to `app/package.json`:** `fuse.js`, `prosemirror-state`, `prosemirror-view` (all transitive via TipTap; add as direct deps so the imports resolve cleanly).
+**New npm deps to add to `app/package.json`:** `fuse.js`, `prosemirror-state`, `prosemirror-view` (all transitive via TipTap; add as direct deps so the imports resolve cleanly). **Verified via `pnpm why`**: TipTap 3.27.3 locks `prosemirror-state@1.4.4` / `prosemirror-view@1.42.1` - use `^1.4.4`/`^1.0.0`, NOT `^2.0.0` (cross-major conflict with TipTap's internal 1.4.4 breaks `Plugin`/`PluginKey` instanceof).
 
 **Interfaces:**
 - Produces: `useSlashCommandsExtension`, `getSelectedCommandIds`, `slashCommandSuggestionPluginKey`, `SlashCommandSelection` (from `slash-commands.tsx`); `skillNode`, `insertSkillNode` (from `skill-node.tsx`); `CommandItem` (from `types.ts`).
 
-- [ ] **Step 1:** Add deps: edit `app/package.json` deps to add `"fuse.js": "^1.6.6"`, `"prosemirror-state": "^2.0.0"`, `"prosemirror-view": "^1.0.0"` (match versions resolved under the installed TipTap 3.27.3 — run `pnpm why prosemirror-state` to confirm). `pnpm install`.
+- [ ] **Step 1:** Add deps: edit `app/package.json` deps to add `"fuse.js": "^1.6.6"`, `"prosemirror-state": "^1.4.4"`, `"prosemirror-view": "^1.0.0"` (match versions resolved under the installed TipTap 3.27.3 — run `pnpm why prosemirror-state` to confirm). `pnpm install`.
 - [ ] **Step 2:** Copy the 7 files above verbatim (adjusting only the `prompt-ghost-suggestion` demo strings). Do NOT delete `app/src/renderer/pages/_layout/_agent/prompt-input/skill-node.ts` yet - its consumers are rewritten in TODO D.
 - [ ] **Step 3:** Verify the `slash-commands.tsx` non-standard suggestion options (`decorationContent`, `decorationEmptyClass`) are accepted by `@tiptap/suggestion@3.27.3`; if not, strip them.
 - [ ] **Step 4:** `pnpm --filter @traceability/app typecheck` (web). Expected: clean (the new files compile unused; the old `prompt-input/skill-node.ts` still satisfies its current importers `use-chat-editor.ts` + `prompt-input/index.tsx`).
@@ -256,6 +258,6 @@ Condensed from this session's exploration. Divisor paths under `/Users/evan/Desk
 
 1. **The `subagents.list` delivery seam (TODO E) is unverified.** Must trace divisor's actual mechanism before implementing. Risk: building the wrong bridge (text-fence vs tool-details). Mitigation: TODO E Step 1.
 2. **`skill-service.ts` pre-existing typecheck errors** (8, `noUncheckedIndexedAccess`). Unrelated to this work but block a fully clean `typecheck`. Decide: fix inline or track separately.
-3. **`prosemirror-state`/`prosemirror-view` versions** must resolve under TipTap 3.27.3 (traceability pins higher than divisor's 3.22.5). Verify with `pnpm why` before assuming.
+3. **`prosemirror-state`/`prosemirror-view` versions** - RESOLVED: `pnpm why` confirms TipTap 3.27.3 locks `prosemirror-state@1.4.4` / `prosemirror-view@1.42.1`. TODO C spec pins `^1.4.4`/`^1.0.0`; `^2.0.0` would cross-major conflict with TipTap's internal 1.4.4.
 4. **Scope creep guard:** the existing plans' "no extensions" exclusions existed for good reasons (read-only agent, fewer deps). This session overrode them by user decision. If a future worker questions the extension code, point them at the **CRITICAL** table above and the commit message of `36f843a` — do not revert without re-confirming with the user.
 5. **`ExtensionsContextAPI` is trimmed** (no artifact methods). If a later builtin needs artifacts, that requires re-expanding the context AND porting the artifact slice/panel — currently out of scope.
