@@ -42,15 +42,6 @@ export function CommandPalette() {
     setActiveIndex(0);
     setOpen(true);
   }, []);
-  const invokeSession = useCallback(
-    <T,>(channel: string, ...args: unknown[]): Promise<T> => {
-      return (invoke as unknown as (name: string, ...parameters: unknown[]) => Promise<T>)(
-        channel,
-        ...args,
-      );
-    },
-    [invoke],
-  );
 
   // Open via ⌘K (global) / ⌘G (sessions), or via the layout command trigger.
   useEffect(() => {
@@ -81,10 +72,10 @@ export function CommandPalette() {
   // Load sessions when entering sessions mode.
   useEffect(() => {
     if (!open || mode !== "sessions" || !appId) return;
-    void invokeSession<Session[]>("sessions:list", appId)
+    void invoke("listSessions", appId)
       .then(setSessions)
       .catch(() => setSessions([]));
-  }, [open, mode, appId, invokeSession]);
+  }, [open, mode, appId, invoke]);
 
   // Focus input on open.
   useEffect(() => {

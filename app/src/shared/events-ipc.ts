@@ -3,13 +3,12 @@ import type { AgentEvent } from "@earendil-works/pi-agent-core";
 import type { AskUserQuestionRequestedEvent } from "./ask-user-question-ipc";
 import type { AgentModelsIPC } from "./models-ipc";
 import type { AgentSessionIPC } from "./session-ipc";
+import type { SessionPersistenceIPC } from "./session-persistence-ipc";
 import type { AgentSkillsIPC } from "./skills-ipc";
 
 export type AgentSessionScope = "main" | "side-chat";
 type SessionTagged<T> = T & { scope: AgentSessionScope; sessionId: string };
-type AgentRuntimeEvent =
-  | AgentEvent
-  | AskUserQuestionRequestedEvent;
+type AgentRuntimeEvent = AgentEvent | AskUserQuestionRequestedEvent;
 
 // main -> renderer events. These are verified at compile-time to be a subset of the
 export const ALLOWED_MAIN_EXPOSE_EVENTS = [
@@ -36,7 +35,10 @@ export type AllowedMainExposeEvents = {
 
 // render -> main
 
-export type AgentRuntimeIPC = AgentModelsIPC & AgentSessionIPC & AgentSkillsIPC;
+export type AgentRuntimeIPC = AgentModelsIPC &
+  AgentSessionIPC &
+  AgentSkillsIPC &
+  SessionPersistenceIPC;
 
 export const ALLOWED_RENDER_INVOKE_EVENTS: (keyof AgentRuntimeIPC)[] = [
   "setModel",
@@ -54,6 +56,13 @@ export const ALLOWED_RENDER_INVOKE_EVENTS: (keyof AgentRuntimeIPC)[] = [
   "resolveAskUserQuestion",
   "listSkills",
   "setSkillEnabled",
+  "createSession",
+  "listSessions",
+  "getSession",
+  "getSessionEntries",
+  "renameSession",
+  "deleteSession",
+  "appendSessionEntries",
 ];
 
 export type AllowedRenderInvokeEvents = (typeof ALLOWED_RENDER_INVOKE_EVENTS)[number];

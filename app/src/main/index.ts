@@ -3,21 +3,25 @@ import { join } from "path";
 import { app, BrowserWindow } from "electron";
 
 import { AgentPool } from "./agent-pool.js";
+import { SessionPersistence } from "./sessions/index.js";
 
 app.whenReady().then(() => {
   let browserWindow: BrowserWindow | null = createWindow();
 
   const agentPool = new AgentPool(browserWindow);
+  const sessionPersistence = new SessionPersistence(browserWindow);
 
   app.on("activate", () => {
     if (!browserWindow || browserWindow.isDestroyed()) {
       browserWindow = createWindow();
       agentPool.updateBrowserWindow(browserWindow);
+      sessionPersistence.updateBrowserWindow(browserWindow);
     }
   });
 
   app.on("quit", () => {
     void agentPool.destroyAll();
+    void sessionPersistence.destroyAll();
   });
 });
 

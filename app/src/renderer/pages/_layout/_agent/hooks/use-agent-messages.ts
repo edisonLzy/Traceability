@@ -1,7 +1,6 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
 import { agentStore, EntryStatus, type SessionEntry } from "@renderer/store/agent";
-import type { Entry } from "@renderer/store/agent";
 import type { AskUserQuestionRequest } from "@shared/ask-user-question-ipc";
 import { useRef } from "react";
 
@@ -54,9 +53,10 @@ function updateStreamingAssistant(
   });
 }
 
-type ElectronInvoke = ReturnType<typeof useElectronIPC>["invoke"];
-
-async function persistUnsyncedEntries(invoke: ElectronInvoke, sessionId: string): Promise<void> {
+async function persistUnsyncedEntries(
+  invoke: ReturnType<typeof useElectronIPC>["invoke"],
+  sessionId: string,
+): Promise<void> {
   const store = agentStore.getState();
   const entries = store
     .getEntryState(sessionId)
@@ -67,21 +67,18 @@ async function persistUnsyncedEntries(invoke: ElectronInvoke, sessionId: string)
   store.setEntryStatus(sessionId, entryIds, EntryStatus.Syncing);
 
   try {
-    await invokeSessionPersistence(
-      invoke,
-      "sessions:appendEntries",
+    await invoke(
+      "appendSessionEntries",
       sessionId,
-      entries.map(
-        (entry): Entry => ({
-          id: entry.id,
-          sessionId,
-          parentId: entry.parentId,
-          type: entry.type,
-          timestamp: entry.timestamp,
-          data: entry.data as unknown as Record<string, unknown>,
-          tokenUsage: isMessageEntry(entry) ? entry.tokenUsage : undefined,
-        }),
-      ),
+      entries.map((entry) => ({
+        id: entry.id,
+        sessionId,
+        parentId: entry.parentId,
+        type: entry.type,
+        timestamp: entry.timestamp,
+        data: entry.data as unknown as Record<string, unknown>,
+        tokenUsage: isMessageEntry(entry) ? entry.tokenUsage : undefined,
+      })),
     );
     agentStore.getState().setEntryStatus(sessionId, entryIds, EntryStatus.Synced);
     window.dispatchEvent(
@@ -197,23 +194,5 @@ export function useAgentMessages(): void {
       },
     },
     { shouldHandleEvent: (event) => event.scope === "main" },
-  );
-}
-
-/**
- * Session persistence is part of the completed main/shared migration contract.
- * The local cast keeps this renderer branch buildable while that contract is
- * being added to the shared worktree.
- */
-function invokeSessionPersistence(
-  invoke: ElectronInvoke,
-  channel: "sessions:appendEntries",
-  sessionId: string,
-  entries: Entry[],
-): Promise<void> {
-  return (invoke as unknown as (channel: string, ...args: unknown[]) => Promise<void>)(
-    channel,
-    sessionId,
-    entries,
   );
 }

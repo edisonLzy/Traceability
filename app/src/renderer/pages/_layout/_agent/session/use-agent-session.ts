@@ -1,12 +1,6 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
-import {
-  agentStore,
-  EntryStatus,
-  type AgentSession,
-  type Entry,
-  type Session,
-} from "@renderer/store/agent";
+import { agentStore, EntryStatus, type AgentSession, type Session } from "@renderer/store/agent";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getSelectedModel, isMessageEntry, toSessionEntry } from "../messages/types";
@@ -20,15 +14,6 @@ export function useAgentSession(appId: string | undefined) {
   const { invoke } = useElectronIPC();
   const activationVersionRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
-  const invokeSession = useCallback(
-    <T>(channel: string, ...args: unknown[]): Promise<T> => {
-      return (invoke as unknown as (name: string, ...parameters: unknown[]) => Promise<T>)(
-        channel,
-        ...args,
-      );
-    },
-    [invoke],
-  );
 
   const activateSession = useCallback(
     async (session: Session): Promise<boolean> => {
@@ -41,7 +26,7 @@ export function useAgentSession(appId: string | undefined) {
       setError(null);
 
       try {
-        const entries = await invokeSession<Entry[]>("sessions:getEntries", session.id);
+        const entries = await invoke("getSessionEntries", session.id);
         if (activationVersion !== activationVersionRef.current) return false;
 
         const sessionEntries = entries.map(toSessionEntry);
@@ -71,20 +56,20 @@ export function useAgentSession(appId: string | undefined) {
         return false;
       }
     },
-    [appId, invoke, invokeSession],
+    [appId, invoke],
   );
 
   const selectSession = useCallback(
     async (sessionId: string): Promise<boolean> => {
       const known = agentStore.getState().getSession(sessionId);
-      const session = known ?? (await invokeSession<Session | null>("sessions:get", sessionId));
+      const session = known ?? (await invoke("getSession", sessionId));
       if (!session) {
         setError("Conversation not found.");
         return false;
       }
       return activateSession(session);
     },
-    [activateSession, invokeSession],
+    [activateSession, invoke],
   );
 
   const createSession = useCallback(async (): Promise<AgentSession | null> => {
@@ -92,7 +77,7 @@ export function useAgentSession(appId: string | undefined) {
 
     try {
       setError(null);
-      const session = await invokeSession<Session>("sessions:create", appId);
+      const session = await invoke("createSession", appId);
       agentStore.getState().appendSession(session);
       const activated = await activateSession(session);
       return activated ? (agentStore.getState().getSession(session.id) ?? null) : null;
@@ -100,7 +85,7 @@ export function useAgentSession(appId: string | undefined) {
       setError(toErrorMessage(cause));
       return null;
     }
-  }, [activateSession, appId, invokeSession]);
+  }, [activateSession, appId, invoke]);
 
   const refreshSessions = useCallback(async (): Promise<Session[]> => {
     if (!appId) {
@@ -108,23 +93,23 @@ export function useAgentSession(appId: string | undefined) {
       return [];
     }
 
-    const sessions = await invokeSession<Session[]>("sessions:list", appId);
+    const sessions = await invoke("listSessions", appId);
     agentStore.getState().setSessions(sessions);
     return sessions;
-  }, [appId, invokeSession]);
+  }, [appId, invoke]);
 
   const renameSession = useCallback(
     async (sessionId: string, name: string): Promise<void> => {
       const previous = agentStore.getState().getSession(sessionId)?.name ?? "";
       agentStore.getState().setSessionName(sessionId, name);
       try {
-        await invokeSession<void>("sessions:rename", sessionId, name);
+        await invoke("renameSession", sessionId, name);
       } catch (cause) {
         agentStore.getState().setSessionName(sessionId, previous);
         setError(toErrorMessage(cause));
       }
     },
-    [invokeSession],
+    [invoke],
   );
 
   useEffect(() => {
