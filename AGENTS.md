@@ -159,6 +159,41 @@ Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `ci`
 - Package names follow the `@traceability/<name>` convention.
 - The root `package.json` defines `onlyBuiltDependencies` for `better-sqlite3`, `electron`, and `esbuild`.
 
+## Aligning and Implementing Plan TODOs
+
+Plans live in `docs/superpowers/plans/`; specs in `docs/superpowers/specs/`. A plan is decomposed into sequenced TODOs. Each TODO is aligned with the human partner **before** implementation, and the alignment decisions are written to files (not left in the session) so they survive context compaction and hand off cleanly to another agent.
+
+### Alignment standard (three dimensions)
+
+For every TODO, align on:
+
+1. **What the task does** - the goal and the problem it solves.
+2. **Change scope** - what is in scope and what is explicitly out of scope.
+3. **Concrete changes + resulting file structure** - files created/modified/deleted, and the file tree after the change.
+
+### Alignment workflow
+
+1. **Verify current state.** Do not trust the plan/handoff text as-is - it is often written against an older state. Use `grep`/`ls`/`Read` to read the actual code and confirm the description matches reality. Record any **baseline drift** (e.g. `shared/events-ipc.ts` already diverged from the plan's Task 5 text). This catches stale or misleading descriptions before they misdirect the work.
+2. **Read the referenced plan/spec.** When a TODO says "execute `<plan>` Task N", open that task and read its exact contracts (types, SQL, skeletons, test cases).
+3. **Organize the alignment** around the three dimensions above.
+4. **Align via `AskUserQuestion`, one TODO at a time.** Start with one question; append follow-up questions for each decision point (naming, class structure, test strategy). Surface contradictions between the plan text and the verified baseline as explicit either/or choices, with the plan text beside the finding.
+5. **Lock decisions.** Each answer becomes a concrete decision recorded in the spec.
+
+### Artifacts (after alignment, before implementation)
+
+6. **Update the plan/handoff.** Correct any description that misdirected the alignment (examples from the extension-migration handoff: `SessionService` -> `SessionPersistence`, `sessions:*` colon keys -> descriptive bare names, a stray `useStore` import removed, `prosemirror-state ^2.0.0` -> `^1.4.4` to match TipTap's resolved version). Add a `> **Spec (authoritative):** <path>` line at the top of the TODO pointing at the new spec.
+7. **Write a spec** to `docs/superpowers/specs/<date>-<topic>.md`. The spec is self-contained and hand-off-able - an implementing agent needs nothing from the alignment session. Structure: task / scope / current baseline / data contracts / change details / resulting file structure / implementation steps / constraints & decisions / acceptance criteria.
+8. **Keep both documents consistent.** The handoff summarizes and points at the spec; the spec carries the exact interfaces and baseline diffs the handoff omits.
+
+### Implementation
+
+9. **Implement against the spec.** The spec is the single source of requirements; do not re-derive decisions from the session.
+10. **Verify against the spec's acceptance criteria.**
+
+### Why
+
+Alignment produces decisions. If those decisions live only in the session, context compaction loses them and the next agent re-derives - or contradicts - them. Writing them to the spec plus the updated plan makes the decision durable and the work resumable, the same principle as superpowers' SDD progress ledger.
+
 ## VS Code Setup
 
 This repository includes workspace settings in `.vscode/settings.json`:

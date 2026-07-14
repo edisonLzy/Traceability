@@ -78,22 +78,36 @@ The three pre-existing agent-migration plans were written assuming **no extensio
 
 ## Remaining Work — Sequenced TODOs
 
-### TODO A — Sessions SQLite persistence (execute existing plan, unchanged by extensions)
+### TODO A - Sessions SQLite persistence
 
-**Execute:** `docs/superpowers/plans/2026-07-13-agent-main-migration.md` **Phase M3, Tasks 15–18** verbatim. This creates `src/main/sessions/{database.ts,session-schema.ts,session-service.ts,session-service.test.ts}`, implements `sessions:create/list/get/getEntries/rename/delete/appendEntries` with TDD, and wires the handlers into `main/index.ts`.
+> **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-session-persistence.md`. The steps below summarize it; the spec carries the exact interfaces and baseline diffs.
 
-**Reconciliation note (the only extension-related wrinkle):** `agent-main-migration.md` Task 11/13 specifies `AgentPool` with `tools: []`. That is **already superseded** by commit `36f843a` — do NOT revert `AgentRuntime` to `tools: []` when following M2 tasks. M3 (sessions) is independent of the extension wiring and needs no change.
+**Execute:** `docs/superpowers/plans/2026-07-13-agent-main-migration.md` **Phase M3, Task 15-16 verbatim** (the `database.ts` better-sqlite3 wrapper + `session-schema.ts` id=2 migration + `SessionRow`/`EntryRow`/`toSession`/`toEntry`). **Task 17-18 are NOT verbatim** - the reconciliation below reshapes the service into a self-registering `AbstractAgentIPCHandler` matching the existing `agent-pool.ts` pattern, renames the class, and changes the channel naming.
 
-- [ ] **Step 1:** Open `agent-main-migration.md`, run Task 15 (`main/sessions/database.ts` — better-sqlite3 wrapper + migration runner).
-- [ ] **Step 2:** Run Task 16 (`session-schema.ts` — migration id=2 + row mappers).
-- [ ] **Step 3:** Run Task 17 (`session-service.ts` — TDD: write tests first, then implementation).
-- [ ] **Step 4:** Run Task 18 (wire `SessionService` + `sessions:*` handlers into `main/index.ts`).
-- [ ] **Step 5:** Add the 7 `sessions:*` channels to `ALLOWED_RENDER_INVOKE_EVENTS` and the `AgentRuntimeIPC`/`SessionPersistenceIPC` type in `src/shared/events-ipc.ts` + `src/shared/session-ipc.ts` (Task 4/5 of the same plan specify the exact shapes — the `Session` interface adds `appId`; `Entry` matches divisor).
-- [ ] **Step 6:** Drop the type-bypassing `invokeSession`/`invokeSessionPersistence` casts in `src/renderer/pages/_layout/_agent/session/use-agent-session.ts`, `hooks/use-agent-messages.ts`, and `_layout/_components/CommandPalette.tsx`; replace with typed `invoke("sessions:...", ...)`.
-- [ ] **Step 7:** `pnpm --filter @traceability/app test` (session-service tests) + `pnpm --filter @traceability/app typecheck`.
-- [ ] **Step 8:** Commit: `feat(app): add main-process SQLite session persistence + sessions IPC`.
+**Reconciliation notes (supersede M3 Task 17/18; supersede Task 4/5's `sessions:*` colon names):**
+- **Class is `SessionPersistence`** (NOT `SessionService`), `extends AbstractAgentIPCHandler<SessionPersistenceIPC> implements SessionPersistenceIPC`. Handlers self-register in `protected override bind()` as arrow-function fields keyed by channel name - mirror `app/src/main/agent-pool.ts` exactly. `main/index.ts` does NOT register handlers; it only `new SessionPersistence(browserWindow)` (and `.updateBrowserWindow(...)` on window recreate, `.destroyAll()` on quit), just like `AgentPool`.
+- **`LocalDatabase` is constructed inside `SessionPersistence`'s ctor** (not in `main/index.ts`). Ctor signature `(browserWindow: BrowserWindow)` to satisfy `AbstractAgentIPCHandler`.
+- **Channel/method/interface-key naming = descriptive bare names** (NOT `sessions:*` colon-prefixed), matching the existing bare-name `ALLOWED_RENDER_INVOKE_EVENTS` style (`prompt`, `listSkills`, ...). The 7 methods: `createSession(appId): Session`, `listSessions(appId): Session[]`, `getSession(id): Session | null`, `getSessionEntries(id): Entry[]`, `renameSession(id, name): void`, `deleteSession(id): void`, `appendSessionEntries(id, Entry[]): void`. (`deleteSession` has no renderer caller yet but is part of the contract - implement it + allowlist it.)
+- **Baseline differs from M3 Task 4/5 text (do NOT copy verbatim):** the live `shared/events-ipc.ts` already uses `AgentRuntimeIPC = AgentModelsIPC & AgentSessionIPC & AgentSkillsIPC` (NOT `TraceabilityInvokeIPC`), a bare-name allowlist, single-arg `setSessionId`, no `AppShellIPC`. Append to this baseline: add `& SessionPersistenceIPC` to the `AgentRuntimeIPC` intersection and push the 7 bare names into `ALLOWED_RENDER_INVOKE_EVENTS`. Do NOT rename to `TraceabilityInvokeIPC`, do NOT add `AppShellIPC`, do NOT change `setSessionId`'s arity. The live `shared/session-ipc.ts` already has the control `AgentSessionIPC`; append the persistence types to it.
+- **Renderer uses the typed `invoke` from `useElectronIPC()`** - the current `useAgentSession`/`useAgentMessages`/`CommandPalette` wrap `invoke` in a type-bypassing `invokeSession`/`invokeSessionPersistence` cast that calls `sessions:*`. Drop those wrappers entirely; call the typed `invoke("createSession", ...)` etc. directly. (This is the "useAgentSession should uniformly use `useElectronIPC`" fix.)
+- **Do NOT revert `AgentRuntime` to `tools: []`** (M2 Task 11/13 said `tools: []`; superseded by commit `36f843a`).
+- **`Session` = divisor shape + `appId`; `Entry`/`Usage`/`TokenUsage` match divisor** (exact interfaces in the spec; `toSession`/`toEntry` mappers in M3 Task 16). DB file: `userData/traceability-agent.sqlite`.
+- **No unit test this round:** `SessionPersistence` depends on `electron`'s `ipcMain` (via `AbstractAgentIPCHandler`) and cannot be instantiated under vitest (node), so `session-persistence.test.ts` is NOT created (mirrors `AgentPool`, which also has no unit test). Correctness is covered by `typecheck` + the TODO G smoke flow; a `SessionRepository` split + tests can be added later if needed.
+- **`skill-service.ts`** has 8 pre-existing `noUncheckedIndexedAccess` errors unrelated to this work - the only allowed typecheck exception (TODO G). TODO A must add no new errors.
+
+- [ ] **Step 1:** Run M3 Task 15 verbatim -> `app/src/main/sessions/database.ts` (`LocalDatabase`: better-sqlite3 connection + migration runner; id=1 legacy verbatim, id=2 from Task 16). Add `app/src/main/sessions/index.ts` barrel.
+- [ ] **Step 2:** Run M3 Task 16 verbatim -> `app/src/main/sessions/session-schema.ts` (migration id=2 SQL + `SessionRow`/`EntryRow` + `toSession`/`toEntry`). Its imports (`Session`/`Entry`/`TokenUsage` from `../../shared/session-ipc.js`) resolve after Step 4.
+- [ ] **Step 3:** Create `app/src/main/sessions/session-persistence.ts`: `SessionPersistence extends AbstractAgentIPCHandler<SessionPersistenceIPC> implements SessionPersistenceIPC`; ctor `(browserWindow)` builds `new LocalDatabase(...)` at `userData/traceability-agent.sqlite`; `protected override bind()` registers the 7 bare-name channels against the matching arrow-function methods (mirror `agent-pool.ts`'s `bind()`); `destroyAll()` closes the DB. Implement the 7 methods per the contract above. (No `session-persistence.test.ts` this round - see reconciliation note.)
+- [ ] **Step 4:** Append `Session`/`Entry`/`EntryType`/`Usage`/`TokenUsage`/`SessionPersistenceIPC` to `app/src/shared/session-ipc.ts` (interfaces per M3 Task 4, but `SessionPersistenceIPC` keys use the bare names above, NOT `sessions:*`).
+- [ ] **Step 5:** In `app/src/shared/events-ipc.ts`, add `& SessionPersistenceIPC` to the `AgentRuntimeIPC` intersection and push the 7 bare names into `ALLOWED_RENDER_INVOKE_EVENTS`.
+- [ ] **Step 6:** In `app/src/main/index.ts`, instantiate `new SessionPersistence(browserWindow)` alongside `new AgentPool(browserWindow)`, call `.updateBrowserWindow(browserWindow)` in the `activate` handler, and `.destroyAll()` in the `quit` handler (mirroring `agentPool`).
+- [ ] **Step 7:** Drop the `invokeSession`/`invokeSessionPersistence` wrappers in `src/renderer/pages/_layout/_agent/session/use-agent-session.ts`, `hooks/use-agent-messages.ts`, and `_layout/_components/CommandPalette.tsx`; replace all `sessions:*` calls with typed `invoke("<bareName>", ...)` from `useElectronIPC()` (call-site map: `sessions:getEntries`->`getSessionEntries`, `sessions:get`->`getSession`, `sessions:create`->`createSession`, `sessions:list`->`listSessions`, `sessions:rename`->`renameSession`, `sessions:appendEntries`->`appendSessionEntries`).
+- [ ] **Step 8:** `pnpm --filter @traceability/app typecheck` (clean except the 8 pre-existing `skill-service.ts` errors) + `pnpm --filter @traceability/app test` (no new session-persistence tests; existing suite must still pass).
+- [ ] **Step 9:** Commit: `feat(app): add main-process SQLite session persistence + sessions IPC`.
 
 ### TODO B — Mount `ExtensionsContextAPIProvider` (NEW)
+
+> **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-extensions-context-api-provider.md`.
 
 The `ExtensionProvider` is mounted but `ExtensionsContextAPIProvider` is not — `useSharedPromptEditor()` (needed by the ported `PromptInput`) throws without it. `getActiveSessionId()` reads the live `agentStore`.
 
@@ -107,7 +121,6 @@ The `ExtensionProvider` is mounted but `ExtensionsContextAPIProvider` is not —
 - [ ] **Step 1:** Add the provider. The `api` needs `getActiveSessionId` (read `agentStore.getState().activeSessionId`) and a module-singleton `SharedPromptEditor`:
 
 ```tsx
-import { useStore } from "zustand";
 import {
   ExtensionProvider,
   ExtensionsContextAPIProvider,
@@ -233,7 +246,7 @@ Condensed from this session's exploration. Divisor paths under `/Users/evan/Desk
 
 **Assistant blocks (TODO E):** `parseExtensionParts` + `useAssistantBlock` from `@extensions/core/renderer` (already inlined). Seam to trace: divisor `messages/assistant-message.tsx`, `assistant-tool-message.tsx`, `use-agent-messages.ts` `tool_execution_*` handlers.
 
-**Sessions (TODO A):** fully specified in `agent-main-migration.md` Phase M3. Contract: `sessions:create(appId):Session`, `list(appId):Session[]`, `get(id):Session|null`, `getEntries(id):Entry[]`, `rename(id,name):void`, `delete(id):void`, `appendEntries(id,Entry[]):void`. `Session` = divisor shape + `appId`. `Entry` matches divisor. better-sqlite3 at `userData/traceability-agent.sqlite`.
+**Sessions (TODO A):** spec `docs/superpowers/specs/2026-07-14-session-persistence.md`. M3 Task 15-16 verbatim (`database.ts` + `session-schema.ts`); Task 17-18 reshaped (NOT verbatim) per the TODO A reconciliation. Class `SessionPersistence extends AbstractAgentIPCHandler<SessionPersistenceIPC>` self-registers in `bind()`, ctor builds `LocalDatabase`; `main/index.ts` only instantiates it (mirrors `AgentPool`). Contract (descriptive bare names, NOT `sessions:*`): `createSession(appId):Session`, `listSessions(appId):Session[]`, `getSession(id):Session|null`, `getSessionEntries(id):Entry[]`, `renameSession(id,name):void`, `deleteSession(id):void`, `appendSessionEntries(id,Entry[]):void`. `Session` = divisor shape + `appId`. `Entry` matches divisor. better-sqlite3 at `userData/traceability-agent.sqlite`. Renderer drops its `invokeSession`/`invokeSessionPersistence` casts and uses typed `invoke` via `useElectronIPC()`.
 
 **Store (NO change needed for extensions):** stays `agentStore` / `store/agent/` (4 trimmed slices). Subagents needs no store additions — the `subagents.list` block is component-rendered from message content/details, not store state. (If TODO E's seam trace requires tool `details` carry-through, that rides on the existing `entries-slice` `MessageEntry.data`, still no new slice.)
 

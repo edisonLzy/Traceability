@@ -65,3 +65,7 @@ SDK (@traceability/core) --Sentry envelope--> server /api/ingest/envelope/:appId
 - **`import type`** for type-only imports.
 - TypeScript strict + `noUncheckedIndexedAccess` (`tsconfig.base.json`); the app splits into `tsconfig.web.json` / `tsconfig.node.json`.
 - `onlyBuiltDependencies` in root `package.json` gates native builds (`better-sqlite3`, `electron`, `esbuild`).
+
+## Working with superpowers plans
+
+Plans (`docs/superpowers/plans/`) decompose work into sequenced TODOs; specs (`docs/superpowers/specs/`) carry the hand-off contracts. **Align each TODO before implementing it**, on three dimensions: what it does, its change scope (in/out), and its concrete changes + resulting file structure. Workflow: first verify the current code against the plan text with `grep`/`ls`/`Read` (catch baseline drift - the plan is often written against an older state), read any referenced plan task for exact contracts, align via `AskUserQuestion` one TODO at a time, then **write the decisions to files** - update the plan/handoff to correct anything that misdirected the alignment, and emit a self-contained spec to `docs/superpowers/specs/`. The spec is the single source for implementation; nothing is re-derived from the session. Full procedure: `AGENTS.md` §"Aligning and Implementing Plan TODOs".
