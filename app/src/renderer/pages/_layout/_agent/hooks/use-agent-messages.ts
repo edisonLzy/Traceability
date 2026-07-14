@@ -192,7 +192,57 @@ export function useAgentMessages(): void {
           .getState()
           .enqueueHumanInTheLoopRequest(sessionId, question as AskUserQuestionRequest);
       },
+
+      tool_execution_start: (event) => {
+        const { sessionId, toolCallId, toolName, args } = event;
+        const existing = agentStore.getState().getEntryState(sessionId).toolStates.get(toolCallId);
+        if (existing) return;
+        agentStore.getState().setToolState(sessionId, toolCallId, {
+          toolCallId,
+          toolName,
+          status: "running",
+          args,
+          output: "",
+        });
+      },
+
+      tool_execution_update: (event) => {
+        const { sessionId, toolCallId, toolName, args } = event;
+        const existing = agentStore.getState().getEntryState(sessionId).toolStates.get(toolCallId);
+        if (!existing) return;
+        const details = event.partialResult?.details ?? existing.details;
+        agentStore.getState().setToolState(sessionId, toolCallId, {
+          toolCallId,
+          toolName,
+          status: "running",
+          args,
+          details,
+          output: existing.output,
+        });
+      },
+
+      tool_execution_end: (event) => {
+        const { sessionId, toolCallId, toolName, result, isError } = event;
+        const resultContent = result?.content;
+        const output = Array.isArray(resultContent) ? extractToolResultText(resultContent) : "";
+        const existing = agentStore.getState().getEntryState(sessionId).toolStates.get(toolCallId);
+        agentStore.getState().setToolState(sessionId, toolCallId, {
+          toolCallId,
+          toolName,
+          status: isError ? "error" : "done",
+          args: existing?.args ?? {},
+          details: result?.details ?? existing?.details,
+          output,
+        });
+      },
     },
     { shouldHandleEvent: (event) => event.scope === "main" },
   );
+}
+
+function extractToolResultText(content: { type?: string; text?: string }[]): string {
+  return content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text ?? "")
+    .join("");
 }

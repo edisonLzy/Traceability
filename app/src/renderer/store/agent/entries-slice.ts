@@ -6,6 +6,17 @@ import type { AgentMessage, Entry, TokenUsage } from "./types";
 
 export type SessionStatus = "idle" | "running" | "completed" | "failed";
 
+export type ToolExecutionStatus = "running" | "done" | "error";
+
+export interface ToolExecutionState {
+  toolCallId: string;
+  toolName: string;
+  status: ToolExecutionStatus;
+  args: unknown;
+  details?: unknown;
+  output: string;
+}
+
 export enum EntryStatus {
   Local,
   Syncing,
@@ -31,6 +42,7 @@ export type SessionEntry = MessageEntry | ModelChangeEntry;
 
 export interface EntryState {
   entries: SessionEntry[];
+  toolStates: Map<string, ToolExecutionState>;
   status: SessionStatus;
 }
 
@@ -45,6 +57,7 @@ export interface EntriesSlice {
   setEntryStatus: (sessionId: string, entryIds: string[], status: EntryStatus) => void;
   setSessionEntries: (sessionId: string, entries: SessionEntry[]) => void;
   setSessionStatus: (sessionId: string, status: SessionStatus) => void;
+  setToolState: (sessionId: string, toolCallId: string, state: ToolExecutionState) => void;
   setStreamingEntryCompletedAt: (sessionId: string, completedAt: number) => void;
   setStreamingEntryId: (sessionId: string, entryId: string | undefined) => void;
   removeEntryState: (sessionId: string) => void;
@@ -52,6 +65,7 @@ export interface EntriesSlice {
 
 export const EMPTY_ENTRY_STATE: EntryState = {
   entries: [],
+  toolStates: new Map(),
   status: "idle",
 };
 
@@ -153,6 +167,17 @@ export const createEntriesSlice: StateCreator<EntriesSlice, [], [], EntriesSlice
       const entryStates = new Map(previous.entryStates);
       const current = getOrCreateEntryState(entryStates, sessionId);
       entryStates.set(sessionId, { ...current, status });
+      return { entryStates };
+    });
+  },
+
+  setToolState: (sessionId, toolCallId, state) => {
+    set((previous) => {
+      const entryStates = new Map(previous.entryStates);
+      const current = getOrCreateEntryState(entryStates, sessionId);
+      const toolStates = new Map(current.toolStates);
+      toolStates.set(toolCallId, state);
+      entryStates.set(sessionId, { ...current, toolStates });
       return { entryStates };
     });
   },

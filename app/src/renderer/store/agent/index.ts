@@ -19,5 +19,11 @@ export const agentStore = createStore<AgentStoreState>()((...args) => ({
 
 export type { AgentSession } from "./sessions-slice";
 export { EntryStatus } from "./entries-slice";
-export type { MessageEntry, SessionEntry, SessionStatus } from "./entries-slice";
+export type {
+  MessageEntry,
+  SessionEntry,
+  SessionStatus,
+  ToolExecutionState,
+  ToolExecutionStatus,
+} from "./entries-slice";
 export type { Entry, MonitoringContext, Session, TokenUsage } from "./types";
