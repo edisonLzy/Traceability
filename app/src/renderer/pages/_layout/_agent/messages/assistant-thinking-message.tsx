@@ -5,9 +5,13 @@ interface AssistantThinkingMessageProps {
 export function AssistantThinkingMessage({ thinking }: AssistantThinkingMessageProps) {
   if (thinking.length === 0) return null;
   return (
-    <details className="mb-2 rounded-lg border border-hairline bg-black/10 px-2 py-1.5 text-[10px] text-tertiary">
-      <summary className="cursor-pointer select-none">Reasoning</summary>
-      <div className="mt-1 whitespace-pre-wrap leading-[1.55]">{thinking.join("\n")}</div>
+    <details className="mb-2 border-y border-hairline text-[10px] text-tertiary">
+      <summary className="cursor-pointer select-none py-2 transition-colors hover:text-muted">
+        Reasoning
+      </summary>
+      <div className="border-t border-hairline py-2 whitespace-pre-wrap leading-[1.6]">
+        {thinking.join("\n")}
+      </div>
     </details>
   );
 }

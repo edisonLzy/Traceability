@@ -2,6 +2,7 @@ import type { AppUserMessage } from "@earendil-works/pi-agent-core";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
 import { agentStore } from "@renderer/store/agent";
 import type { Session } from "@renderer/store/agent";
+import { Sparkles } from "lucide-react";
 import { useState } from "react";
 
 import { PanelBody, PanelFooter, PanelHeader, PanelLayout } from "./components/panel-layout";
@@ -73,22 +74,29 @@ export function PendingSessionContent() {
 
   return (
     <PanelLayout>
-      <PanelHeader title="New conversation" />
+      <PanelHeader subtitle="Traceability Agent" title="New conversation" />
       <PanelBody className="flex items-center justify-center">
-        <div className="mx-auto max-w-[280px] text-center">
-          <h2 className="text-[13px] font-[570] leading-snug text-muted">
-            What should I help you with?
+        <div className="mx-auto max-w-[280px] px-6 text-center">
+          <span className="mx-auto mb-3 grid size-10 place-items-center rounded-[11px] border border-hairline bg-white/[0.025] text-primary-hover">
+            <Sparkles size={17} />
+          </span>
+          <h2 className="text-[13px] font-[620] leading-snug text-ink">
+            Investigate this application
           </h2>
+          <p className="mt-1.5 text-[10px] leading-5 text-tertiary">
+            Ask about the current issue, performance view, or session replay.
+          </p>
         </div>
       </PanelBody>
       <PanelFooter>
-        <PromptInput
-          disabled={isLoading}
-          initialModel={null}
-          isRunning={false}
-          onSubmit={submitPrompt}
-          sessionId={null}
-        />
+        <div className="mx-auto w-full max-w-[720px]">
+          <PromptInput
+            disabled={isLoading}
+            initialModel={null}
+            isRunning={false}
+            onSubmit={submitPrompt}
+          />
+        </div>
       </PanelFooter>
     </PanelLayout>
   );

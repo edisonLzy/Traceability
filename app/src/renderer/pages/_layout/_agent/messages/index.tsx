@@ -1,6 +1,7 @@
 import type { MessageEntry, SessionEntry } from "@renderer/store/agent";
 import type { ToolExecutionState } from "@renderer/store/agent";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { AssistantMessage } from "./assistant-message";
@@ -53,19 +54,27 @@ export function ChatMessages({
 
   if (messageEntries.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="rounded-md border-2 border-border bg-card px-5 py-2 text-sm text-muted-foreground shadow-[var(--hard-shadow-sm)]">
-          Start a conversation
+      <div className="grid h-full place-items-center px-6 text-center">
+        <div className="max-w-[280px]">
+          <span className="mx-auto mb-3 grid size-10 place-items-center rounded-[11px] border border-hairline bg-white/[0.025] text-primary-hover">
+            <Sparkles size={17} />
+          </span>
+          <strong className="block text-[13px] font-[620] text-ink">
+            Investigate this application
+          </strong>
+          <p className="mt-1.5 text-[10px] leading-5 text-tertiary">
+            Ask about the current issue, performance view, or session replay.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative h-full min-w-0 overflow-x-hidden">
+    <div className="relative h-full min-w-0 overflow-x-hidden bg-black/[0.04]">
       <div
         ref={scrollRef}
-        className="h-full min-w-0 overflow-x-hidden overflow-y-auto pr-2"
+        className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-3 py-4"
         onScroll={handleStickyScroll}
       >
         <div
@@ -87,12 +96,12 @@ export function ChatMessages({
                 key={virtualRow.index}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
-                className="absolute left-0 top-0 w-full min-w-0 px-2"
+                className="absolute left-0 top-0 w-full min-w-0"
                 style={{
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <div className="mx-auto w-full max-w-4xl min-w-0">
+                <div className="mx-auto w-full max-w-[720px] min-w-0">
                   {isUserMessage(message) ? (
                     <UserMessage
                       message={message}
@@ -104,13 +113,10 @@ export function ChatMessages({
                   ) : isAssistantMessage(message) ? (
                     <AssistantMessage
                       completedAt={entry.completedAt}
-                      entries={entries}
-                      entryId={entry.id}
                       isStreaming={entry.id === streamingEntryId}
                       message={message}
                       sessionId={sessionId}
                       startedAt={entry.timestamp}
-                      tokenUsage={entry.tokenUsage ?? undefined}
                       toolStates={toolStates}
                     />
                   ) : null}

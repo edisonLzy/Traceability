@@ -87,16 +87,16 @@ export function ModalSelector({ value, onChange }: ModalSelectorProps) {
       disabled={isLoading || models.length === 0}
     >
       <SelectTrigger
-        className="h-7 w-auto max-w-50 gap-1 rounded-sm border-2 border-border bg-card px-2 text-foreground shadow-[var(--hard-shadow-sm)] hover:bg-accent data-popup-open:bg-accent focus:ring-0"
+        className="h-7 w-auto max-w-50 gap-1 rounded-[6px] border border-hairline bg-black/10 px-2 !text-ink shadow-none hover:border-hairline-strong hover:bg-white/[0.055] data-popup-open:border-primary/55 data-popup-open:bg-white/[0.05] focus:ring-0"
         aria-label="Select model"
       >
         <SelectValue className="pointer-events-none min-w-0">
           {value ? (
-            <div className="flex min-w-0 items-center gap-1.5 text-left text-xs font-normal text-muted-foreground">
-              <span className="block truncate">{value.modelName}</span>
+            <div className="flex min-w-0 items-center gap-1.5 text-left text-[10px] font-[610] !text-ink">
+              <span className="block truncate !text-ink">{value.modelName}</span>
             </div>
           ) : (
-            <span className="truncate text-xs text-muted-foreground">
+            <span className="truncate text-[10px] !text-muted">
               {isLoading ? "加载中..." : "选择模型"}
             </span>
           )}
@@ -106,9 +106,9 @@ export function ModalSelector({ value, onChange }: ModalSelectorProps) {
       <SelectContent
         align="end"
         sideOffset={8}
-        className="max-h-none w-max min-w-56 max-w-80 overflow-hidden rounded-md border-2 border-border bg-popover p-0 text-popover-foreground shadow-[var(--hard-shadow)]"
+        className="max-h-none w-max min-w-56 max-w-80 overflow-hidden rounded-[10px] border border-hairline-strong bg-[rgba(30,31,37,0.98)] p-0 text-ink shadow-[0_18px_50px_rgba(0,0,0,0.38)]"
       >
-        <div className="border-b-2 border-border px-2 py-2.5">
+        <div className="border-b border-hairline px-2 py-2">
           <Input
             autoFocus
             value={query}
@@ -117,11 +117,11 @@ export function ModalSelector({ value, onChange }: ModalSelectorProps) {
               event.stopPropagation();
             }}
             placeholder="搜索模型..."
-            className="h-8 rounded-sm px-3 text-[12px] text-foreground placeholder:text-muted-foreground"
+            className="h-8 rounded-[6px] border-hairline bg-black/15 px-3 text-[11px] text-ink placeholder:text-tertiary"
           />
         </div>
 
-        <div className="max-h-60 overflow-x-hidden overflow-y-auto px-1 py-1.5">
+        <div className="max-h-60 overflow-x-hidden overflow-y-auto p-1">
           {filteredModels.map((model) => {
             const modelValue = `${model.providerId}/${model.modelId}`;
             const isSelected = selectedValue === modelValue;
@@ -131,19 +131,19 @@ export function ModalSelector({ value, onChange }: ModalSelectorProps) {
                 key={modelValue}
                 value={modelValue}
                 className={cn(
-                  "mb-0.5 last:mb-0 w-full overflow-hidden rounded-sm border border-transparent px-3 py-2 text-foreground focus:bg-accent focus:text-accent-foreground",
-                  isSelected && "text-foreground",
+                  "mb-0.5 last:mb-0 w-full overflow-hidden rounded-[7px] border border-transparent px-2 py-2 text-ink focus:bg-white/[0.07] focus:text-ink",
+                  isSelected && "bg-white/[0.055] text-ink",
                 )}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden pr-6">
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-sm border border-border bg-signal-purple text-accent-foreground">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-[5px] border border-primary/20 bg-primary/10 text-primary-hover">
                     <Cpu className="size-3" />
                   </span>
                   <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-                    <span className="block min-w-0 truncate text-[13px] font-medium leading-none text-current">
+                    <span className="block min-w-0 truncate text-[11px] font-[610] leading-none text-current">
                       {model.modelName}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{model.providerName}</span>
+                    <span className="text-[9px] text-tertiary">{model.providerName}</span>
                   </div>
                 </div>
               </SelectItem>

@@ -4,10 +4,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@renderer/components/ui/collapsible";
-import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
 import { cn } from "@renderer/lib/utils";
-import type { SessionEntry, ToolExecutionState, TokenUsage } from "@renderer/store/agent";
-import { ChevronRightIcon } from "lucide-react";
+import type { ToolExecutionState } from "@renderer/store/agent";
+import { ChevronRightIcon, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AssistantResponseMessage } from "./assistant-response-message";
@@ -15,29 +14,22 @@ import { AssistantThinkingMessage } from "./assistant-thinking-message";
 import { AssistantToolMessage } from "./assistant-tool-message";
 import { CopyMessageButton } from "./toolbar/copy-message-button";
 import { MessageToolbar } from "./toolbar/message-toolbar";
-import { assistantText, assistantThinking } from "./types";
 
 interface AssistantMessageProps {
   completedAt?: number;
-  entries: SessionEntry[];
-  entryId: string;
   isStreaming: boolean;
   message: AssistantMessageType;
   sessionId: string;
   startedAt: number;
-  tokenUsage?: TokenUsage;
   toolStates: Map<string, ToolExecutionState>;
 }
 
 export function AssistantMessage({
   completedAt,
-  entries,
-  entryId,
   isStreaming,
   message,
   sessionId,
   startedAt,
-  tokenUsage,
   toolStates,
 }: AssistantMessageProps) {
   const contentArray = Array.isArray(message.content) ? message.content : [];
@@ -69,54 +61,61 @@ export function AssistantMessage({
   }, [textContent.length]);
 
   return (
-    <div className="mb-3 grid grid-cols-[32px_minmax(0,1fr)] items-start gap-2.5 pr-2.5">
-      <span className="flex size-8 items-center justify-center rounded-sm border-2 border-border bg-signal-cyan font-mono text-[10px] font-bold text-accent-foreground shadow-[var(--hard-shadow-sm)]">
-        AI
-      </span>
-
+    <article className="mb-5 pr-2">
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-[620] text-tertiary">
+        <Sparkles
+          className={isStreaming ? "animate-pulse text-primary-hover" : "text-primary-hover"}
+          size={13}
+        />
+        Traceability Agent
+        <ProcessingTip
+          completedAt={completedAt}
+          hasError={hasError}
+          isStreaming={isStreaming}
+          startedAt={startedAt}
+        />
+      </div>
       <div className="flex min-w-0 flex-col gap-1.5">
-        <Collapsible open={isProcessingOpen} onOpenChange={(open) => setIsProcessingOpen(open)}>
-          <div className="flex flex-col gap-2">
-            <CollapsibleTrigger className="group/trigger flex cursor-pointer items-center gap-1.5">
-              <ProcessingTip
-                completedAt={completedAt}
-                hasError={hasError}
-                isStreaming={isStreaming}
-                startedAt={startedAt}
-              />
-              <ChevronRightIcon className="size-3.5 text-muted-foreground transition-transform group-data-panel-open/trigger:rotate-90 hover:text-foreground" />
+        {processingContent.length > 0 ? (
+          <Collapsible open={isProcessingOpen} onOpenChange={(open) => setIsProcessingOpen(open)}>
+            <CollapsibleTrigger className="group/trigger flex cursor-pointer items-center gap-1.5 py-1 text-[10px] text-tertiary transition-colors hover:text-muted">
+              Reasoning & activity
+              <ChevronRightIcon className="size-3 text-tertiary transition-transform group-data-panel-open/trigger:rotate-90" />
             </CollapsibleTrigger>
-          </div>
 
-          <CollapsibleContent className="mt-1.5 flex flex-col gap-2">
-            {processingContent.map((block, index) => {
-              if (block.type === "thinking") {
-                return (
-                  <AssistantThinkingMessage key={`thinking-${index}`} thinking={[block.thinking]} />
-                );
-              }
+            <CollapsibleContent className="flex flex-col gap-2">
+              {processingContent.map((block, index) => {
+                if (block.type === "thinking") {
+                  return (
+                    <AssistantThinkingMessage
+                      key={`thinking-${index}`}
+                      thinking={[block.thinking]}
+                    />
+                  );
+                }
 
-              if (block.type === "toolCall") {
-                return (
-                  <AssistantToolMessage
-                    key={block.id}
-                    sessionId={sessionId}
-                    toolState={toolStates.get(block.id)}
-                  />
-                );
-              }
+                if (block.type === "toolCall") {
+                  return (
+                    <AssistantToolMessage
+                      key={block.id}
+                      sessionId={sessionId}
+                      toolState={toolStates.get(block.id)}
+                    />
+                  );
+                }
 
-              return null;
-            })}
-          </CollapsibleContent>
-        </Collapsible>
+                return null;
+              })}
+            </CollapsibleContent>
+          </Collapsible>
+        ) : null}
 
         {textContent.map((block, i) => (
           <AssistantResponseMessage key={`text-${i}`} text={block.text} />
         ))}
 
         {hasError && textContent.every((block) => block.text.trim().length === 0) ? (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">
+          <div className="border-l-2 border-danger/70 bg-danger/[0.06] px-2 py-1.5 text-[10px] leading-5 text-danger">
             {errorMessage ||
               "Agent request failed. Please check the model/API configuration and try again."}
           </div>
@@ -128,7 +127,7 @@ export function AssistantMessage({
           </MessageToolbar>
         ) : null}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -162,9 +161,9 @@ function ProcessingTip({ completedAt, hasError, isStreaming, startedAt }: Proces
   return (
     <span
       className={cn(
-        "text-xs text-muted-foreground",
-        hasError && "text-destructive",
-        isStreaming && !hasError && "animate-pulse",
+        "font-normal text-tertiary",
+        hasError && "text-danger",
+        isStreaming && !hasError && "animate-pulse text-primary-hover",
       )}
     >
       {`${hasError ? "处理失败" : isStreaming ? "正在处理" : "已处理"} ${elapsed}s`}

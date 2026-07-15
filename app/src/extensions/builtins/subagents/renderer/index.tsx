@@ -22,36 +22,34 @@ function SubagentsListBlock({ props }: { props: Record<string, unknown> }) {
   }
 
   return (
-    <div className="not-prose rounded-md border border-border/70 bg-card/70 p-2 text-sm text-card-foreground">
-      <div className="mb-2 flex items-center justify-between gap-2 px-1">
-        <span className="font-medium">Subagents</span>
-        <span className="inline-flex shrink-0 items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {block.subagents.length}
-        </span>
+    <div className="not-prose my-2 border-y border-hairline text-card-foreground">
+      <div className="flex min-h-8 items-center justify-between gap-2 px-1 text-[10px] text-muted">
+        <span className="font-[620]">Subagents</span>
+        <span className="text-tertiary">{block.subagents.length} tasks</span>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="border-t border-hairline py-1">
         {block.subagents.map((subagent) => {
           const status = subagent.status;
           const StatusIcon = getStatusIcon(status);
           return (
             <div
               key={subagent.id}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left"
+              className="flex w-full items-center gap-2 rounded-[7px] px-1.5 py-1.5 text-left transition-colors hover:bg-white/[0.035]"
             >
               <StatusIcon
                 className={cn(
-                  "size-4 shrink-0 text-muted-foreground",
+                  "size-3.5 shrink-0 text-muted-foreground",
                   status === "running" && "animate-spin",
                 )}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate font-medium">{subagent.name}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <span className="truncate text-[10px] font-[610]">{subagent.name}</span>
+                  <span className="shrink-0 text-[9px] text-muted-foreground">
                     {getStatusLabel(status)}
                   </span>
                 </div>
-                <div className="truncate text-xs text-muted-foreground">
+                <div className="truncate text-[9px] text-muted-foreground">
                   {subagent.phase || subagent.task}
                 </div>
               </div>

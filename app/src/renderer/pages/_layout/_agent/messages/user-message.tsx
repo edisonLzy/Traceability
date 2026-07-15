@@ -8,7 +8,6 @@ import type { Virtualizer } from "@tanstack/react-virtual";
 import Mention from "@tiptap/extension-mention";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Pencil } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 import { toast } from "sonner";
 
@@ -61,12 +60,12 @@ export function StickyUserMessage({ message, onJump }: StickyUserMessageProps) {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 px-2">
-      <div className="mx-auto w-full max-w-4xl">
-        <div className="pointer-events-auto grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground shadow-[var(--hard-shadow)]">
-          <div className="pm-readonly min-w-0 overflow-hidden text-[14px] leading-6 text-foreground [&_.ProseMirror]:overflow-hidden [&_.ProseMirror]:text-ellipsis [&_.ProseMirror]:!whitespace-nowrap [&_.ProseMirror_p]:overflow-hidden [&_.ProseMirror_p]:text-ellipsis [&_.ProseMirror_p]:!whitespace-nowrap">
+      <div className="mx-auto w-full max-w-[720px]">
+        <div className="pointer-events-auto grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] border border-hairline-strong bg-[rgba(24,25,30,0.98)] px-3 py-2 text-[12px] text-ink shadow-[0_14px_38px_rgba(0,0,0,0.34)]">
+          <div className="pm-readonly min-w-0 overflow-hidden text-[12px] leading-[1.55] text-ink [&_.ProseMirror]:overflow-hidden [&_.ProseMirror]:text-ellipsis [&_.ProseMirror]:!whitespace-nowrap [&_.ProseMirror_p]:overflow-hidden [&_.ProseMirror_p]:text-ellipsis [&_.ProseMirror_p]:!whitespace-nowrap">
             <EditorContent editor={readOnlyEditor} className="prompt-editor max-w-none min-w-0" />
           </div>
-          <Button size="sm" variant="ghost" onClick={onJump}>
+          <Button className="h-6 text-[10px]" size="sm" variant="ghost" onClick={onJump}>
             Click to jump
           </Button>
         </div>
@@ -163,22 +162,19 @@ function ReadonlyUserMessage({ message, isRunning, onStartEdit }: ReadonlyUserMe
   const plainText = typeof message.content === "string" ? message.content : "unsupported content";
 
   return (
-    <div className="grid max-w-3xl grid-cols-[34px_minmax(0,1fr)] items-start gap-3">
-      <span className="flex size-8.5 items-center justify-center rounded-sm border-2 border-border bg-signal-yellow font-mono text-[10px] font-bold text-accent-foreground shadow-[var(--hard-shadow-sm)]">
-        YOU
-      </span>
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <div className="rounded-md border-2 border-border bg-card px-4 py-2.5 text-[14px] leading-6 text-card-foreground shadow-[var(--hard-shadow-sm)]">
-          <div className="pm-readonly min-w-0 text-[14px] leading-6 text-card-foreground">
+    <article className="mb-4 flex justify-end pl-10">
+      <div className="flex max-w-[92%] min-w-0 flex-col items-end gap-1">
+        <div className="rounded-[12px_12px_4px_12px] border border-primary/20 bg-primary/[0.12] px-3 py-2 text-[#e4e7ff]">
+          <div className="pm-readonly min-w-0 text-[12px] leading-[1.55]">
             <EditorContent editor={readOnlyEditor} className="prompt-editor max-w-none min-w-0" />
           </div>
         </div>
-        <MessageToolbar align="start">
+        <MessageToolbar align="end">
           <CopyMessageButton text={plainText} />
           <EditMessageButton isRunning={isRunning} onEdit={onStartEdit} />
         </MessageToolbar>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -266,7 +262,7 @@ function EditableUserMessage({
 
   return (
     <div className="ml-auto flex max-w-2xl flex-col items-end gap-1">
-      <div className="w-full rounded-md border-2 border-border bg-card px-4 py-2.5 shadow-[var(--hard-shadow-sm)]">
+      <div className="w-full rounded-[11px] border border-primary/30 bg-primary/[0.08] px-3 py-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.18)]">
         <EditorContent editor={editor} className="prompt-editor max-w-none" />
       </div>
       <div className="flex items-center gap-2">
@@ -300,7 +296,7 @@ function useUserMessageEditor(document: AppUserMessage["jsonContent"]) {
         }).configure({
           HTMLAttributes: {
             class:
-              "mention inline-flex items-center gap-1 rounded-sm border border-border bg-signal-yellow px-1.5 py-0.5 text-sm font-bold text-accent-foreground",
+              "mention inline-flex items-center gap-1 rounded-[5px] border border-primary/25 bg-primary/15 px-1.5 py-0.5 text-[11px] font-[620] text-primary-hover",
           },
         }),
         skillNode,
@@ -309,7 +305,7 @@ function useUserMessageEditor(document: AppUserMessage["jsonContent"]) {
       editable: false,
       editorProps: {
         attributes: {
-          class: "ProseMirror min-h-0 text-[14px] leading-6 outline-none",
+          class: "ProseMirror min-h-0 text-[12px] leading-[1.55] outline-none",
         },
       },
     },
