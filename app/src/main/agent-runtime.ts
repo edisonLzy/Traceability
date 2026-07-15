@@ -19,7 +19,7 @@ import { AskUserQuestionService } from "./human-in-the-loop/ask-user-question-se
 import { ModelRegistry } from "./models/index.js";
 import { SystemPromptService } from "./prompt/index.js";
 import { SkillService } from "./skills/index.js";
-import { fsReadTextFileTool } from "./tools/index.js";
+import { fsReadTextFileTool, terminalCreateTool } from "./tools/index.js";
 
 // ── Derived runtime delegate type ──────────────────────────────────────────
 
@@ -103,10 +103,14 @@ export class AgentRuntime extends Emittery<AgentRuntimeEvents> implements AgentR
   }
 
   private createInternalAgent() {
-    // Read-only runtime: only the text-file read tool is available. No write
-    // or shell-execution tools are registered, so no permission gating is needed.
+    // Read-only runtime: the text-file read tool and a read-only terminal
+    // tool are available. The terminal tool rejects write/exec commands
+    // internally (see `evaluateReadonlyCommand`), so no permission gating is
+    // needed for this phase.
     const excludedToolNames = new Set(this.options.extensionTools?.excludeToolNames ?? []);
-    const builtinTools = [fsReadTextFileTool].filter((tool) => !excludedToolNames.has(tool.name));
+    const builtinTools = [fsReadTextFileTool, terminalCreateTool].filter(
+      (tool) => !excludedToolNames.has(tool.name),
+    );
 
     this.askUserQuestionService.on("human-in-the-loop", ({ data: request }) => {
       this.emit("ask_user_question_requested", {
