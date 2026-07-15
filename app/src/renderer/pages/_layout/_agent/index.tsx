@@ -68,6 +68,8 @@ export function AgentPanel() {
       <section className="min-h-0 flex-1 overflow-hidden">
         <ChatMessages
           entries={entries}
+          isRunning={isRunning}
+          messageEntries={messageEntries}
           sessionId={activeSessionId ?? ""}
           streamingEntryId={streamingEntryId}
           toolStates={toolStates}

@@ -1,95 +1,128 @@
 import type { MessageEntry, SessionEntry } from "@renderer/store/agent";
+import type { ToolExecutionState } from "@renderer/store/agent";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useRef } from "react";
 
 import { AssistantMessage } from "./assistant-message";
-import { isAssistantMessage, isMessageEntry, isUserMessage } from "./types";
-import { UserMessage } from "./user-message";
+import { isAssistantMessage, isUserMessage } from "./types";
+import { StickyUserMessage, UserMessage, useStickyUserMessage } from "./user-message";
 
 interface ChatMessagesProps {
   entries: SessionEntry[];
-  streamingEntryId?: string;
-  toolStates: Map<string, import("@renderer/store/agent").ToolExecutionState>;
+  isRunning: boolean;
+  messageEntries: MessageEntry[];
   sessionId: string;
+  streamingEntryId?: string;
+  toolStates: Map<string, ToolExecutionState>;
 }
 
 export function ChatMessages({
   entries,
+  isRunning,
+  messageEntries,
+  sessionId,
   streamingEntryId,
   toolStates,
-  sessionId,
 }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const messageEntries = entries.filter(isMessageEntry);
-  const virtualizer = useVirtualizer({
+
+  const virtualizer = useVirtualizer<HTMLDivElement, HTMLDivElement>({
     count: messageEntries.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 120,
-    gap: 10,
+    estimateSize: () => 160,
     overscan: 6,
+    gap: 18,
+  });
+
+  const { activeStickyMessage, handleStickyJump, handleStickyScroll } = useStickyUserMessage({
+    messageEntries: messageEntries,
+    scrollRef,
+    sessionId,
+    virtualizer,
   });
 
   useEffect(() => {
-    if (messageEntries.length > 0)
-      virtualizer.scrollToIndex(messageEntries.length - 1, { align: "end" });
-  }, [entries, messageEntries.length, streamingEntryId, virtualizer]);
+    if (messageEntries.length === 0) {
+      return;
+    }
+
+    virtualizer.scrollToIndex(messageEntries.length - 1, {
+      align: "end",
+    });
+  }, [messageEntries.length, virtualizer]);
 
   if (messageEntries.length === 0) {
     return (
-      <div className="grid h-full place-items-center px-4 text-center text-[11px] leading-5 text-tertiary">
-        Start a conversation to investigate this application's monitoring data.
+      <div className="flex h-full items-center justify-center">
+        <div className="rounded-md border-2 border-border bg-card px-5 py-2 text-sm text-muted-foreground shadow-[var(--hard-shadow-sm)]">
+          Start a conversation
+        </div>
       </div>
     );
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-x-hidden overflow-y-auto px-2.5 py-3">
-      <div className="relative" style={{ height: virtualizer.getTotalSize() }}>
-        {virtualizer.getVirtualItems().map((row) => {
-          const entry = messageEntries[row.index];
-          if (!entry) return null;
-          return (
-            <div
-              key={entry.id}
-              ref={virtualizer.measureElement}
-              className="absolute left-0 top-0 w-full"
-              data-index={row.index}
-              style={{ transform: `translateY(${row.start}px)` }}
-            >
-              <MessageEntryView
-                entry={entry}
-                isStreaming={entry.id === streamingEntryId}
-                toolStates={toolStates}
-                sessionId={sessionId}
-              />
-            </div>
-          );
-        })}
+    <div className="relative h-full min-w-0 overflow-x-hidden">
+      <div
+        ref={scrollRef}
+        className="h-full min-w-0 overflow-x-hidden overflow-y-auto pr-2"
+        onScroll={handleStickyScroll}
+      >
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            position: "relative",
+            width: "100%",
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const entry = messageEntries[virtualRow.index];
+            if (!entry) return null;
+
+            const message = entry.data;
+            if (!("role" in message)) return null;
+
+            return (
+              <div
+                key={virtualRow.index}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className="absolute left-0 top-0 w-full min-w-0 px-2"
+                style={{
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className="mx-auto w-full max-w-4xl min-w-0">
+                  {isUserMessage(message) ? (
+                    <UserMessage
+                      message={message}
+                      entryId={entry.id}
+                      sessionId={sessionId}
+                      isRunning={isRunning}
+                      entries={entries}
+                    />
+                  ) : isAssistantMessage(message) ? (
+                    <AssistantMessage
+                      completedAt={entry.completedAt}
+                      entries={entries}
+                      entryId={entry.id}
+                      isStreaming={entry.id === streamingEntryId}
+                      message={message}
+                      sessionId={sessionId}
+                      startedAt={entry.timestamp}
+                      tokenUsage={entry.tokenUsage ?? undefined}
+                      toolStates={toolStates}
+                    />
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
+      {activeStickyMessage ? (
+        <StickyUserMessage message={activeStickyMessage} onJump={handleStickyJump} />
+      ) : null}
     </div>
   );
-}
-
-function MessageEntryView({
-  entry,
-  isStreaming,
-  toolStates,
-  sessionId,
-}: {
-  entry: MessageEntry;
-  isStreaming: boolean;
-  toolStates: Map<string, import("@renderer/store/agent").ToolExecutionState>;
-  sessionId: string;
-}) {
-  if (isUserMessage(entry.data)) return <UserMessage message={entry.data} />;
-  if (isAssistantMessage(entry.data))
-    return (
-      <AssistantMessage
-        isStreaming={isStreaming}
-        message={entry.data}
-        toolStates={toolStates}
-        sessionId={sessionId}
-      />
-    );
-  return null;
 }
