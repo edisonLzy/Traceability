@@ -28,6 +28,7 @@
     "@tiptap/react": "^3.22.5",
     "@tiptap/starter-kit": "^3.22.5",
     "@tiptap/suggestion": "3.27.3",
+    "@traceability/client": "workspace:*",
     "@traceability/protocol": "workspace:*",
     "axios": "^1.18.1",
     "better-sqlite3": "^12.0.0",

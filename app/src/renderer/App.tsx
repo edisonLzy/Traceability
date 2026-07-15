@@ -1,9 +1,12 @@
-import { installedRendererExtensions } from "@extensions/builtins/index.renderer";
+import appsExtension from "@extensions/builtins/apps/renderer";
+import issuesExtension from "@extensions/builtins/issues/renderer";
+import subagentsExtension from "@extensions/builtins/subagents/renderer";
 import {
   ExtensionProvider,
   ExtensionsContextAPIProvider,
   SharedPromptEditor,
   type ExtensionsContextAPI,
+  type RendererExtensionDefinition,
 } from "@extensions/core/renderer";
 import { Toaster } from "@renderer/components/ui/sonner";
 import { CurrentAppProvider } from "@renderer/context/current-app";
@@ -24,6 +27,12 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const installedRendererExtensions: RendererExtensionDefinition[] = [
+  subagentsExtension,
+  appsExtension,
+  issuesExtension,
+];
 
 export function App() {
   useEffect(() => {
