@@ -2,6 +2,7 @@ import { Type } from "@earendil-works/pi-ai";
 import { createTraceabilityClient } from "@traceability/client";
 import type { Application } from "@traceability/protocol";
 
+import { formatAssistantBlockFence } from "../../../core/common/index.js";
 import { defineMainExtension } from "../../../core/main/index.js";
 import { APPS_EXTENSION } from "../common/extension.js";
 import { APPS_LIST_BLOCK_TYPE, APPS_LIST_TOOL } from "../common/types.js";
@@ -18,7 +19,24 @@ export default defineMainExtension({
   setup(ctx) {
     ctx.systemPrompt.register({
       id: "apps.prompt",
-      content: `Use the ${APPS_LIST_TOOL} tool to list the user's Traceability apps when they ask about their apps or when you need to know which apps exist. The result is rendered as a read-only card in the chat.`,
+      content: `Use the ${APPS_LIST_TOOL} tool to list the user's Traceability apps when they ask about their apps or when you need to know which apps exist.
+
+After calling ${APPS_LIST_TOOL}, present the result as an interactive card by emitting a fenced ${APPS_LIST_BLOCK_TYPE} agent-block in your reply (do NOT render a markdown table for apps). The fence body is JSON with the exact props the card expects. Example:
+
+${formatAssistantBlockFence({
+  type: APPS_LIST_BLOCK_TYPE,
+  props: {
+    apps: [
+      {
+        id: "<app-id>",
+        name: "smoke",
+        repoUrl: "https://github.com/org/repo.git",
+        defaultBranch: "master",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  },
+})}`,
     });
 
     ctx.tools.register({

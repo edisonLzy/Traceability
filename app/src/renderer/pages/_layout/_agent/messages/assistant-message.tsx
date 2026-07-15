@@ -111,7 +111,7 @@ export function AssistantMessage({
         ) : null}
 
         {textContent.map((block, i) => (
-          <AssistantResponseMessage key={`text-${i}`} text={block.text} />
+          <AssistantResponseMessage key={`text-${i}`} isStreaming={isStreaming} text={block.text} />
         ))}
 
         {hasError && textContent.every((block) => block.text.trim().length === 0) ? (

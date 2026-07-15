@@ -2,6 +2,7 @@ import { Type } from "@earendil-works/pi-ai";
 import { createTraceabilityClient } from "@traceability/client";
 import type { Issue, IssueStatus } from "@traceability/protocol";
 
+import { formatAssistantBlockFence } from "../../../core/common/index.js";
 import { defineMainExtension } from "../../../core/main/index.js";
 import type { MainExtensionContext } from "../../../core/main/index.js";
 import { ISSUES_EXTENSION } from "../common/extension.js";
@@ -22,7 +23,32 @@ export default defineMainExtension({
       content: `Use the ${ISSUES_LIST_TOOL} tool to list issues for a Traceability app and ${ISSUES_GET_TOOL} to fetch a single issue's full detail.
 - Pass appId when known; if unknown, omit it and the user will pick an app.
 - Optional filters: status (open | fix-manual | fixing | fixed), limit (default 20).
-Present results concisely; the UI renders an interactive card for the issue list (clickable to open the issue detail).`,
+
+After calling ${ISSUES_LIST_TOOL}, present the result as an interactive card by emitting a fenced ${ISSUES_LIST_BLOCK_TYPE} agent-block in your reply (do NOT render a markdown table for the issue list). The fence body is JSON with the exact props the card expects, and the issues array mirrors the Issue type. Example:
+
+${formatAssistantBlockFence({
+  type: ISSUES_LIST_BLOCK_TYPE,
+  props: {
+    appId: "<app-id>",
+    nextCursor: null,
+    issues: [
+      {
+        id: "<issue-id>",
+        appId: "<app-id>",
+        fingerprint: "<fingerprint>",
+        title: "TypeError: Cannot read properties of undefined",
+        type: "error",
+        firstSeen: "2026-01-01T00:00:00.000Z",
+        lastSeen: "2026-01-02T00:00:00.000Z",
+        count: 5,
+        status: "open",
+        metadata: {},
+      },
+    ],
+  },
+})}
+
+For ${ISSUES_GET_TOOL}, surface the single issue's detail as plain text only (no card).`,
     });
 
     ctx.tools.register({

@@ -7,7 +7,7 @@ export type {
   AskUserQuestionResult,
 } from "./human-in-the-loop";
 
-export const DIVISOR_BLOCK_LANGUAGE = "divisor-block";
+export const AGENT_BLOCK_LANGUAGE = "agent-block";
 
 export interface AssistantBlockPayload {
   props: Record<string, unknown>;
@@ -29,7 +29,7 @@ export function formatAssistantBlockFence({
   props = {},
   type,
 }: FormatAssistantBlockFenceOptions): string {
-  return `\`\`\`${DIVISOR_BLOCK_LANGUAGE}
+  return `\`\`\`${AGENT_BLOCK_LANGUAGE}
 ${JSON.stringify({ type, props })}
 \`\`\``;
 }

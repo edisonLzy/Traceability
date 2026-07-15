@@ -8,7 +8,7 @@ export interface ParsedExtensionPart {
   };
 }
 
-const EXTENSION_FENCE_PATTERN = /```(divisor-block)\s*([\s\S]*?)```/g;
+const EXTENSION_FENCE_PATTERN = /```(agent-block)\s*([\s\S]*?)```/g;
 
 export function parseExtensionParts(content: string): ParsedExtensionPart[] {
   const parts: ParsedExtensionPart[] = [];
