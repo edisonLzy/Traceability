@@ -1,13 +1,21 @@
 import type { AppUserMessage } from "@earendil-works/pi-agent-core";
 import { skillNode } from "@renderer/components/richtext/inline/skill-node";
+import { Button } from "@renderer/components/ui/button";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
 import { agentStore } from "@renderer/store/agent";
-import type { SessionEntry } from "@renderer/store/agent";
+import type { MessageEntry, SessionEntry } from "@renderer/store/agent";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import Mention from "@tiptap/extension-mention";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Pencil } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
+import { toast } from "sonner";
+
+import { useChatEditor } from "../use-chat-editor";
+import { CopyMessageButton } from "./toolbar/copy-message-button";
+import { EditMessageButton } from "./toolbar/edit-message-button";
+import { MessageToolbar } from "./toolbar/message-toolbar";
 
 interface UserMessageProps {
   message: AppUserMessage;
@@ -23,6 +31,7 @@ export function UserMessage({ message, entryId, sessionId, isRunning, entries }:
   if (isEditing) {
     return (
       <EditableUserMessage
+        entries={entries}
         entryId={entryId}
         message={message}
         sessionId={sessionId}
@@ -40,159 +49,7 @@ export function UserMessage({ message, entryId, sessionId, isRunning, entries }:
   );
 }
 
-// ─── ReadonlyUserMessage ────────────────────────────────────────
-
-function ReadonlyUserMessage({
-  message,
-  isRunning,
-  onStartEdit,
-}: {
-  message: AppUserMessage;
-  isRunning: boolean;
-  onStartEdit: () => void;
-}) {
-  const editor = useEditor({
-    content: message.jsonContent,
-    editable: false,
-    extensions: [StarterKit, Mention, skillNode],
-    editorProps: {
-      attributes: { className: "ProseMirror text-[12px] leading-[1.55] outline-none" },
-    },
-  });
-
-  return (
-    <article className="mb-3 flex justify-end">
-      <div className="flex max-w-full flex-col gap-1 rounded-[13px_13px_4px_13px] border border-primary/25 bg-primary/15 px-3 py-2 text-[#e4e7ff]">
-        <EditorContent editor={editor} />
-        {!isRunning ? (
-          <button
-            type="button"
-            onClick={onStartEdit}
-            className="self-end text-[9px] text-primary/60 transition-colors hover:text-primary"
-          >
-            编辑
-          </button>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-// ─── EditableUserMessage ────────────────────────────────────────
-
-function EditableUserMessage({
-  message,
-  entryId,
-  sessionId,
-  onCancel,
-}: {
-  message: AppUserMessage;
-  entryId: string;
-  sessionId: string;
-  onCancel: () => void;
-}) {
-  const { invoke } = useElectronIPC();
-  const [isSaving, setIsSaving] = useState(false);
-
-  const editor = useEditor({
-    content: message.jsonContent,
-    editable: true,
-    extensions: [StarterKit, Mention, skillNode],
-    editorProps: {
-      attributes: { className: "ProseMirror text-[12px] leading-[1.55] outline-none" },
-    },
-  });
-
-  const handleSave = useCallback(async () => {
-    if (!editor) return;
-
-    setIsSaving(true);
-    try {
-      const updatedContent = editor.getJSON();
-      const updatedText = editor.getText({ blockSeparator: "\n" }).trim();
-
-      if (!updatedText) {
-        setIsSaving(false);
-        return;
-      }
-
-      const store = agentStore.getState();
-      const entryState = store.getEntryState(sessionId);
-      const updatedEntries = entryState.entries.map((entry) => {
-        if (entry.id === entryId && entry.type === "message" && entry.data.role === "user") {
-          return {
-            ...entry,
-            data: {
-              ...entry.data,
-              content: updatedText,
-              jsonContent: updatedContent,
-            },
-          };
-        }
-        return entry;
-      });
-      store.setSessionEntries(sessionId, updatedEntries);
-
-      // Sync updated user messages to the agent runtime
-      const messages = updatedEntries
-        .filter((e): e is Extract<SessionEntry, { type: "message" }> => e.type === "message")
-        .map((e) => e.data);
-      await invoke("setHistoryMessages", sessionId, messages);
-
-      onCancel();
-    } catch (error) {
-      console.error("Failed to save edited message", error);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [editor, entryId, invoke, onCancel, sessionId]);
-
-  // Handle Enter to save, Escape to cancel
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCancel();
-      } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        void handleSave();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave, onCancel]);
-
-  return (
-    <article className="mb-3 flex justify-end pl-9">
-      <div className="flex max-w-full flex-col gap-2 rounded-[13px_13px_4px_13px] border border-primary/25 bg-primary/15 px-3 py-2 text-[#e4e7ff]">
-        <EditorContent editor={editor} />
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSaving}
-            className="text-[10px] text-primary/60 transition-colors hover:text-primary disabled:opacity-50"
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="text-[10px] font-medium text-primary transition-colors hover:text-primary-hover disabled:opacity-50"
-          >
-            {isSaving ? "保存中..." : "保存"}
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 // ─── StickyUserMessage ──────────────────────────────────────────
-
-const STICKY_TRIGGER_OFFSET = 8;
 
 interface StickyUserMessageProps {
   message: AppUserMessage;
@@ -200,32 +57,18 @@ interface StickyUserMessageProps {
 }
 
 export function StickyUserMessage({ message, onJump }: StickyUserMessageProps) {
-  const editor = useEditor({
-    content: message.jsonContent,
-    editable: false,
-    extensions: [StarterKit, Mention, skillNode],
-    editorProps: {
-      attributes: {
-        className:
-          "ProseMirror !overflow-hidden !text-ellipsis !whitespace-nowrap text-[14px] leading-6 text-foreground [&_p]:!overflow-hidden [&_p]:!text-ellipsis [&_p]:!whitespace-nowrap",
-      },
-    },
-  });
+  const readOnlyEditor = useUserMessageEditor(message.jsonContent);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 px-2">
       <div className="mx-auto w-full max-w-4xl">
         <div className="pointer-events-auto grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground shadow-[var(--hard-shadow)]">
           <div className="pm-readonly min-w-0 overflow-hidden text-[14px] leading-6 text-foreground [&_.ProseMirror]:overflow-hidden [&_.ProseMirror]:text-ellipsis [&_.ProseMirror]:!whitespace-nowrap [&_.ProseMirror_p]:overflow-hidden [&_.ProseMirror_p]:text-ellipsis [&_.ProseMirror_p]:!whitespace-nowrap">
-            <EditorContent editor={editor} className="prompt-editor max-w-none min-w-0" />
+            <EditorContent editor={readOnlyEditor} className="prompt-editor max-w-none min-w-0" />
           </div>
-          <button
-            type="button"
-            onClick={onJump}
-            className="rounded-md border-2 border-border px-2.5 py-1 text-xs text-foreground shadow-[var(--hard-shadow-sm)] transition-all hover:translate-x-px hover:translate-y-px hover:bg-accent hover:shadow-none"
-          >
-            跳转
-          </button>
+          <Button size="sm" variant="ghost" onClick={onJump}>
+            Click to jump
+          </Button>
         </div>
       </div>
     </div>
@@ -234,8 +77,10 @@ export function StickyUserMessage({ message, onJump }: StickyUserMessageProps) {
 
 // ─── useStickyUserMessage ───────────────────────────────────────
 
+const STICKY_TRIGGER_OFFSET = 8;
+
 interface UseStickyUserMessageOptions {
-  messageEntries: Array<{ id: string; data: { role: string } }>;
+  messageEntries: MessageEntry[];
   scrollRef: RefObject<HTMLDivElement | null>;
   sessionId: string;
   virtualizer: Virtualizer<HTMLDivElement, HTMLDivElement>;
@@ -247,50 +92,217 @@ export function useStickyUserMessage({
   sessionId,
   virtualizer,
 }: UseStickyUserMessageOptions) {
-  const [activeStickyMessage, setActiveStickyMessage] = useState<AppUserMessage | null>(null);
+  const [activeStickyIndex, setActiveStickyIndex] = useState<number | null>(null);
 
-  const userMessages = useMemo(() => {
-    return messageEntries.filter(
-      (entry): entry is { id: string; data: AppUserMessage } => entry.data.role === "user",
+  const userMessageIndexes = useMemo(
+    () =>
+      messageEntries.reduce<number[]>((indexes, entry, index) => {
+        if (entry.data.role === "user") {
+          indexes.push(index);
+        }
+        return indexes;
+      }, []),
+    [messageEntries],
+  );
+
+  const updateStickyUserMessage = useCallback(() => {
+    const scrollOffset = virtualizer.scrollOffset ?? scrollRef.current?.scrollTop ?? 0;
+    const viewportTop = scrollOffset + STICKY_TRIGGER_OFFSET;
+
+    let nextStickyIndex: number | null = null;
+    for (const index of userMessageIndexes) {
+      const measurement = virtualizer.measurementsCache[index];
+      if (!measurement || measurement.end > viewportTop) {
+        break;
+      }
+      nextStickyIndex = index;
+    }
+
+    setActiveStickyIndex((currentIndex) =>
+      currentIndex === nextStickyIndex ? currentIndex : nextStickyIndex,
     );
-  }, [messageEntries]);
+  }, [scrollRef, userMessageIndexes, virtualizer]);
 
   const handleStickyScroll = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const scrollTop = container.scrollTop;
-    const lastUser = userMessages[userMessages.length - 1];
-    if (!lastUser) return;
-
-    const lastIndex = messageEntries.findIndex((e) => e.id === lastUser.id);
-    if (lastIndex < 0) return;
-
-    const offsetResult = virtualizer.getOffsetForIndex(lastIndex);
-    if (offsetResult == null) return;
-    const offset: number | null = Array.isArray(offsetResult)
-      ? offsetResult[0]
-      : (offsetResult as unknown as number | null);
-    if (offset === null) return;
-
-    const stickyTriggerPoint = offset + STICKY_TRIGGER_OFFSET;
-    if (scrollTop >= stickyTriggerPoint) {
-      setActiveStickyMessage(lastUser.data as AppUserMessage);
-    } else {
-      setActiveStickyMessage(null);
-    }
-  }, [messageEntries, scrollRef, userMessages, virtualizer]);
+    updateStickyUserMessage();
+  }, [updateStickyUserMessage]);
 
   const handleStickyJump = useCallback(() => {
-    const lastUser = userMessages[userMessages.length - 1];
-    if (!lastUser) return;
+    if (activeStickyIndex === null) return;
+    virtualizer.scrollToIndex(activeStickyIndex, { align: "start" });
+  }, [activeStickyIndex, virtualizer]);
 
-    const lastIndex = messageEntries.findIndex((e) => e.id === lastUser.id);
-    if (lastIndex < 0) return;
+  useEffect(() => {
+    setActiveStickyIndex(null);
+  }, [sessionId]);
 
-    virtualizer.scrollToIndex(lastIndex, { align: "end" });
-    setActiveStickyMessage(null);
-  }, [messageEntries, userMessages, virtualizer]);
+  useEffect(() => {
+    updateStickyUserMessage();
+  }, [messageEntries, updateStickyUserMessage]);
+
+  const activeStickyEntry =
+    activeStickyIndex === null ? null : (messageEntries[activeStickyIndex] ?? null);
+  const activeStickyMessage =
+    activeStickyEntry && activeStickyEntry.data.role === "user"
+      ? (activeStickyEntry.data as AppUserMessage)
+      : null;
 
   return { activeStickyMessage, handleStickyJump, handleStickyScroll };
+}
+
+// ─── ReadonlyUserMessage ────────────────────────────────────────
+
+interface ReadonlyUserMessageProps {
+  message: AppUserMessage;
+  isRunning: boolean;
+  onStartEdit: () => void;
+}
+
+function ReadonlyUserMessage({ message, isRunning, onStartEdit }: ReadonlyUserMessageProps) {
+  const readOnlyEditor = useUserMessageEditor(message.jsonContent);
+  const plainText = typeof message.content === "string" ? message.content : "unsupported content";
+
+  return (
+    <div className="grid max-w-3xl grid-cols-[34px_minmax(0,1fr)] items-start gap-3">
+      <span className="flex size-8.5 items-center justify-center rounded-sm border-2 border-border bg-signal-yellow font-mono text-[10px] font-bold text-accent-foreground shadow-[var(--hard-shadow-sm)]">
+        YOU
+      </span>
+      <div className="flex min-w-0 flex-col items-start gap-1">
+        <div className="rounded-md border-2 border-border bg-card px-4 py-2.5 text-[14px] leading-6 text-card-foreground shadow-[var(--hard-shadow-sm)]">
+          <div className="pm-readonly min-w-0 text-[14px] leading-6 text-card-foreground">
+            <EditorContent editor={readOnlyEditor} className="prompt-editor max-w-none min-w-0" />
+          </div>
+        </div>
+        <MessageToolbar align="start">
+          <CopyMessageButton text={plainText} />
+          <EditMessageButton isRunning={isRunning} onEdit={onStartEdit} />
+        </MessageToolbar>
+      </div>
+    </div>
+  );
+}
+
+// ─── EditableUserMessage ────────────────────────────────────────
+
+interface EditableUserMessageProps {
+  entries: SessionEntry[];
+  entryId: string;
+  message: AppUserMessage;
+  sessionId: string;
+  onCancel: () => void;
+}
+
+function EditableUserMessage({
+  entries,
+  entryId,
+  message,
+  sessionId,
+  onCancel,
+}: EditableUserMessageProps) {
+  const { invoke } = useElectronIPC();
+  const { editor, hasContent } = useChatEditor({
+    content: message.jsonContent,
+    disabled: false,
+  });
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!editor) return;
+
+    const jsonContent = editor.getJSON();
+    const text = editor.getText({ blockSeparator: "\n" }).trim();
+    if (!text) return;
+
+    try {
+      const targetIndex = entries.findIndex((entry) => entry.id === entryId);
+      if (targetIndex < 0) {
+        toast.error("无法找到要编辑的消息");
+        return;
+      }
+
+      const rewindEntries = entries.slice(0, targetIndex);
+
+      agentStore.getState().setSessionEntries(sessionId, rewindEntries);
+
+      const runtimeMessages = rewindEntries
+        .filter((entry): entry is MessageEntry => entry.type === "message")
+        .map((entry) => entry.data);
+      await invoke("setHistoryMessages", sessionId, runtimeMessages);
+
+      onCancel();
+      agentStore.getState().setSessionStatus(sessionId, "running");
+
+      const appUserMessage: AppUserMessage = {
+        role: "user",
+        content: text,
+        timestamp: Date.now(),
+        kind: "prompt",
+        jsonContent,
+        metadata: {
+          model: message.metadata?.model,
+          skillIds: message.metadata?.skillIds,
+        },
+      };
+      await invoke("prompt", sessionId, appUserMessage);
+    } catch (error) {
+      console.error("Failed to resubmit edited message:", error);
+      toast.error("发送失败");
+      const store = agentStore.getState();
+      const session = store.getSession(sessionId);
+      if (session) {
+        store.setSessionStatus(sessionId, "idle");
+      }
+    }
+  }, [editor, entries, entryId, sessionId, invoke, onCancel, message.metadata]);
+
+  return (
+    <div className="ml-auto flex max-w-2xl flex-col items-end gap-1">
+      <div className="w-full rounded-md border-2 border-border bg-card px-4 py-2.5 shadow-[var(--hard-shadow-sm)]">
+        <EditorContent editor={editor} className="prompt-editor max-w-none" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          取消
+        </Button>
+        <Button size="sm" disabled={!hasContent} onClick={handleSaveEdit}>
+          保存并重发
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Shared Readonly Editor ─────────────────────────────────────
+
+function useUserMessageEditor(document: AppUserMessage["jsonContent"]) {
+  return useEditor(
+    {
+      extensions: [
+        StarterKit.configure({
+          heading: false,
+          blockquote: false,
+          codeBlock: false,
+          horizontalRule: false,
+          orderedList: false,
+          bulletList: false,
+        }),
+        Mention.extend({
+          name: "slashCommandMention",
+        }).configure({
+          HTMLAttributes: {
+            class:
+              "mention inline-flex items-center gap-1 rounded-sm border border-border bg-signal-yellow px-1.5 py-0.5 text-sm font-bold text-accent-foreground",
+          },
+        }),
+        skillNode,
+      ],
+      content: document,
+      editable: false,
+      editorProps: {
+        attributes: {
+          class: "ProseMirror min-h-0 text-[14px] leading-6 outline-none",
+        },
+      },
+    },
+    [document],
+  );
 }
