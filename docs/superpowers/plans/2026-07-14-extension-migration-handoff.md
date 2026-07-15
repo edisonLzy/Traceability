@@ -180,45 +180,54 @@ Extension slash commands (e.g. `/subagent`) need the TipTap slash-command sugges
 - [ ] **Step 4:** `pnpm --filter @traceability/app typecheck` (web). Expected: clean (the new files compile unused; the old `prompt-input/skill-node.ts` still satisfies its current importers `use-chat-editor.ts` + `prompt-input/index.tsx`).
 - [ ] **Step 5:** Commit: `feat(app): port richtext slash-commands + skill-node from divisor`.
 
-### TODO D — Integrate extension slash-commands into prompt-input (NEW)
+### TODO D - Integrate extension slash-commands into prompt-input (NEW)
 
 > **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-prompt-input-slash-commands-integration.md`.
 
-Wire `usePluginSlashCommands()` + `usePluginPromptInputExtensions()` into the chat editor so `/subagent` appears and extension TipTap extensions load. The current `_agent/use-chat-editor.ts` is a lean `StarterKit + Placeholder + skillNode` editor; bring it toward divisor's `use-chat-editor.ts` shape (which composes slash-commands + plugin extensions).
+Port divisor's `prompt-input/` (modal-selector + index) into traceability's **Base UI** stack, strip the token/voice/permission displays, and wire extension slash-commands via `use-chat-editor.ts`. Typing `/` surfaces skill + `subagent` commands; submit captures their ids.
 
 **Files:**
-- Modify: `app/src/renderer/pages/_layout/_agent/use-chat-editor.ts` — replace the lean editor with one that composes `useSlashCommandsExtension({commands: [...skillItems, ...pluginItems], ...})` + `usePluginPromptInputExtensions()` + `usePluginSlashCommands()`, mirroring divisor's `pages/workspace/chat/use-chat-editor.ts`.
-- Modify: `app/src/renderer/pages/_layout/_agent/prompt-input/index.tsx` — submit builder must call `getSelectedCommandIds(editor)` (not the old `getSkillNodeIds`) to capture slash-command selections including plugin commands.
-- Modify: `app/src/renderer/pages/_layout/_agent/index.tsx` - remove `skills={skills}` from the `<PromptInput>` call site; `skills` is no longer used (destructure only `error: skillsError` from `useAgentSkills()`, or drop the call if the `skillsError` display is also removed).
-- Delete: `app/src/renderer/pages/_layout/_agent/prompt-input/skill-node.ts` (lean version; replaced by `@renderer/components/richtext/inline/skill-node` from TODO C).
-
-**Reference:** divisor `pages/workspace/chat/use-chat-editor.ts` (read it; its `useSkillsCommandItems` calls `useAgentSkills` — traceability already has `_agent/hooks/use-agent-skills.ts`, reuse it).
+- Modify: `app/src/renderer/pages/_layout/_agent/prompt-input/modal-selector.tsx` - port divisor's searchable `ModalSelector` to Base UI: self-loads models (`invoke("getAvailableModels")`) + auto-selects default (`value===null && models.length>0 -> onChange(models[0])`) + `Input` search filter + `Cpu` icon. Drop `Tooltip` (absent in traceability). Props `{value, onChange}` + export `useModalSelector` (NO `models` prop - high-cohesion).
+- Modify: `app/src/renderer/pages/_layout/_agent/prompt-input/index.tsx` - port divisor's skeleton (editor + submit + keydown with `slashCommandSuggestionPluginKey` guard + `ModalSelector`); STRIP token (`ContextUsageControl`/`HoverCard`/`Progress`/`EntryTokenUsage`/`formatTokenCount`/`getCurrentContextTokens`), voice (`useVoiceInput`/`VoiceInputButton`/`toast`/`INSERT_PROMPT_TEXT_EVENT`), permission (`PermissionSelector`), `@tanstack/react-hotkeys` (`matchesKeyboardEvent` -> native). `PromptInputProps`: `initialModel` + `onModelChange` + `onCreate`/`onDestroy` (divisor style; NO `models`/`skills`).
+- Modify: `app/src/renderer/pages/_layout/_agent/use-chat-editor.ts` - compose `useSlashCommandsExtension({commands:[...skillItems,...pluginItems]})` + `usePluginPromptInputExtensions()` + `usePluginSlashCommands()` + `skillNode` + `promptGhostSuggestionExtension` (divisor shape; traceability import paths + placeholder/class).
+- Modify: `app/src/renderer/pages/_layout/_agent/index.tsx` - `<PromptInput>` call site: drop `models`+`skills` props; pass `initialModel={activeSession?.model ?? null}` + `onModelChange={changeModel}` + `onCreate`/`onDestroy` (mount `sharedPromptEditor`); DELETE the models-loading `useEffect` (line 47/68-85 - now inside `ModalSelector`); `useAgentSkills` only `skillsError`. external-prompt model fallback (line 165) uses `activeSession?.model` (NO `models[0]`).
+- Delete: `app/src/renderer/pages/_layout/_agent/prompt-input/skill-node.ts` (lean; replaced by `@renderer/components/richtext/inline/skill-node` from TODO C).
 
 **Reconciliation decisions (verified against divisor + traceability baseline):**
-- **Drop the Skills dropdown** (traceability lean `prompt-input/index.tsx` has one; divisor does not). Skills are selected ONLY via `/` slash-command (`useSkillsCommandItems` feeds them as slash commands). Delete the `<details>` Skills block, the `selectedSkillIds` state, the `skills` prop, and the `DiscoveredSkill`/`Wrench` imports; remove `skills={skills}` from the `_agent/index.tsx` call site.
-- **Mount `sharedPromptEditor` inside `prompt-input/index.tsx`** via `useChatEditor`'s `onCreate`/`onDestroy` (`sharedPromptEditor.editor = editor` / `= null`). Divisor mounts it in `active-session-content.tsx`, but traceability's active-session-content is not split until TODO F - mounting in prompt-input avoids touching the monolithic `_agent/index.tsx` for this and does not depend on TODO F.
-- **Path/signature adaptations (NOT verbatim from divisor):** `useAgentSkills` imports from `../hooks/use-agent-skills` (divisor uses `@renderer/hooks/use-agent-skills`); `insertSkillNode` uses divisor's object signature `insertSkillNode({editor, skill, range?})` - but `prompt-input/index.tsx` no longer calls `insertSkillNode` directly (the slash-command `onSelectCommand` in `use-chat-editor.ts` does); `useChatEditor` gains a `getFloatingReference` option (passed `() => containerRef.current`); `UseChatEditorOptions` adds `content?`/`getFloatingReference?`.
-- **keydown must check `slashCommandSuggestionPluginKey.getState(editor.state)?.active`** before submitting on Enter - if the suggestion panel is open, Enter selects a command, it does NOT submit. Do NOT introduce `@tanstack/react-hotkeys` (traceability lacks it; keep the lean native `event.key` check + add the suggestion-active guard).
-- **Keep traceability's placeholder copy + editorProps class** (`"Ask about this application..."` + the existing `ProseMirror` class) - per "keep traceability's editor class/placeholder copy".
-- **`PromptSubmission` shape unchanged** (`{content, jsonContent, model, skillIds}`); `skillIds` now comes from `getSelectedCommandIds(editor)` at submit time.
+- **Primitive stack mismatch (NOT verbatim copy):** divisor `modal-selector.tsx` is Radix/shadcn; traceability `select.tsx` is `@base-ui/react/select`. Adapt: `SelectValue` accepts ReactNode children (OK); `SelectGroup` not exported by traceability's `select.tsx` - either add the export or drop `SelectGroup` (divisor uses one group, droppable); `SelectContent` has no `alignItemWithTrigger` - drop it; `SelectTrigger` `data-popup-open` - verify/adapt CSS. Drop `Tooltip` entirely (absent; non-essential - it only showed `providerName`).
+- **modal-selector high-cohesion (divisor style):** models loading + default selection move INTO `ModalSelector` (out of `AgentPanel`). `AgentPanel` no longer holds `models` state. `useAvailableModels` hook (TODO F) is NOT needed.
+- **sharedPromptEditor mounting -> parent (AgentPanel):** divisor's `PromptInput` exposes `onCreate`/`onDestroy`; the PARENT mounts `sharedPromptEditor.editor` via them. This REVISES the earlier "mount inside prompt-input" decision - now parent-mounted (divisor-consistent). (TODO F may later move this into a hook.)
+- **Drop the Skills dropdown** (lean `prompt-input/index.tsx` has one; divisor does not). Skills selected ONLY via `/` slash-command. Delete the `<details>` block + `selectedSkillIds` + `skills` prop + `DiscoveredSkill`/`Wrench` imports.
+- **keydown `slashCommandSuggestionPluginKey` guard:** before submitting on Enter, check `getState(editor.state)?.active` - if suggestion open, Enter selects a command, does NOT submit. Native `event.key` (no react-hotkeys).
+- **Path/signature adaptations:** `useAgentSkills` from `../hooks/use-agent-skills`; `insertSkillNode({editor, skill, range?})` (divisor object signature, called from `use-chat-editor.ts`'s `onSelectCommand`, NOT from `prompt-input/index.tsx`); `useChatEditor` gains `getFloatingReference` (passed `() -> containerRef.current`); `UseChatEditorOptions` adds `content?`/`getFloatingReference?`.
+- **Keep traceability placeholder + editorProps class** (`"Ask about this application..."` + existing `ProseMirror` class).
+- **`PromptSubmission` shape unchanged** (`{content, jsonContent, model, skillIds}`); `skillIds` from `getSelectedCommandIds(editor)` at submit.
 
 **Interfaces:**
-- Consumes: `usePluginSlashCommands`, `usePluginPromptInputExtensions`, `useSharedPromptEditor` from `@extensions/core/renderer`; `useSlashCommandsExtension`, `getSelectedCommandIds` from TODO C.
-- Produces: a prompt editor where typing `/` surfaces skill commands + the `subagent` extension command; submit captures their ids.
+- Consumes: `usePluginSlashCommands`/`usePluginPromptInputExtensions`/`useSharedPromptEditor` from `@extensions/core/renderer`; `useSlashCommandsExtension`/`getSelectedCommandIds`/`slashCommandSuggestionPluginKey` from TODO C; Base UI `Select`/`Input` from `@renderer/components/ui/*`.
+- Produces: a prompt editor where `/` surfaces skill + `subagent` commands; submit captures their ids; a self-loading searchable model selector.
 
-- [ ] **Step 1:** Read divisor `packages/app/src/renderer/pages/workspace/chat/use-chat-editor.ts` and `prompt-input/index.tsx` for the exact composition.
-- [ ] **Step 2:** Rewrite `_agent/use-chat-editor.ts` to compose slash-commands + plugin extensions + skillNode (keep traceability's editor class/placeholder copy).
-- [ ] **Step 3:** Update `_agent/prompt-input/index.tsx` submit to use `getSelectedCommandIds(editor)` (replacing `getSkillNodeIds`).
-- [ ] **Step 4:** Now that both consumers no longer import it, delete `app/src/renderer/pages/_layout/_agent/prompt-input/skill-node.ts`.
-- [ ] **Step 5:** `pnpm --filter @traceability/app typecheck` (web). Expected: clean.
-- [ ] **Step 6:** `pnpm dev:app`; type `/` in the prompt — confirm the `subagent` command appears. Commit: `feat(app): integrate extension slash-commands into prompt editor`.
-
+- [ ] **Step 1:** Port `modal-selector.tsx` to Base UI (divisor searchable, drop Tooltip, adapt Select API). Export `ModalSelector` + `useModalSelector`.
+- [ ] **Step 2:** Rewrite `use-chat-editor.ts` to compose slash-commands + plugin extensions + skillNode (traceability paths/placeholder/class).
+- [ ] **Step 3:** Port `prompt-input/index.tsx` from divisor skeleton: editor + submit (`getSelectedCommandIds`) + keydown (suggestion guard, native) + `ModalSelector`; strip token/voice/permission/react-hotkeys. `PromptInputProps` = `initialModel`/`onModelChange`/`onCreate`/`onDestroy` + existing `onSubmit`/`onSteer`/`onFollowUp`/`onStop`/`isRunning`/`disabled`.
+- [ ] **Step 4:** Update `_agent/index.tsx` call site: `initialModel`/`onModelChange`/`onCreate`/`onDestroy`, drop `models`+`skills`, delete models-loading `useEffect`, external-prompt fallback -> `activeSession?.model`.
+- [ ] **Step 5:** Delete `prompt-input/skill-node.ts`.
+- [ ] **Step 6:** `pnpm --filter @traceability/app typecheck` (web). Expected: clean.
+- [ ] **Step 7:** `pnpm dev:app`; type `/` - confirm skill + `subagent` commands; confirm model selector self-loads + searchable. Commit: `feat(app): integrate extension slash-commands into prompt editor`.
 ### TODO E — Render assistant blocks in messages (NEW)
+
+> **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-assistant-blocks-rendering.md`.
+
+**Seam trace (Step 1, verified):** `subagents.list` uses **path (b)** - NOT path (a). The `subagents/run` tool returns `details: snapshot` with `snapshot.assistantBlock = {type:"subagents.list", props}` (already produced by `builtins/subagents/main/index.ts:176`); `tool_execution_*` events carry `details` -> store `toolStates` -> `assistant-tool-message` reads `toolState.details.assistantBlock` -> `useAssistantBlock(type)` renders. The original "modify `assistant-response-message.tsx` + `parseExtensionParts`" (path a) is WRONG for `subagents.list` - do NOT change `assistant-response-message.tsx`. Real scope: add `ToolExecutionState`/`toolStates` to the store, `tool_execution_*` handlers to `use-agent-messages.ts` (details carry-through, NO artifact upsert), a new slim `assistant-tool-message.tsx` (block bridge ONLY, NO tool card UI), and pass `toolStates` through `messages/index.tsx` + `assistant-message.tsx`.
 
 So `subagents.list` (the live subagent status block) renders in the assistant message stream.
 
 **Files:**
-- Modify: `app/src/renderer/pages/_layout/_agent/messages/assistant-response-message.tsx` — split rendered text with `parseExtensionParts(content)` from `@extensions/core/renderer`; for `kind === "block"` parts, look up the renderer via `useAssistantBlock(part.payload.type)` and render `<BlockRender props={part.payload.props} raw={part.payload.raw} />`; render `kind === "text"` parts with `Streamdown` as today.
+- Modify: `app/src/renderer/store/agent/entries-slice.ts` - add `ToolExecutionState` + `toolStates: Map<string, ToolExecutionState>` to `EntryState` + `setToolState` to `EntriesSlice` (slim: status `running`/`done`/`error` only, NO `awaiting_approval`/`requestId`/`approvalStatus` - read-only agent has no permission).
+- Modify: `app/src/renderer/pages/_layout/_agent/hooks/use-agent-messages.ts` - add `tool_execution_start`/`update`/`end` handlers that `setToolState` with `details` carry-through (NO `upsertArtifactsFromToolDetails`); use `agentStore.getState()`. Optionally add the `message_update` toolCall fallback (divisor line 182-196) for defense.
+- Create: `app/src/renderer/pages/_layout/_agent/messages/assistant-tool-message.tsx` - slim block bridge ONLY (from divisor `assistant-tool-message.tsx`): `getAssistantBlockDescriptor(toolState?.details)` -> `useAssistantBlock(type)` -> `<Block props raw />`; NO tool card UI (Collapsible/Input/output/Shimmer/ChevronRight/formatToolArgs).
+- Modify: `app/src/renderer/pages/_layout/_agent/messages/assistant-message.tsx` - accept `toolStates` + `sessionId`; split `message.content` toolCall blocks -> `<AssistantToolMessage toolState={toolStates.get(block.id)} />`.
+- Modify: `app/src/renderer/pages/_layout/_agent/messages/index.tsx` - pass `toolStates` (from `getEntryState(sessionId).toolStates`) + `sessionId` to `AssistantMessage`.
 
 **Verify-this-seam (do not guess):** Trace how divisor delivers the `subagents.list` block to the renderer. The `subagents/run` tool returns `content: [{type:"text", text: summarizeProgress(...)}]` (plain text, no `divisor-block` fence) and `details: snapshot` where `snapshot.assistantBlock = {type:"subagents.list", props}`. Determine whether divisor (a) injects a `divisor-block` fence into the assistant text from `details.assistantBlock`, or (b) renders the block from the tool-execution `details` via the tool-message component. Check `divisor packages/app/src/renderer/pages/workspace/chat/messages/assistant-message.tsx` + `assistant-tool-message.tsx` + `use-agent-messages.ts` (the `tool_execution_*` handlers). Implement whichever path divisor uses; if (b), this TODO also requires porting the tool-execution `details` carry-through (but NOT the tool card UI — only the assistant-block bridge).
 
@@ -227,19 +236,28 @@ So `subagents.list` (the live subagent status block) renders in the assistant me
 - [ ] **Step 3:** `pnpm dev:app`; trigger `subagents/run` (ask the agent to parallelize a task); confirm the `subagents.list` status block renders and updates live.
 - [ ] **Step 4:** Commit: `feat(app): render extension assistant blocks (subagents.list)`.
 
-### TODO F — Finish the `active-session-content` split (execute existing plan, reconciled)
+### TODO F - Refactor `_agent/index.tsx` to divisor's hook-extraction style
 
-**Execute:** `docs/superpowers/plans/2026-07-13-agent-renderer-migration.md` **Tasks 6–8** (prompt surface, message rendering, integration + remove legacy). The current `_agent/index.tsx` is the monolithic `AgentPanel` to be split.
+> **Spec (authoritative):** `docs/superpowers/specs/2026-07-14-agent-panel-refactor.md`.
 
-**Reconciliation edits to that plan (because extensions are now present):**
-- Task 6 said "Delete extension prompt-input hooks, extension commands". **Changed:** instead integrate them per TODO D. Keep `usePluginSlashCommands`/`usePluginPromptInputExtensions`.
-- Task 7 said "Remove … extension block renderers, … extension registry dependencies". **Changed:** instead add assistant-block rendering per TODO E. Keep `useAssistantBlock`/`parseExtensionParts`.
-- Task 7 said "Remove `AssistantToolMessage`". **Keep this** (read-only agent has no tool cards) — UNLESS TODO E's seam trace shows the `subagents.list` block rides on tool `details`, in which case a minimal tool-details-to-block bridge is needed (no tool *card* UI).
+**Not** a mechanical split into `active-session-content.tsx` - do NOT create that file. Instead, align `_agent/index.tsx` (398-line monolithic `AgentPanel`) to divisor `active-session-content.tsx`'s code style: **extract hooks, keep features highly cohesive**. The component should only consume hooks + render; chat logic moves into hooks.
 
-- [ ] **Step 1:** Run renderer-migration Task 6 (prompt surface) with the TODO D integration.
-- [ ] **Step 2:** Run Task 7 (message rendering) with the TODO E integration.
-- [ ] **Step 3:** Run Task 8 (split `active-session-content.tsx` out of `index.tsx`; keep the traceability header/context-chips/session-switcher shell in `index.tsx`; remove the broken legacy renderer pieces).
-- [ ] **Step 4:** Commit per the plan's task commits.
+**Reference:** divisor `pages/workspace/chat/active-session-content.tsx` - its `useActiveSessionChat()` hook (line 191-344) owns all chat logic (submit/steer/followUp/stop + derived entries/isRunning/streamingEntryId/toolStates/tokenUsage); the component only consumes the hook + renders. Traceability adapts this to its single-panel layout (header + context-chips + chat + composer all in `AgentPanel`) and its extra concerns (external events, models loading, context chips, session management via `useAgentSession`).
+
+**Reconciliation (extensions now present; supersedes renderer-migration Tasks 6-8's "Delete/Remove extension" lines):**
+- Task 6/7 said "Delete extension prompt-input hooks/commands; Remove extension block renderers, extension registry dependencies". **Changed:** KEEP `usePluginSlashCommands`/`usePluginPromptInputExtensions` (TODO D) and `useAssistantBlock`/`assistant-tool-message` bridge (TODO E, path b). Do NOT remove them.
+- Task 7 said "Remove `AssistantToolMessage`". **Changed:** KEEP the slim `assistant-tool-message.tsx` (TODO E's path-b bridge) - read-only agent has no tool *card* UI, but `subagents.list` rides tool-execution `details`, so the block bridge stays.
+- renderer-migration Tasks 6-8 were written as "create files from scratch"; traceability's renderer already exists, so this TODO is a **refactor** (extract hooks), not a creation pass. Task 8's legacy cleanup is already done (`_layout/index.tsx` uses `_agent`; legacy `AgentPanel.tsx` deleted; `rg '@shared/ipc|traceability.(agent|sessions|window)'` clean; `lib/agent-events.ts` already on new contract).
+
+**Hook extraction (2 hooks, fine-grained):**
+- `hooks/use-active-session-chat.ts` - chat logic: `send`/`submitPrompt`/`steerPrompt`/`followUpPrompt`/`stopPrompt` + `changeModel`/`clearContext` + derived `isRunning`/`streamingEntryId`/`entries`/`pendingQuestion`/`context`. Mirrors divisor's `useActiveSessionChat`. (NO `useAvailableModels` - models loading moved into `ModalSelector` in TODO D.)
+- `hooks/use-agent-external-events.ts` - `traceability:agent-prompt`/`agent-context`/`agent-new-session`/`agent-session-updated`/`agent-select-session` window-event listeners (line 161-217 of current `index.tsx`). external-prompt model fallback uses `activeSession?.model` (no `models[0]` - models owned by `ModalSelector`).
+
+- [ ] **Step 1:** Create `hooks/use-agent-external-events.ts` (external window-event listeners; model fallback via `activeSession?.model`).
+- [ ] **Step 2:** Create `hooks/use-active-session-chat.ts` (chat send/submit/steer/followUp/stop + context + derived state).
+- [ ] **Step 3:** Refactor `_agent/index.tsx` `AgentPanel` to consume the 2 hooks + render (header/context-chips/chat/composer); keep session management (`useAgentSession`) in the component or a hook; `sharedPromptEditor` mounted via `PromptInput`'s `onCreate`/`onDestroy` (from TODO D).
+- [ ] **Step 4:** `pnpm --filter @traceability/app typecheck` (web). Expected: clean.
+- [ ] **Step 5:** `pnpm dev:app` smoke (full chat flow still works). Commit per the refactor.
 
 ### TODO G — Verification
 
