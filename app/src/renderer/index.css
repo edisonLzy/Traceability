@@ -150,6 +150,14 @@
   background: #090a0b;
 }
 
+/* Streamdown's inline-code renderer uses Tailwind's `bg-muted` utility. In
+   this app `muted` is reserved for readable text, so restore the intended
+   dark surface without affecting ordinary secondary copy. */
+[data-streamdown="inline-code"].bg-muted {
+  color: var(--color-foreground);
+  background-color: var(--muted);
+}
+
 /* Frameless titlebar drag regions. Keep controls interactive while the rest of
    the titlebar remains draggable. */
 .app-drag-region {
