@@ -1,0 +1,2085 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traceability · Workbench Style Lab</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --page: #0b0c10;
+        --page-raised: #11131a;
+        --canvas: #1f1633;
+        --surface: rgba(38, 27, 57, 0.92);
+        --surface-raised: #2b2042;
+        --surface-soft: rgba(255, 255, 255, 0.055);
+        --line: rgba(255, 255, 255, 0.12);
+        --line-strong: rgba(255, 255, 255, 0.2);
+        --ink: #ffffff;
+        --muted: #c7c0d1;
+        --subtle: #968ca5;
+        --accent: #c2ef4e;
+        --accent-ink: #1a1423;
+        --accent-soft: rgba(194, 239, 78, 0.15);
+        --danger: #ff8bb0;
+        --warning: #ffc95d;
+        --success: #68d391;
+        --info: #8bbcff;
+        --shadow: 0 22px 64px rgba(0, 0, 0, 0.35);
+        --radius: 14px;
+        --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        --font-mono: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 1140px;
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 8% 0%, var(--accent-soft), transparent 25rem),
+          var(--page);
+        font-family: var(--font-ui);
+        transition: background 220ms ease, color 220ms ease;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 68px;
+        padding: 0 34px;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--page) 82%, transparent);
+        backdrop-filter: blur(18px);
+      }
+
+      .brand,
+      .top-actions,
+      .eyebrow,
+      .workspace-head,
+      .toolbar,
+      .issue-title,
+      .meta-row,
+      .sidebar-top,
+      .sidebar-nav-item,
+      .sidebar-bottom,
+      .agent-heading,
+      .agent-action,
+      .event-row,
+      .source-row,
+      .selection-note {
+        display: flex;
+        align-items: center;
+      }
+
+      .brand {
+        gap: 11px;
+        font-size: 14px;
+        font-weight: 680;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 27px;
+        height: 27px;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--line));
+        border-radius: 8px;
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .brand-mark svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .eyebrow {
+        gap: 7px;
+        color: var(--subtle);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .top-actions {
+        gap: 16px;
+      }
+
+      .shortcut,
+      .header-status,
+      .soft-pill,
+      .source-pill,
+      .kbd {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: var(--muted);
+        background: var(--surface-soft);
+      }
+
+      .shortcut {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 32px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .shortcut svg,
+      .header-status svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .kbd {
+        padding: 1px 4px;
+        color: var(--subtle);
+        font: 11px var(--font-mono);
+      }
+
+      .header-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 32px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .header-status svg {
+        color: var(--success);
+      }
+
+      .lab {
+        display: grid;
+        grid-template-columns: 316px minmax(0, 1fr);
+        min-height: calc(100vh - 68px);
+      }
+
+      .selector {
+        padding: 30px 24px 34px;
+        border-right: 1px solid var(--line);
+        background: color-mix(in srgb, var(--page-raised) 76%, transparent);
+      }
+
+      .selector h1 {
+        max-width: 230px;
+        margin: 11px 0 8px;
+        font-size: 24px;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+      }
+
+      .selector > p {
+        margin: 0 0 23px;
+        color: var(--subtle);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .style-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .style-choice {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        color: var(--ink);
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+      }
+
+      .style-choice:hover {
+        background: var(--surface-soft);
+      }
+
+      .style-choice[aria-pressed="true"] {
+        border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+        background: var(--accent-soft);
+      }
+
+      .choice-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .choice-name {
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .source-pill {
+        padding: 3px 6px;
+        color: var(--subtle);
+        font-size: 10px;
+        font-weight: 650;
+      }
+
+      .choice-description {
+        margin: 5px 0 0;
+        color: var(--subtle);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .swatches {
+        display: flex;
+        gap: 4px;
+        margin-top: 9px;
+      }
+
+      .swatch {
+        width: 15px;
+        height: 4px;
+        border-radius: 99px;
+        background: var(--swatch);
+      }
+
+      .selector-footer {
+        margin-top: 24px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        color: var(--subtle);
+        background: var(--surface-soft);
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .selector-footer b {
+        color: var(--muted);
+        font-weight: 650;
+      }
+
+      .preview-shell {
+        min-width: 0;
+        padding: 28px 34px 42px;
+      }
+
+      .preview-intro {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        max-width: 1280px;
+        margin: 0 auto 18px;
+      }
+
+      .preview-intro h2 {
+        margin: 8px 0 0;
+        font-size: 20px;
+        letter-spacing: -0.035em;
+      }
+
+      .selection-note {
+        gap: 8px;
+        color: var(--subtle);
+        font-size: 12px;
+      }
+
+      .selection-note i {
+        color: var(--accent);
+      }
+
+      .stage {
+        position: relative;
+        overflow: hidden;
+        max-width: 1280px;
+        min-height: 660px;
+        margin: 0 auto;
+        border: 1px solid var(--line-strong);
+        border-radius: 20px;
+        background: var(--canvas);
+        box-shadow: var(--shadow);
+      }
+
+      /* Electron chrome: the real app has a 30px frameless titlebar, macOS
+         traffic-light inset, and a draggable region that excludes controls. */
+      .desktop-titlebar {
+        position: relative;
+        z-index: 6;
+        display: flex;
+        height: 30px;
+        align-items: center;
+        padding: 0 12px 0 92px;
+        border-bottom: 1px solid var(--line);
+        color: var(--subtle);
+        background: color-mix(in srgb, var(--canvas) 78%, transparent);
+        user-select: none;
+        -webkit-app-region: drag;
+        app-region: drag;
+      }
+
+      .traffic-lights {
+        position: absolute;
+        top: 0;
+        left: 14px;
+        display: flex;
+        height: 30px;
+        align-items: center;
+        gap: 8px;
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+      }
+
+      .traffic-lights button {
+        display: grid;
+        width: 12px;
+        height: 12px;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        color: rgba(30, 20, 20, 0.62);
+        cursor: pointer;
+      }
+
+      .traffic-lights button svg { width: 7px; height: 7px; opacity: 0; }
+      .traffic-lights:hover button svg { opacity: 1; }
+      .traffic-lights .close { background: #ff5f57; }
+      .traffic-lights .minimize { background: #febc2e; }
+      .traffic-lights .maximize { background: #28c840; }
+
+      .drag-caption {
+        overflow: hidden;
+        font-size: 10px;
+        font-weight: 620;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .desktop-titlebar-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-left: auto;
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+      }
+
+      .desktop-titlebar-actions span { color: var(--subtle); font: 9px var(--font-mono); }
+      .desktop-titlebar-actions button {
+        display: grid;
+        width: 20px;
+        height: 20px;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 5px;
+        color: var(--subtle);
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .desktop-titlebar-actions button:hover { color: var(--ink); background: var(--surface-soft); }
+      .desktop-titlebar-actions svg { width: 12px; height: 12px; }
+
+      .win-window-controls {
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: none;
+        height: 30px;
+        align-items: stretch;
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+      }
+
+      .win-window-controls button {
+        display: grid;
+        width: 42px;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-left: 1px solid var(--line);
+        color: var(--muted);
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .win-window-controls button:hover { background: var(--surface-soft); }
+      .win-window-controls button:last-child:hover { color: #ffffff; background: var(--danger); }
+      .win-window-controls svg { width: 12px; height: 12px; }
+
+      .stage[data-platform="win32"] .desktop-titlebar { padding-right: 138px; padding-left: 12px; }
+      .stage[data-platform="win32"] .traffic-lights { display: none; }
+      .stage[data-platform="win32"] .win-window-controls { display: flex; }
+
+      .window-mode-control {
+        display: inline-flex;
+        overflow: hidden;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-soft);
+      }
+
+      .window-mode-control button {
+        height: 27px;
+        padding: 0 9px;
+        border: 0;
+        border-right: 1px solid var(--line);
+        color: var(--subtle);
+        background: transparent;
+        font-size: 10px;
+        cursor: pointer;
+      }
+
+      .window-mode-control button:last-child { border-right: 0; }
+      .window-mode-control button[aria-pressed="true"] { color: var(--ink); background: var(--accent-soft); }
+
+      .platform-control {
+        display: inline-flex;
+        overflow: hidden;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-soft);
+      }
+
+      .platform-control button {
+        height: 27px;
+        padding: 0 8px;
+        border: 0;
+        border-right: 1px solid var(--line);
+        color: var(--subtle);
+        background: transparent;
+        font-size: 10px;
+        cursor: pointer;
+      }
+
+      .platform-control button:last-child { border-right: 0; }
+      .platform-control button[aria-pressed="true"] { color: var(--ink); background: var(--accent-soft); }
+
+      .stage[data-window-mode="maximized"] { border-radius: 8px; }
+      .stage[data-window-mode="fullscreen"] { border-color: transparent; border-radius: 0; }
+      .stage[data-window-mode="fullscreen"] .desktop-titlebar {
+        height: 8px;
+        padding: 0;
+        border-bottom-color: transparent;
+        background: transparent;
+      }
+
+      .stage[data-window-mode="fullscreen"] .traffic-lights,
+      .stage[data-window-mode="fullscreen"] .win-window-controls,
+      .stage[data-window-mode="fullscreen"] .drag-caption,
+      .stage[data-window-mode="fullscreen"] .desktop-titlebar-actions {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .edge-sensor {
+        position: absolute;
+        z-index: 5;
+        top: 30px;
+        bottom: 0;
+        left: 0;
+        width: 9px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        color: transparent;
+        background: color-mix(in srgb, var(--accent) 55%, transparent);
+        cursor: ew-resize;
+        opacity: 0.5;
+        transition: opacity 160ms ease, width 160ms ease;
+      }
+
+      .edge-sensor:hover,
+      .stage.nav-open .edge-sensor {
+        width: 12px;
+        opacity: 1;
+      }
+
+      .floating-sidebar {
+        position: absolute;
+        z-index: 4;
+        top: 44px;
+        bottom: 14px;
+        left: 16px;
+        display: flex;
+        width: 234px;
+        flex-direction: column;
+        padding: 12px;
+        border: 1px solid color-mix(in srgb, var(--line-strong) 78%, var(--accent));
+        border-radius: var(--radius);
+        background: color-mix(in srgb, var(--surface) 88%, transparent);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+        backdrop-filter: blur(20px) saturate(1.1);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(calc(-100% - 30px));
+        transition: transform 210ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 160ms ease;
+      }
+
+      .stage.nav-open .floating-sidebar {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(0);
+      }
+
+      .stage[data-window-mode="fullscreen"] .edge-sensor { top: 8px; }
+      .stage[data-window-mode="fullscreen"] .floating-sidebar { top: 22px; }
+
+      .sidebar-top {
+        justify-content: space-between;
+        padding: 5px 5px 13px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sidebar-app {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .app-avatar {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 8px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .sidebar-app span {
+        display: block;
+        overflow: hidden;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .sidebar-app small {
+        display: block;
+        margin-top: 1px;
+        color: var(--subtle);
+        font-size: 10px;
+      }
+
+      .icon-button {
+        display: inline-grid;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 auto;
+        place-items: center;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        background: var(--surface-soft);
+        cursor: pointer;
+      }
+
+      .icon-button:hover {
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+
+      .icon-button svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .sidebar-label {
+        margin: 19px 8px 7px;
+        color: var(--subtle);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .sidebar-nav-item {
+        width: 100%;
+        gap: 10px;
+        height: 34px;
+        padding: 0 9px;
+        border: 0;
+        border-radius: 8px;
+        color: var(--muted);
+        background: transparent;
+        font-size: 12px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .sidebar-nav-item:hover {
+        color: var(--ink);
+        background: var(--surface-soft);
+      }
+
+      .sidebar-nav-item.active {
+        color: var(--ink);
+        background: var(--accent-soft);
+      }
+
+      .sidebar-nav-item svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .sidebar-nav-item.active svg {
+        color: var(--accent);
+      }
+
+      .nav-count {
+        margin-left: auto;
+        color: var(--subtle);
+        font: 10px var(--font-mono);
+      }
+
+      .sidebar-bottom {
+        gap: 8px;
+        margin-top: auto;
+        padding: 11px 7px 3px;
+        border-top: 1px solid var(--line);
+        color: var(--subtle);
+        font-size: 11px;
+      }
+
+      .status-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--success);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 12%, transparent);
+      }
+
+      .workbench {
+        display: flex;
+        min-height: 628px;
+        flex-direction: column;
+      }
+
+      .workbench-topbar {
+        display: flex;
+        align-items: center;
+        height: 54px;
+        padding: 0 24px 0 31px;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--canvas) 78%, transparent);
+      }
+
+      .breadcrumbs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--subtle);
+        font-size: 11px;
+      }
+
+      .breadcrumbs strong {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .workbench-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .soft-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 26px;
+        padding: 0 8px;
+        font-size: 10px;
+      }
+
+      .soft-pill i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--success);
+      }
+
+      .workbench-body {
+        display: grid;
+        min-height: 0;
+        flex: 1;
+        grid-template-columns: minmax(440px, 1.24fr) minmax(320px, 0.86fr);
+      }
+
+      .incident-pane {
+        min-width: 0;
+        padding: 25px 25px 28px 31px;
+        border-right: 1px solid var(--line);
+      }
+
+      .workspace-head {
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .workspace-head h3 {
+        margin: 6px 0 0;
+        font-size: 21px;
+        letter-spacing: -0.035em;
+      }
+
+      .workspace-head .eyebrow {
+        color: var(--danger);
+      }
+
+      .primary-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 31px;
+        padding: 0 11px;
+        border: 0;
+        border-radius: 8px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .primary-button svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      .issue-summary {
+        display: grid;
+        grid-template-columns: 1fr 120px;
+        gap: 16px;
+        margin-top: 22px;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: var(--surface-soft);
+      }
+
+      .issue-title {
+        gap: 9px;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .issue-title svg {
+        width: 16px;
+        height: 16px;
+        color: var(--danger);
+      }
+
+      .issue-summary p {
+        margin: 7px 0 0 25px;
+        color: var(--subtle);
+        font: 11px/1.55 var(--font-mono);
+      }
+
+      .summary-number {
+        align-self: center;
+        padding-left: 16px;
+        border-left: 1px solid var(--line);
+      }
+
+      .summary-number b {
+        display: block;
+        color: var(--ink);
+        font-size: 19px;
+        letter-spacing: -0.05em;
+      }
+
+      .summary-number span {
+        color: var(--subtle);
+        font-size: 10px;
+      }
+
+      .meta-row {
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 13px 0 20px;
+      }
+
+      .meta-token {
+        padding: 4px 7px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--subtle);
+        background: var(--surface-soft);
+        font: 10px var(--font-mono);
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 9px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+      }
+
+      .section-title span {
+        color: var(--subtle);
+        font-size: 10px;
+        font-weight: 500;
+      }
+
+      .source-list,
+      .events {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--surface-soft) 58%, transparent);
+      }
+
+      .source-row {
+        min-height: 37px;
+        gap: 11px;
+        padding: 0 11px;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font: 11px var(--font-mono);
+      }
+
+      .source-row:last-child,
+      .event-row:last-child {
+        border-bottom: 0;
+      }
+
+      .source-row b {
+        color: var(--info);
+        font-weight: 500;
+      }
+
+      .source-row em {
+        overflow: hidden;
+        margin-left: auto;
+        color: var(--subtle);
+        font-style: normal;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .events {
+        margin-top: 20px;
+      }
+
+      .event-row {
+        min-height: 38px;
+        gap: 11px;
+        padding: 0 11px;
+        border-bottom: 1px solid var(--line);
+        font-size: 11px;
+      }
+
+      .event-time {
+        color: var(--subtle);
+        font: 10px var(--font-mono);
+      }
+
+      .event-label {
+        color: var(--muted);
+      }
+
+      .event-status {
+        width: 6px;
+        height: 6px;
+        margin-left: auto;
+        border-radius: 50%;
+      }
+
+      .event-status.danger { background: var(--danger); }
+      .event-status.warning { background: var(--warning); }
+      .event-status.info { background: var(--info); }
+
+      .agent-pane {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        padding: 25px 22px 21px;
+        background: color-mix(in srgb, var(--surface-soft) 48%, transparent);
+      }
+
+      .agent-heading {
+        gap: 9px;
+      }
+
+      .agent-orb {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 9px;
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .agent-orb svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .agent-heading b {
+        display: block;
+        font-size: 13px;
+      }
+
+      .agent-heading span {
+        display: block;
+        margin-top: 2px;
+        color: var(--subtle);
+        font-size: 10px;
+      }
+
+      .confidence {
+        margin-left: auto;
+        color: var(--success);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .agent-card {
+        margin-top: 23px;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: color-mix(in srgb, var(--surface) 70%, transparent);
+      }
+
+      .agent-card > span {
+        color: var(--accent);
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .agent-card h4 {
+        margin: 8px 0 7px;
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+
+      .agent-card p {
+        margin: 0;
+        color: var(--subtle);
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .agent-evidence {
+        display: grid;
+        gap: 7px;
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .agent-evidence li {
+        display: flex;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.4;
+      }
+
+      .agent-evidence i {
+        flex: 0 0 auto;
+        width: 5px;
+        height: 5px;
+        margin-top: 4px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .agent-actions {
+        display: grid;
+        gap: 7px;
+        margin-top: 14px;
+      }
+
+      .agent-action {
+        justify-content: space-between;
+        width: 100%;
+        min-height: 34px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        background: var(--surface-soft);
+        font-size: 11px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .agent-action:hover {
+        border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+        color: var(--ink);
+      }
+
+      .agent-action svg {
+        width: 13px;
+        height: 13px;
+        color: var(--accent);
+      }
+
+      .agent-composer {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        height: 39px;
+        margin-top: auto;
+        padding: 0 8px 0 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--surface) 78%, transparent);
+      }
+
+      .agent-composer span {
+        flex: 1;
+        color: var(--subtle);
+        font-size: 11px;
+      }
+
+      /* The five candidates deliberately change information architecture, not just palette. */
+      .layout-variant {
+        display: none;
+        min-height: 628px;
+        color: var(--ink);
+        background: color-mix(in srgb, var(--canvas) 92%, transparent);
+      }
+
+      body[data-layout="incident"] .layout-incident { display: flex; }
+      body[data-layout="queue"] .layout-queue { display: grid; }
+      body[data-layout="canvas"] .layout-canvas { display: grid; }
+      body[data-layout="replay"] .layout-replay { display: grid; }
+      body[data-layout="console"] .layout-console { display: grid; }
+
+      .alt-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 54px;
+        padding: 0 24px 0 31px;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--canvas) 82%, transparent);
+      }
+
+      .alt-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .alt-title svg {
+        width: 15px;
+        height: 15px;
+        color: var(--accent);
+      }
+
+      .queue-layout,
+      .replay-layout,
+      .console-layout {
+        grid-template-rows: 54px minmax(0, 1fr);
+      }
+
+      .queue-grid {
+        display: grid;
+        min-height: 0;
+        grid-template-columns: 255px minmax(0, 1fr);
+      }
+
+      .issue-queue {
+        padding: 16px 10px;
+        border-right: 1px solid var(--line);
+        background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+      }
+
+      .queue-heading,
+      .queue-filter,
+      .queue-item-top,
+      .queue-detail-head,
+      .queue-agent-title,
+      .replay-heading,
+      .console-heading,
+      .console-summary {
+        display: flex;
+        align-items: center;
+      }
+
+      .queue-heading {
+        justify-content: space-between;
+        padding: 0 7px 12px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .queue-heading span {
+        color: var(--subtle);
+        font: 10px var(--font-mono);
+      }
+
+      .queue-filter {
+        gap: 7px;
+        height: 30px;
+        margin: 0 5px 11px;
+        padding: 0 9px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: var(--subtle);
+        background: var(--surface-soft);
+        font-size: 10px;
+      }
+
+      .queue-filter svg { width: 13px; height: 13px; }
+
+      .queue-item {
+        width: 100%;
+        min-height: 62px;
+        margin: 2px 0;
+        padding: 9px 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: var(--muted);
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .queue-item:hover { background: var(--surface-soft); }
+      .queue-item.active {
+        border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+        background: var(--accent-soft);
+      }
+
+      .queue-item-top { gap: 7px; font-size: 11px; font-weight: 650; }
+      .queue-item-top i { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
+      .queue-item-top i.warning { background: var(--warning); }
+      .queue-item-top i.info { background: var(--info); }
+      .queue-item small { display: block; margin-top: 5px; color: var(--subtle); font-size: 10px; line-height: 1.35; }
+
+      .queue-detail {
+        display: grid;
+        min-width: 0;
+        grid-template-rows: minmax(0, 1fr) 172px;
+      }
+
+      .queue-detail-main { padding: 25px 29px 18px; }
+      .queue-detail-head { justify-content: space-between; gap: 16px; }
+      .queue-detail-head h3 { margin: 6px 0 0; font-size: 20px; letter-spacing: -0.035em; }
+
+      .queue-summary-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(190px, 0.7fr);
+        gap: 13px;
+        margin-top: 20px;
+      }
+
+      .queue-summary-card {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--surface-soft);
+      }
+
+      .queue-summary-card b { display: block; font-size: 12px; }
+      .queue-summary-card p { margin: 7px 0 0; color: var(--subtle); font-size: 10px; line-height: 1.5; }
+      .queue-summary-card strong { display: block; margin-top: 12px; color: var(--accent); font-size: 19px; letter-spacing: -0.05em; }
+
+      .queue-timeline { margin-top: 18px; }
+      .queue-timeline .event-row { padding-right: 4px; }
+
+      .queue-agent {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(230px, 0.65fr);
+        gap: 18px;
+        padding: 17px 29px;
+        border-top: 1px solid var(--line);
+        background: color-mix(in srgb, var(--surface-soft) 45%, transparent);
+      }
+
+      .queue-agent-title { gap: 9px; }
+      .queue-agent-title i { width: 16px; height: 16px; color: var(--accent); }
+      .queue-agent-title b { font-size: 12px; }
+      .queue-agent-title p { margin: 3px 0 0; color: var(--subtle); font-size: 10px; }
+      .queue-agent-copy { margin: 10px 0 0 25px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+      .queue-agent .agent-actions { align-content: center; margin: 0; }
+
+      .canvas-layout { grid-template-rows: 54px minmax(0, 1fr); }
+      .canvas-board {
+        display: grid;
+        min-height: 0;
+        grid-template-columns: 238px minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) 158px;
+      }
+
+      .canvas-evidence {
+        padding: 18px 14px;
+        border-right: 1px solid var(--line);
+        background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+      }
+
+      .canvas-evidence h3,
+      .canvas-agent h3,
+      .replay-side h3,
+      .console-analysis h3 {
+        margin: 4px 0 13px;
+        font-size: 12px;
+        letter-spacing: -0.01em;
+      }
+
+      .evidence-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 39px;
+        margin: 5px 0;
+        padding: 0 9px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: var(--muted);
+        background: var(--surface-soft);
+        font: 10px var(--font-mono);
+      }
+
+      .evidence-chip svg { width: 13px; height: 13px; color: var(--info); }
+      .evidence-chip.active { border-color: color-mix(in srgb, var(--accent) 46%, var(--line)); color: var(--ink); background: var(--accent-soft); }
+      .evidence-chip.active svg { color: var(--accent); }
+
+      .investigation-map {
+        position: relative;
+        display: grid;
+        min-width: 0;
+        padding: 30px 34px 18px;
+        grid-template-columns: 1fr 76px 1fr;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .map-column { display: grid; gap: 13px; }
+      .map-node {
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--surface) 72%, transparent);
+      }
+
+      .map-node small { display: block; color: var(--subtle); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+      .map-node b { display: block; margin-top: 5px; color: var(--ink); font-size: 12px; }
+      .map-node span { display: block; margin-top: 5px; color: var(--subtle); font-size: 10px; line-height: 1.4; }
+      .map-node.alert { border-color: color-mix(in srgb, var(--danger) 58%, var(--line)); }
+      .map-node.signal { border-color: color-mix(in srgb, var(--accent) 54%, var(--line)); background: var(--accent-soft); }
+
+      .map-bridge {
+        display: grid;
+        height: 100%;
+        place-items: center;
+      }
+
+      .map-bridge span {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 1px;
+        background: color-mix(in srgb, var(--accent) 60%, var(--line));
+      }
+
+      .map-bridge span::after {
+        position: absolute;
+        top: -3px;
+        right: -1px;
+        width: 7px;
+        height: 7px;
+        border: 1px solid var(--accent);
+        border-radius: 50%;
+        content: "";
+        background: var(--canvas);
+      }
+
+      .canvas-agent {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 238px minmax(0, 1fr) 186px;
+        gap: 18px;
+        padding: 16px 24px;
+        border-top: 1px solid var(--line);
+        background: color-mix(in srgb, var(--surface-soft) 45%, transparent);
+      }
+
+      .canvas-agent h3 { margin: 0; }
+      .canvas-agent p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+      .canvas-agent .primary-button { align-self: center; justify-self: end; }
+
+      .replay-grid {
+        display: grid;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr) 285px;
+      }
+
+      .replay-main {
+        display: grid;
+        min-width: 0;
+        grid-template-rows: minmax(0, 1fr) 176px;
+        border-right: 1px solid var(--line);
+      }
+
+      .replay-stage {
+        display: grid;
+        min-height: 0;
+        padding: 19px 24px 17px;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+
+      .replay-heading { justify-content: space-between; }
+      .replay-heading h3 { margin: 0; font-size: 13px; }
+      .replay-heading span { color: var(--subtle); font: 10px var(--font-mono); }
+
+      .replay-surface {
+        display: grid;
+        min-height: 0;
+        margin-top: 14px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--surface) 86%, transparent);
+        grid-template-columns: 146px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .replay-moments { display: grid; align-content: start; gap: 5px; }
+      .moment {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 7px;
+        padding: 7px 6px;
+        border-radius: 6px;
+        color: var(--subtle);
+        font-size: 10px;
+      }
+
+      .moment b { color: var(--muted); font: 10px var(--font-mono); }
+      .moment.active { color: var(--ink); background: var(--accent-soft); }
+      .moment.active b { color: var(--accent); }
+
+      .replay-state {
+        display: grid;
+        min-width: 0;
+        padding: 16px;
+        border-left: 1px solid var(--line);
+        align-content: center;
+      }
+
+      .replay-state .eyebrow { color: var(--danger); }
+      .replay-state h4 { max-width: 290px; margin: 8px 0; font-size: 19px; letter-spacing: -0.04em; }
+      .replay-state p { max-width: 330px; margin: 0; color: var(--subtle); font-size: 11px; line-height: 1.6; }
+      .replay-rail { display: flex; gap: 3px; margin-top: 17px; }
+      .replay-rail span { height: 4px; flex: 1; border-radius: 99px; background: var(--line); }
+      .replay-rail span.active { background: var(--danger); }
+
+      .replay-bottom {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        padding: 13px 24px;
+        border-top: 1px solid var(--line);
+      }
+
+      .replay-stat { padding: 9px; border-radius: 8px; background: var(--surface-soft); }
+      .replay-stat span { display: block; color: var(--subtle); font-size: 9px; }
+      .replay-stat b { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+
+      .replay-side { padding: 20px 18px; background: color-mix(in srgb, var(--surface-soft) 50%, transparent); }
+      .replay-side .agent-card { margin-top: 12px; }
+      .replay-side .agent-actions { margin-top: 12px; }
+
+      .console-grid {
+        display: grid;
+        min-height: 0;
+        grid-template-columns: 60px minmax(0, 1fr) 314px;
+      }
+
+      .console-rail {
+        display: grid;
+        padding: 15px 0;
+        border-right: 1px solid var(--line);
+        align-content: start;
+        justify-items: center;
+        gap: 12px;
+        background: color-mix(in srgb, var(--surface-soft) 45%, transparent);
+      }
+
+      .console-rail i { width: 15px; height: 15px; color: var(--subtle); }
+      .console-rail i.active { color: var(--accent); }
+
+      .console-stream { min-width: 0; padding: 21px 22px; }
+      .console-heading { justify-content: space-between; }
+      .console-heading h3 { margin: 0; font-size: 13px; }
+      .console-heading span { color: var(--subtle); font: 10px var(--font-mono); }
+
+      .console-table { overflow: hidden; margin-top: 17px; border: 1px solid var(--line); border-radius: 9px; }
+      .console-row {
+        display: grid;
+        min-height: 39px;
+        grid-template-columns: 74px 86px minmax(0, 1fr) 58px;
+        align-items: center;
+        gap: 10px;
+        padding: 0 11px;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .console-row:last-child { border-bottom: 0; }
+      .console-row span:first-child { color: var(--subtle); font-family: var(--font-mono); }
+      .console-row span:nth-child(2) { color: var(--info); font-family: var(--font-mono); }
+      .console-row strong { overflow: hidden; color: var(--muted); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+      .console-row em { color: var(--subtle); font: 9px var(--font-mono); font-style: normal; text-align: right; }
+      .console-row.error span:nth-child(2) { color: var(--danger); }
+
+      .console-summary { gap: 9px; margin-top: 17px; padding: 12px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius: 9px; background: var(--accent-soft); }
+      .console-summary svg { width: 15px; height: 15px; color: var(--accent); }
+      .console-summary p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+      .console-analysis { padding: 21px 18px; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--surface-soft) 50%, transparent); }
+      .console-analysis .agent-card { margin-top: 12px; }
+      .console-analysis .agent-actions { margin-top: 12px; }
+
+      .send-button {
+        display: grid;
+        width: 25px;
+        height: 25px;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 7px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        cursor: pointer;
+      }
+
+      .send-button svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      /* 1. Alert-oriented violet/lime — translated from the Sentry direction. */
+      body[data-style="sentry"] {
+        color-scheme: dark;
+        --page: #0d0a14;
+        --page-raised: #171020;
+        --canvas: #1f1633;
+        --surface: rgba(40, 29, 58, 0.93);
+        --surface-raised: #2b2042;
+        --surface-soft: rgba(255, 255, 255, 0.055);
+        --line: rgba(220, 205, 248, 0.14);
+        --line-strong: rgba(220, 205, 248, 0.24);
+        --ink: #ffffff;
+        --muted: #d0c9da;
+        --subtle: #9d94aa;
+        --accent: #c2ef4e;
+        --accent-ink: #1b1623;
+        --accent-soft: rgba(194, 239, 78, 0.15);
+        --danger: #ff8fb5;
+        --warning: #f7c866;
+        --success: #75d89b;
+        --info: #99b7ff;
+        --shadow: 0 26px 70px rgba(7, 3, 15, 0.55);
+      }
+
+      /* 2. Low-noise charcoal and a single lavender signal — Linear direction. */
+      body[data-style="linear"] {
+        color-scheme: dark;
+        --page: #010102;
+        --page-raised: #090a0b;
+        --canvas: #0b0c0d;
+        --surface: rgba(20, 21, 22, 0.94);
+        --surface-raised: #18191a;
+        --surface-soft: rgba(255, 255, 255, 0.035);
+        --line: #23252a;
+        --line-strong: #34343a;
+        --ink: #f7f8f8;
+        --muted: #d0d6e0;
+        --subtle: #8a8f98;
+        --accent: #828fff;
+        --accent-ink: #ffffff;
+        --accent-soft: rgba(94, 106, 210, 0.2);
+        --danger: #ed7676;
+        --warning: #daa74e;
+        --success: #49b366;
+        --info: #82a3ff;
+        --radius: 10px;
+        --shadow: 0 22px 64px rgba(0, 0, 0, 0.45);
+      }
+
+      /* 3. Command-palette chrome and selective status color — Raycast direction. */
+      body[data-style="raycast"] {
+        color-scheme: dark;
+        --page: #07080a;
+        --page-raised: #0b0c0e;
+        --canvas: #0d0d0d;
+        --surface: rgba(16, 17, 17, 0.94);
+        --surface-raised: #121212;
+        --surface-soft: rgba(255, 255, 255, 0.06);
+        --line: #242728;
+        --line-strong: rgba(255, 255, 255, 0.22);
+        --ink: #f4f4f6;
+        --muted: #d3d3d4;
+        --subtle: #9c9c9d;
+        --accent: #ffffff;
+        --accent-ink: #18191a;
+        --accent-soft: rgba(255, 255, 255, 0.11);
+        --danger: #ff6161;
+        --warning: #ffc533;
+        --success: #59d499;
+        --info: #57c1ff;
+        --radius: 10px;
+        --shadow: 0 20px 58px rgba(0, 0, 0, 0.58);
+      }
+
+      body[data-style="raycast"] .stage::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 3px;
+        content: "";
+        background: linear-gradient(90deg, #ff5757, #cf242d 42%, transparent 42%);
+      }
+
+      body[data-style="raycast"] .agent-card > span,
+      body[data-style="raycast"] .agent-evidence i {
+        color: var(--info);
+        background: var(--info);
+      }
+
+      /* 4. Light, technical and emerald-stateful — Supabase direction. */
+      body[data-style="supabase"] {
+        color-scheme: light;
+        --page: #f7f8f7;
+        --page-raised: #ffffff;
+        --canvas: #ffffff;
+        --surface: rgba(255, 255, 255, 0.92);
+        --surface-raised: #fafafa;
+        --surface-soft: rgba(23, 23, 23, 0.045);
+        --line: #dfdfdf;
+        --line-strong: #c7c7c7;
+        --ink: #171717;
+        --muted: #3d3d3d;
+        --subtle: #747474;
+        --accent: #3ecf8e;
+        --accent-ink: #102e20;
+        --accent-soft: rgba(62, 207, 142, 0.16);
+        --danger: #e85d64;
+        --warning: #d69420;
+        --success: #24b47e;
+        --info: #3b82f6;
+        --radius: 11px;
+        --shadow: 0 20px 54px rgba(14, 31, 21, 0.12);
+      }
+
+      body[data-style="supabase"] .agent-pane {
+        background: #fafafa;
+      }
+
+      body[data-style="supabase"] .floating-sidebar {
+        box-shadow: 0 18px 44px rgba(14, 31, 21, 0.16);
+      }
+
+      /* 5. Bright grid, geometric type rhythm and hard monochrome — Vercel direction. */
+      body[data-style="vercel"] {
+        color-scheme: light;
+        --page: #ffffff;
+        --page-raised: #ffffff;
+        --canvas: #ffffff;
+        --surface: rgba(255, 255, 255, 0.96);
+        --surface-raised: #fafafa;
+        --surface-soft: rgba(23, 23, 23, 0.035);
+        --line: #ebebeb;
+        --line-strong: #a1a1a1;
+        --ink: #171717;
+        --muted: #4d4d4d;
+        --subtle: #888888;
+        --accent: #171717;
+        --accent-ink: #ffffff;
+        --accent-soft: rgba(23, 23, 23, 0.08);
+        --danger: #ee0000;
+        --warning: #ab570a;
+        --success: #0070f3;
+        --info: #0070f3;
+        --radius: 8px;
+        --font-ui: Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        --font-mono: "Geist Mono", "SF Mono", SFMono-Regular, Consolas, monospace;
+        --shadow: 0 22px 54px rgba(0, 0, 0, 0.1);
+      }
+
+      body[data-style="vercel"] .stage {
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+
+      body[data-style="vercel"] .workbench,
+      body[data-style="vercel"] .workbench-topbar,
+      body[data-style="vercel"] .agent-pane {
+        background-color: rgba(255, 255, 255, 0.95);
+      }
+
+      @media (max-width: 1240px) {
+        body { min-width: 960px; }
+        .lab { grid-template-columns: 278px minmax(0, 1fr); }
+        .preview-shell { padding-right: 22px; padding-left: 22px; }
+        .workbench-body { grid-template-columns: minmax(390px, 1.2fr) minmax(280px, 0.8fr); }
+        .incident-pane { padding-left: 24px; }
+      }
+    </style>
+  </head>
+  <body data-style="sentry" data-layout="incident">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark"><i data-lucide="fingerprint"></i></span>
+        <span>Traceability</span>
+        <span class="eyebrow">Workbench Style Lab</span>
+      </div>
+      <div class="top-actions">
+        <span class="shortcut"><i data-lucide="command"></i> 切换风格 <span class="kbd">1–5</span></span>
+        <span class="header-status"><i data-lucide="radio"></i> 交互预览</span>
+      </div>
+    </header>
+
+    <main class="lab">
+      <aside class="selector" aria-label="设计风格选择">
+        <span class="eyebrow">5 种候选方向</span>
+        <h1>为不同的排障动作，设计不同的工作台。</h1>
+        <p>这五种方案重排了信息的起点、主视野与 AI 的驻留位置；配色只配合布局，不是差异本身。</p>
+
+        <div class="style-list" role="group" aria-label="选择一种工作台布局">
+          <button class="style-choice" type="button" data-layout-choice="incident" aria-pressed="true">
+            <span class="choice-head">
+              <span class="choice-name">01 · Issue Detail</span><span class="source-pill">Sentry</span>
+            </span>
+            <span class="choice-description">以单个事故为中心：上下文在左，AI 诊断固定在右。</span>
+            <span class="swatches"><i class="swatch" style="--swatch:#1f1633"></i><i class="swatch" style="--swatch:#c2ef4e"></i><i class="swatch" style="--swatch:#ff8fb5"></i></span>
+          </button>
+          <button class="style-choice" type="button" data-layout-choice="queue" aria-pressed="false">
+            <span class="choice-head">
+              <span class="choice-name">02 · Triage Inbox</span><span class="source-pill">Linear</span>
+            </span>
+            <span class="choice-description">先扫异常队列，再打开一项；AI 在底部给出下一步。</span>
+            <span class="swatches"><i class="swatch" style="--swatch:#010102"></i><i class="swatch" style="--swatch:#5e6ad2"></i><i class="swatch" style="--swatch:#f7f8f8"></i></span>
+          </button>
+          <button class="style-choice" type="button" data-layout-choice="canvas" aria-pressed="false">
+            <span class="choice-head">
+              <span class="choice-name">03 · Evidence Canvas</span><span class="source-pill">Raycast</span>
+            </span>
+            <span class="choice-description">以证据关系为主画面，适合定位跨事件、代码与回放的因果。</span>
+            <span class="swatches"><i class="swatch" style="--swatch:#07080a"></i><i class="swatch" style="--swatch:#ffffff"></i><i class="swatch" style="--swatch:#57c1ff"></i></span>
+          </button>
+          <button class="style-choice" type="button" data-layout-choice="replay" aria-pressed="false">
+            <span class="choice-head">
+              <span class="choice-name">04 · Replay Theater</span><span class="source-pill">Supabase</span>
+            </span>
+            <span class="choice-description">把真实用户会话放到画面中心，诊断与属性检查靠右。</span>
+            <span class="swatches"><i class="swatch" style="--swatch:#ffffff"></i><i class="swatch" style="--swatch:#3ecf8e"></i><i class="swatch" style="--swatch:#171717"></i></span>
+          </button>
+          <button class="style-choice" type="button" data-layout-choice="console" aria-pressed="false">
+            <span class="choice-head">
+              <span class="choice-name">05 · Command Console</span><span class="source-pill">Vercel</span>
+            </span>
+            <span class="choice-description">事件流优先、窄工具轨、右侧分析；为 Electron 桌面端而设计。</span>
+            <span class="swatches"><i class="swatch" style="--swatch:#ffffff"></i><i class="swatch" style="--swatch:#171717"></i><i class="swatch" style="--swatch:#0070f3"></i></span>
+          </button>
+        </div>
+
+        <div class="selector-footer">
+          <b>Sidebar 原则</b><br />
+          左侧仅保留 8px 感应边；触发后 Sidebar 以 234px 浮层覆盖，不改变 Main 的宽度。macOS 为左侧 72px 原生控制安全区；Windows/Linux 为右侧 126px 标题栏覆盖区。窗口化、最大化与全屏都会重新计算这些避让。把鼠标移到预览中的最左边，或按 <b>T</b> 体验。
+        </div>
+      </aside>
+
+      <section class="preview-shell" aria-label="工作台预览">
+        <div class="preview-intro">
+          <div>
+            <span class="eyebrow">实时预览</span>
+            <h2><span id="style-name">Issue Detail</span> · Traceability 的事故处置工作台</h2>
+          </div>
+          <div class="top-actions">
+            <span class="selection-note"><i data-lucide="mouse-pointer-2"></i> 左缘触发，浮层不挤压 Main</span>
+            <div class="platform-control" role="group" aria-label="系统标题栏平台预览">
+              <button type="button" data-platform-choice="darwin" aria-pressed="true">macOS</button>
+              <button type="button" data-platform-choice="win32" aria-pressed="false">Windows</button>
+            </div>
+            <div class="window-mode-control" role="group" aria-label="Electron 窗口状态预览">
+              <button type="button" data-window-mode="windowed" aria-pressed="true">窗口化</button>
+              <button type="button" data-window-mode="maximized" aria-pressed="false">最大化</button>
+              <button type="button" data-window-mode="fullscreen" aria-pressed="false">全屏</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="stage" id="stage" data-platform="darwin" data-window-mode="windowed" aria-label="Traceability 工作台模型">
+          <header class="desktop-titlebar" aria-label="Electron 原生标题栏与拖拽区域">
+            <div class="traffic-lights" aria-label="macOS 窗口控制">
+              <button class="close" type="button" aria-label="关闭窗口"><i data-lucide="x"></i></button>
+              <button class="minimize" type="button" aria-label="最小化窗口"><i data-lucide="minus"></i></button>
+              <button class="maximize" type="button" aria-label="最大化窗口"><i data-lucide="maximize-2"></i></button>
+            </div>
+            <span class="drag-caption">Traceability · drag region · controls stay interactive</span>
+            <div class="desktop-titlebar-actions">
+              <span>production</span>
+              <button type="button" aria-label="打开命令菜单"><i data-lucide="search"></i></button>
+            </div>
+            <div class="win-window-controls" aria-label="Windows 原生窗口控制">
+              <button type="button" aria-label="最小化窗口"><i data-lucide="minus"></i></button>
+              <button type="button" aria-label="最大化窗口"><i data-lucide="maximize-2"></i></button>
+              <button type="button" aria-label="关闭窗口"><i data-lucide="x"></i></button>
+            </div>
+          </header>
+          <button class="edge-sensor" id="edge-sensor" type="button" aria-label="展开导航栏">展开</button>
+          <aside class="floating-sidebar" id="floating-sidebar" aria-label="主导航">
+            <div class="sidebar-top">
+              <div class="sidebar-app">
+                <span class="app-avatar">TR</span>
+                <span>checkout-web<small>production</small></span>
+              </div>
+              <button class="icon-button" id="sidebar-toggle" type="button" aria-label="收起导航"><i data-lucide="panel-left-close"></i></button>
+            </div>
+            <p class="sidebar-label">Observe</p>
+            <button class="sidebar-nav-item active" type="button"><i data-lucide="triangle-alert"></i> Issues <span class="nav-count">12</span></button>
+            <button class="sidebar-nav-item" type="button"><i data-lucide="chart-no-axes-combined"></i> Performance</button>
+            <button class="sidebar-nav-item" type="button"><i data-lucide="history"></i> Replays</button>
+            <p class="sidebar-label">Automate</p>
+            <button class="sidebar-nav-item" type="button"><i data-lucide="bot"></i> Fix drafts</button>
+            <button class="sidebar-nav-item" type="button"><i data-lucide="settings-2"></i> Project settings</button>
+            <div class="sidebar-bottom"><span class="status-dot"></span> Ingest connected</div>
+          </aside>
+
+          <div class="workbench layout-variant layout-incident">
+            <header class="workbench-topbar">
+              <nav class="breadcrumbs"><span>checkout-web</span><span>/</span><strong>Issues</strong><span>/</span><strong>TR-1842</strong></nav>
+              <div class="workbench-actions"><span class="soft-pill"><i></i> Live</span><button class="icon-button" type="button" aria-label="打开命令菜单"><i data-lucide="search"></i></button></div>
+            </header>
+            <div class="workbench-body">
+              <article class="incident-pane">
+                <div class="workspace-head">
+                  <div><span class="eyebrow">Unhandled exception</span><h3>Customer cannot complete checkout</h3></div>
+                  <button class="primary-button" type="button"><i data-lucide="circle-check-big"></i> Resolve</button>
+                </div>
+                <section class="issue-summary" aria-label="异常摘要">
+                  <div><div class="issue-title"><i data-lucide="circle-alert"></i> TypeError: Cannot read properties of undefined</div><p>CheckoutButton.tsx:118 · click handler</p></div>
+                  <div class="summary-number"><b>1,284</b><span>events · last 24h</span></div>
+                </section>
+                <div class="meta-row"><span class="meta-token">prod</span><span class="meta-token">release 2.14.0</span><span class="meta-token">Chrome 127</span><span class="meta-token">/checkout</span></div>
+                <section>
+                  <div class="section-title">Most relevant frames <span>stack trace</span></div>
+                  <div class="source-list">
+                    <div class="source-row"><b>118</b><span>onSubmit</span><em>CheckoutButton.tsx</em></div>
+                    <div class="source-row"><b>52</b><span>placeOrder</span><em>useCheckout.ts</em></div>
+                    <div class="source-row"><b>186</b><span>dispatch</span><em>react-dom.production.js</em></div>
+                  </div>
+                </section>
+                <section class="events">
+                  <div class="event-row"><span class="event-time">14:52:11</span><span class="event-label">Replay linked · cart total ¥419.00</span><i class="event-status info"></i></div>
+                  <div class="event-row"><span class="event-time">14:51:49</span><span class="event-label">Payment intent returned 200</span><i class="event-status warning"></i></div>
+                  <div class="event-row"><span class="event-time">14:51:48</span><span class="event-label">Exception captured</span><i class="event-status danger"></i></div>
+                </section>
+              </article>
+
+              <aside class="agent-pane" aria-label="AI 诊断">
+                <div class="agent-heading"><span class="agent-orb"><i data-lucide="sparkles"></i></span><div><b>Traceability Agent</b><span>Exception-to-fix loop</span></div><span class="confidence">87% confidence</span></div>
+                <section class="agent-card">
+                  <span>Likely cause</span><h4>Optional cart data is read after the payment response.</h4><p>The error starts only in 2.14.0, and every sampled replay has a promotion payload without <code>appliedCodes</code>.</p>
+                  <ul class="agent-evidence"><li><i></i> Regression aligns with release 2.14.0</li><li><i></i> 19/20 sampled events share the same missing field</li><li><i></i> Frame 118 accesses the field without a guard</li></ul>
+                </section>
+                <div class="agent-actions"><button class="agent-action" type="button">View the proposed patch <i data-lucide="arrow-up-right"></i></button><button class="agent-action" type="button">Compare 20 replay samples <i data-lucide="film"></i></button></div>
+                <div class="agent-composer"><span>Ask about this exception…</span><button class="send-button" type="button" aria-label="发送问题"><i data-lucide="arrow-up"></i></button></div>
+              </aside>
+            </div>
+          </div>
+
+          <section class="layout-variant layout-queue queue-layout" aria-label="Triage Inbox 布局预览">
+            <header class="alt-topbar">
+              <div class="alt-title"><i data-lucide="inbox"></i> Triage Inbox</div>
+              <div class="workbench-actions"><span class="soft-pill"><i></i> 12 open</span><button class="icon-button" type="button" aria-label="筛选异常"><i data-lucide="sliders-horizontal"></i></button></div>
+            </header>
+            <div class="queue-grid">
+              <aside class="issue-queue" aria-label="异常队列">
+                <div class="queue-heading"><b>Open issues</b><span>12</span></div>
+                <div class="queue-filter"><i data-lucide="filter"></i> production · newest</div>
+                <button class="queue-item active" type="button">
+                  <span class="queue-item-top"><i></i> Checkout failure</span>
+                  <small>1,284 events · 3 min ago</small>
+                </button>
+                <button class="queue-item" type="button">
+                  <span class="queue-item-top"><i class="warning"></i> Slow checkout</span>
+                  <small>p95 4.8s · 9 min ago</small>
+                </button>
+                <button class="queue-item" type="button">
+                  <span class="queue-item-top"><i class="info"></i> Cart restore</span>
+                  <small>482 events · 16 min ago</small>
+                </button>
+                <button class="queue-item" type="button">
+                  <span class="queue-item-top"><i class="warning"></i> Coupon validation</span>
+                  <small>98 events · 31 min ago</small>
+                </button>
+              </aside>
+              <article class="queue-detail">
+                <div class="queue-detail-main">
+                  <div class="queue-detail-head">
+                    <div><span class="eyebrow">Selected issue</span><h3>Customer cannot complete checkout</h3></div>
+                    <button class="primary-button" type="button"><i data-lucide="circle-check-big"></i> Resolve</button>
+                  </div>
+                  <div class="queue-summary-grid">
+                    <section class="queue-summary-card"><b>TypeError: Cannot read properties of undefined</b><p>CheckoutButton.tsx:118 · click handler · release 2.14.0</p></section>
+                    <section class="queue-summary-card"><span class="eyebrow">Volume</span><strong>1,284</strong><p>events in the last 24h</p></section>
+                  </div>
+                  <section class="queue-timeline events" aria-label="最新事件">
+                    <div class="event-row"><span class="event-time">14:52:11</span><span class="event-label">Replay linked · cart total ¥419.00</span><i class="event-status info"></i></div>
+                    <div class="event-row"><span class="event-time">14:51:49</span><span class="event-label">Payment intent returned 200</span><i class="event-status warning"></i></div>
+                    <div class="event-row"><span class="event-time">14:51:48</span><span class="event-label">Exception captured</span><i class="event-status danger"></i></div>
+                  </section>
+                </div>
+                <section class="queue-agent" aria-label="队列内 AI 建议">
+                  <div>
+                    <div class="queue-agent-title"><i data-lucide="sparkles"></i><b>Traceability Agent</b><span class="confidence">87% confidence</span></div>
+                    <p class="queue-agent-copy">先验证 promotion payload 是否缺少 appliedCodes；相同信号出现在 19/20 个采样会话中。</p>
+                  </div>
+                  <div class="agent-actions"><button class="agent-action" type="button">Open patch draft <i data-lucide="arrow-up-right"></i></button><button class="agent-action" type="button">Compare replays <i data-lucide="film"></i></button></div>
+                </section>
+              </article>
+            </div>
+          </section>
+
+          <section class="layout-variant layout-canvas canvas-layout" aria-label="Evidence Canvas 布局预览">
+            <header class="alt-topbar">
+              <div class="alt-title"><i data-lucide="network"></i> Evidence Canvas</div>
+              <div class="workbench-actions"><span class="soft-pill"><i></i> 4 linked signals</span><button class="icon-button" type="button" aria-label="添加证据"><i data-lucide="plus"></i></button></div>
+            </header>
+            <div class="canvas-board">
+              <aside class="canvas-evidence" aria-label="证据集">
+                <span class="eyebrow">Evidence set</span>
+                <h3>Signals in scope</h3>
+                <div class="evidence-chip active"><i data-lucide="file-code-2"></i> CheckoutButton.tsx:118</div>
+                <div class="evidence-chip"><i data-lucide="film"></i> Replay #cc82f</div>
+                <div class="evidence-chip"><i data-lucide="server"></i> payment intent 200</div>
+                <div class="evidence-chip"><i data-lucide="scroll-text"></i> release 2.14.0</div>
+              </aside>
+              <main class="investigation-map" aria-label="事故证据关系图">
+                <div class="map-column">
+                  <article class="map-node"><small>User behavior</small><b>Checkout replay</b><span>Promotion entered before payment confirmation.</span></article>
+                  <article class="map-node"><small>Network</small><b>Payment response</b><span>200 OK; promotion object is partial.</span></article>
+                </div>
+                <div class="map-bridge" aria-hidden="true"><span></span></div>
+                <div class="map-column">
+                  <article class="map-node alert"><small>Exception</small><b>undefined.appliedCodes</b><span>Captured at CheckoutButton.tsx:118.</span></article>
+                  <article class="map-node signal"><small>Candidate cause</small><b>Missing null guard</b><span>Introduced with release 2.14.0.</span></article>
+                </div>
+              </main>
+              <section class="canvas-agent" aria-label="AI 假设">
+                <div><span class="eyebrow">Traceability Agent</span><h3>Evidence-led hypothesis</h3></div>
+                <p>The replay and the response payload both point to an optional promotion field. The direct source frame accesses it without a defensive fallback.</p>
+                <button class="primary-button" type="button"><i data-lucide="git-pull-request"></i> Generate patch</button>
+              </section>
+            </div>
+          </section>
+
+          <section class="layout-variant layout-replay replay-layout" aria-label="Replay Theater 布局预览">
+            <header class="alt-topbar">
+              <div class="alt-title"><i data-lucide="clapperboard"></i> Replay Theater</div>
+              <div class="workbench-actions"><span class="soft-pill"><i></i> session cc82f</span><button class="icon-button" type="button" aria-label="全屏回放"><i data-lucide="expand"></i></button></div>
+            </header>
+            <div class="replay-grid">
+              <main class="replay-main">
+                <section class="replay-stage">
+                  <div class="replay-heading"><h3>Checkout replay · 00:42</h3><span>error at 00:37.2</span></div>
+                  <div class="replay-surface">
+                    <div class="replay-moments">
+                      <div class="moment"><b>00:12</b><span>Cart opened</span></div>
+                      <div class="moment"><b>00:24</b><span>Promotion applied</span></div>
+                      <div class="moment"><b>00:35</b><span>Pay clicked</span></div>
+                      <div class="moment active"><b>00:37</b><span>Exception</span></div>
+                    </div>
+                    <div class="replay-state">
+                      <span class="eyebrow">Frame at failure</span>
+                      <h4>Apply promotion, then complete payment.</h4>
+                      <p>The payment returns successfully, but the promotion payload does not include appliedCodes in this session.</p>
+                      <div class="replay-rail" aria-label="会话时间轴"><span></span><span></span><span></span><span class="active"></span><span></span><span></span></div>
+                    </div>
+                  </div>
+                </section>
+                <div class="replay-bottom">
+                  <div class="replay-stat"><span>Browser</span><b>Chrome 127 · macOS</b></div>
+                  <div class="replay-stat"><span>Release</span><b>checkout-web@2.14.0</b></div>
+                  <div class="replay-stat"><span>Network</span><b>payment intent · 200</b></div>
+                </div>
+              </main>
+              <aside class="replay-side" aria-label="回放 AI 检查器">
+                <span class="eyebrow">AI review</span>
+                <h3>Why did this session fail?</h3>
+                <section class="agent-card"><span>Likely cause</span><h4>Optional cart data is read after the payment response.</h4><p>Frame 118 reads a field missing from this session’s promotion payload.</p><ul class="agent-evidence"><li><i></i> Replay confirms the sequence</li><li><i></i> Payload shape matches 19 samples</li></ul></section>
+                <div class="agent-actions"><button class="agent-action" type="button">Show source frame <i data-lucide="file-code-2"></i></button><button class="agent-action" type="button">Open patch draft <i data-lucide="arrow-up-right"></i></button></div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="layout-variant layout-console console-layout" aria-label="Command Console 布局预览">
+            <header class="alt-topbar">
+              <div class="alt-title"><i data-lucide="terminal-square"></i> Command Console</div>
+              <div class="workbench-actions"><span class="soft-pill"><i></i> stream live</span><button class="icon-button" type="button" aria-label="打开命令面板"><i data-lucide="command"></i></button></div>
+            </header>
+            <div class="console-grid">
+              <aside class="console-rail" aria-label="控制台工具">
+                <i class="active" data-lucide="activity"></i><i data-lucide="bug"></i><i data-lucide="film"></i><i data-lucide="sparkles"></i><i data-lucide="settings-2"></i>
+              </aside>
+              <main class="console-stream" aria-label="事件流">
+                <div class="console-heading"><h3>production / checkout-web</h3><span>last 4m · 1,284 events</span></div>
+                <div class="console-table">
+                  <div class="console-row"><span>14:52:11</span><span>REPLAY</span><strong>session cc82f attached to issue TR-1842</strong><em>linked</em></div>
+                  <div class="console-row"><span>14:51:49</span><span>FETCH</span><strong>POST /payment-intent → 200</strong><em>214ms</em></div>
+                  <div class="console-row error"><span>14:51:48</span><span>ERROR</span><strong>TypeError: Cannot read properties of undefined</strong><em>TR-1842</em></div>
+                  <div class="console-row"><span>14:51:47</span><span>UI</span><strong>CheckoutButton.onSubmit invoked</strong><em>frame 118</em></div>
+                  <div class="console-row"><span>14:51:39</span><span>STATE</span><strong>promotion.appliedCodes is absent</strong><em>payload</em></div>
+                  <div class="console-row"><span>14:51:28</span><span>ROUTE</span><strong>/checkout opened from /cart</strong><em>chrome</em></div>
+                </div>
+                <div class="console-summary"><i data-lucide="sparkles"></i><p>Agent grouped these events into one likely regression introduced in checkout-web@2.14.0.</p></div>
+              </main>
+              <aside class="console-analysis" aria-label="桌面端分析面板">
+                <span class="eyebrow">Traceability Agent</span>
+                <h3>Exception-to-fix loop</h3>
+                <section class="agent-card"><span>Next command</span><h4>Guard optional promotion data</h4><p>Generate a narrow patch, then compare it against the 20 linked replays before resolving.</p></section>
+                <div class="agent-actions"><button class="agent-action" type="button">Generate patch <i data-lucide="git-pull-request"></i></button><button class="agent-action" type="button">Inspect session <i data-lucide="film"></i></button></div>
+                <div class="agent-composer"><span>Run a diagnostic command…</span><button class="send-button" type="button" aria-label="执行命令"><i data-lucide="arrow-up"></i></button></div>
+              </aside>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const layoutMeta = {
+        incident: "Issue Detail",
+        queue: "Triage Inbox",
+        canvas: "Evidence Canvas",
+        replay: "Replay Theater",
+        console: "Command Console",
+      };
+      const themeForLayout = {
+        incident: "sentry",
+        queue: "linear",
+        canvas: "raycast",
+        replay: "supabase",
+        console: "vercel",
+      };
+      const body = document.body;
+      const stage = document.getElementById("stage");
+      const edgeSensor = document.getElementById("edge-sensor");
+      const sidebar = document.getElementById("floating-sidebar");
+      const sidebarToggle = document.getElementById("sidebar-toggle");
+      const styleName = document.getElementById("style-name");
+      let closeTimer;
+
+      function setLayout(layout) {
+        body.dataset.layout = layout;
+        body.dataset.style = themeForLayout[layout];
+        styleName.textContent = layoutMeta[layout];
+        document.querySelectorAll("[data-layout-choice]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.layoutChoice === layout));
+        });
+      }
+
+      function setWindowMode(mode) {
+        stage.dataset.windowMode = mode;
+        document.querySelectorAll("[data-window-mode]").forEach((button) => {
+          if (button.tagName === "BUTTON") button.setAttribute("aria-pressed", String(button.dataset.windowMode === mode));
+        });
+      }
+
+      function setPlatform(platform) {
+        stage.dataset.platform = platform;
+        document.querySelectorAll("[data-platform-choice]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.platformChoice === platform));
+        });
+      }
+
+      function openSidebar() {
+        window.clearTimeout(closeTimer);
+        stage.classList.add("nav-open");
+      }
+
+      function closeSidebar() {
+        window.clearTimeout(closeTimer);
+        closeTimer = window.setTimeout(() => stage.classList.remove("nav-open"), 240);
+      }
+
+      document.querySelectorAll("[data-layout-choice]").forEach((button) => {
+        button.addEventListener("click", () => setLayout(button.dataset.layoutChoice));
+      });
+
+      document.querySelectorAll(".window-mode-control [data-window-mode]").forEach((button) => {
+        button.addEventListener("click", () => setWindowMode(button.dataset.windowMode));
+      });
+
+      document.querySelectorAll("[data-platform-choice]").forEach((button) => {
+        button.addEventListener("click", () => setPlatform(button.dataset.platformChoice));
+      });
+
+      edgeSensor.addEventListener("pointerenter", openSidebar);
+      edgeSensor.addEventListener("focus", openSidebar);
+      sidebar.addEventListener("pointerenter", openSidebar);
+      sidebar.addEventListener("pointerleave", closeSidebar);
+      sidebarToggle.addEventListener("click", () => stage.classList.remove("nav-open"));
+      edgeSensor.addEventListener("click", openSidebar);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key >= "1" && event.key <= "5") {
+          setLayout(["incident", "queue", "canvas", "replay", "console"][Number(event.key) - 1]);
+        }
+        if (event.key.toLowerCase() === "t") {
+          stage.classList.toggle("nav-open");
+        }
+      });
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

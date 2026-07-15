@@ -21,7 +21,7 @@ Parse the stacktrace's top frames. Open the files at the given `filename:lineno`
 
 ## 3. Add temporary diagnostic instrumentation (optional)
 
-If the root cause is unclear, wrap the suspected call site with `addBreadcrumb` (see `instrumentation` skill) to capture the inputs/state next time it runs. Deploy, let it reproduce, then re-fetch the issue events.
+If the root cause is unclear, wrap the suspected call site with `addBreadcrumb` (see the `trace` skill's `references/reporting-api.md`) to capture the inputs/state next time it runs. Deploy, let it reproduce, then re-fetch the issue events.
 
 ## 4. Produce a fix
 
