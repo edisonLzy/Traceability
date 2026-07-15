@@ -2,21 +2,14 @@ import { Input } from "@renderer/components/ui/input";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@renderer/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@renderer/components/ui/tooltip";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
 import { cn } from "@renderer/lib/utils";
 import type { AvailableModel } from "@shared/models-ipc";
-import { CircleHelp, Cpu } from "lucide-react";
+import { Cpu } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function ModalSelector({ value, onChange }: ModalSelectorProps) {
@@ -112,7 +105,6 @@ export function ModalSelector({ value, onChange }: ModalSelectorProps) {
 
       <SelectContent
         align="end"
-        alignItemWithTrigger={false}
         sideOffset={8}
         className="max-h-none w-max min-w-56 max-w-80 overflow-hidden rounded-md border-2 border-border bg-popover p-0 text-popover-foreground shadow-[var(--hard-shadow)]"
       >
@@ -130,55 +122,33 @@ export function ModalSelector({ value, onChange }: ModalSelectorProps) {
         </div>
 
         <div className="max-h-60 overflow-x-hidden overflow-y-auto px-1 py-1.5">
-          <TooltipProvider delay={120}>
-            <SelectGroup className="min-w-0 p-0">
-              {filteredModels.map((model) => {
-                const modelValue = `${model.providerId}/${model.modelId}`;
-                const isSelected = selectedValue === modelValue;
+          {filteredModels.map((model) => {
+            const modelValue = `${model.providerId}/${model.modelId}`;
+            const isSelected = selectedValue === modelValue;
 
-                return (
-                  <SelectItem
-                    key={modelValue}
-                    value={modelValue}
-                    className={cn(
-                      "mb-0.5 last:mb-0 w-full overflow-hidden rounded-sm border border-transparent px-3 py-2 text-foreground focus:bg-accent focus:text-accent-foreground",
-                      isSelected && "text-foreground",
-                    )}
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden pr-6">
-                      <span className="flex size-5 shrink-0 items-center justify-center rounded-sm border border-border bg-signal-purple text-accent-foreground">
-                        <Cpu className="size-3" />
-                      </span>
-                      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-                        <span className="block min-w-0 truncate text-[13px] font-medium leading-none text-current">
-                          {model.modelName}
-                        </span>
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={
-                              <button
-                                type="button"
-                                className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground/75 transition-colors hover:bg-muted hover:text-foreground"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                }}
-                              />
-                            }
-                          >
-                            <CircleHelp className="size-3.25" />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="text-[11px]">
-                            {model.providerName}
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectGroup>
-          </TooltipProvider>
+            return (
+              <SelectItem
+                key={modelValue}
+                value={modelValue}
+                className={cn(
+                  "mb-0.5 last:mb-0 w-full overflow-hidden rounded-sm border border-transparent px-3 py-2 text-foreground focus:bg-accent focus:text-accent-foreground",
+                  isSelected && "text-foreground",
+                )}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden pr-6">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-sm border border-border bg-signal-purple text-accent-foreground">
+                    <Cpu className="size-3" />
+                  </span>
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+                    <span className="block min-w-0 truncate text-[13px] font-medium leading-none text-current">
+                      {model.modelName}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{model.providerName}</span>
+                  </div>
+                </div>
+              </SelectItem>
+            );
+          })}
 
           {!isLoading && filteredModels.length === 0 ? (
             <div

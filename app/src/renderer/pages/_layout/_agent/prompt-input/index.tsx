@@ -9,7 +9,6 @@ import { formatTokenCount } from "@renderer/lib/token-usage";
 import { cn } from "@renderer/lib/utils";
 import type { TokenUsage } from "@renderer/store/agent";
 import type { AvailableModel } from "@shared/models-ipc";
-import { matchesKeyboardEvent } from "@tanstack/react-hotkeys";
 import { Editor, EditorContent } from "@tiptap/react";
 import { ArrowUp, Square } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
@@ -108,11 +107,7 @@ export function PromptInput({
     if (!editor || !container) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.isComposing ||
-        (!matchesKeyboardEvent(event, "Enter") && !matchesKeyboardEvent(event, "Mod+Enter"))
-      ) {
+      if (event.defaultPrevented || event.isComposing || event.key !== "Enter") {
         return;
       }
 
@@ -124,20 +119,23 @@ export function PromptInput({
       }
 
       if (isRunning) {
-        if (matchesKeyboardEvent(event, "Mod+Enter")) {
+        if (event.metaKey || event.ctrlKey) {
           event.preventDefault();
           void handleSubmit("follow-up");
+          return;
         }
 
-        if (matchesKeyboardEvent(event, "Enter")) {
+        if (!event.shiftKey) {
           event.preventDefault();
           void handleSubmit("steering");
         }
         return;
       }
 
-      event.preventDefault();
-      void handleSubmit("prompt");
+      if (!event.shiftKey) {
+        event.preventDefault();
+        void handleSubmit("prompt");
+      }
     };
 
     container.addEventListener("keydown", handleKeyDown, { capture: true });

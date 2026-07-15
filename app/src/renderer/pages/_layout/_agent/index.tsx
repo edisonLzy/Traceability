@@ -68,8 +68,6 @@ export function AgentPanel() {
       <section className="min-h-0 flex-1 overflow-hidden">
         <ChatMessages
           entries={entries}
-          isRunning={isRunning}
-          messageEntries={messageEntries}
           sessionId={activeSessionId ?? ""}
           streamingEntryId={streamingEntryId}
           toolStates={toolStates}
@@ -116,7 +114,7 @@ function CreateSessionButton() {
       agentStore.getState().appendSession(session);
       agentStore.getState().setActiveSessionId(session.id);
       await invoke("setSessionId", session.id);
-      await invoke("setSessionScope", "main");
+      await invoke("setSessionScope", session.id, "main");
     } catch (error) {
       console.error("Failed to create session", error);
     }
@@ -147,7 +145,7 @@ function useActiveSessionChat() {
   const messageEntries = entries.filter(isMessageEntry);
   const toolStates = entryState.toolStates;
   const isRunning = entryState.status === "running";
-  const tokenUsage = messageEntries.findLast((entry) => entry.tokenUsage)?.tokenUsage;
+  const tokenUsage = messageEntries.findLast((entry) => entry.tokenUsage)?.tokenUsage ?? undefined;
 
   const submitPrompt = useCallback(
     async (submission: PromptSubmission) => {
