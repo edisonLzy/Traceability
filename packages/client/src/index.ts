@@ -40,6 +40,13 @@ export type {
 
 export interface TraceabilityClientOptions {
   baseUrl: string;
+  /**
+   * A pre-provisioned bearer token. When set, the client uses it for every
+   * authenticated request without needing to call `login()`. Useful for the
+   * CLI, which stores a static token in its config. If omitted, call `login()`
+   * before making authenticated requests.
+   */
+  token?: string;
 }
 
 export interface LoginInput {
@@ -231,6 +238,7 @@ class TraceabilityClientImpl implements TraceabilityClient {
   constructor(options: TraceabilityClientOptions) {
     if (!options.baseUrl.trim()) throw new Error("baseUrl is required");
     this.http = axios.create({ baseURL: options.baseUrl.replace(/\/+$/, "") });
+    this.token = options.token;
   }
 
   async login(input: LoginInput): Promise<void> {

@@ -226,6 +226,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@traceability/client':
+        specifier: workspace:*
+        version: link:../client
       '@traceability/protocol':
         specifier: workspace:*
         version: link:../protocol

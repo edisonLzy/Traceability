@@ -35,6 +35,24 @@ describe("Traceability client", () => {
     expect(apps).toEqual([{ id: "app-1" }]);
   });
 
+  it("uses a pre-provisioned token without calling login()", async () => {
+    const request = mockHttp(async () => response([{ id: "app-1" }]));
+    const client = createTraceabilityClient({
+      baseUrl: "http://monitor.local",
+      token: "static-token",
+    });
+
+    const apps = await client.apps.list();
+
+    expect(request).toHaveBeenCalledOnce();
+    expect(request.mock.calls[0]?.[0]).toEqual({
+      method: "GET",
+      url: "/api/apps",
+      headers: { Authorization: "Bearer static-token" },
+    });
+    expect(apps).toEqual([{ id: "app-1" }]);
+  });
+
   it("deduplicates concurrent login attempts", async () => {
     let resolveLogin: ((result: AxiosResponse) => void) | undefined;
     const request = mockHttp(

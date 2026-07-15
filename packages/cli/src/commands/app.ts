@@ -1,7 +1,7 @@
 import type { Application } from "@traceability/protocol";
 import { Command } from "commander";
 
-import { api } from "../lib/api.js";
+import { getClient } from "../lib/client.js";
 import { printJson, printTable } from "../lib/output.js";
 
 export function appCommand(program: Command): void {
@@ -10,7 +10,7 @@ export function appCommand(program: Command): void {
     .command("list")
     .option("--json", "output JSON")
     .action(async (opts) => {
-      const apps = await api.get<Application[]>("/api/apps");
+      const apps = await getClient().apps.list();
       opts.json
         ? printJson(apps)
         : printTable(apps, [
@@ -27,7 +27,7 @@ export function appCommand(program: Command): void {
     .requiredOption("--branch <branch>")
     .option("--json", "output JSON")
     .action(async (opts) => {
-      const app = await api.post<Application>("/api/apps", {
+      const app = await getClient().apps.create({
         name: opts.name,
         repoUrl: opts.repoUrl,
         defaultBranch: opts.branch,
@@ -39,8 +39,8 @@ export function appCommand(program: Command): void {
     .command("show <appId>")
     .option("--json", "output JSON")
     .action(async (appId, opts) => {
-      const app = await api.get<Application>(`/api/apps/${appId}`);
-      opts.json ? printJson(app) : printJson(app);
+      const app: Application = await getClient().apps.get(appId);
+      printJson(app);
     });
 
   cmd
@@ -49,16 +49,16 @@ export function appCommand(program: Command): void {
     .option("--repo-url <url>")
     .option("--branch <branch>")
     .action(async (appId, opts) => {
-      const body: Record<string, string> = {};
-      if (opts.name) body.name = opts.name;
-      if (opts.repoUrl) body.repoUrl = opts.repoUrl;
-      if (opts.branch) body.defaultBranch = opts.branch;
-      const app = await api.patch<Application>(`/api/apps/${appId}`, body);
+      const app = await getClient().apps.update(appId, {
+        ...(opts.name ? { name: opts.name } : {}),
+        ...(opts.repoUrl ? { repoUrl: opts.repoUrl } : {}),
+        ...(opts.branch ? { defaultBranch: opts.branch } : {}),
+      });
       printJson(app);
     });
 
   cmd.command("delete <appId>").action(async (appId) => {
-    await api.delete(`/api/apps/${appId}`);
+    await getClient().apps.remove(appId);
     console.log("Deleted.");
   });
 }

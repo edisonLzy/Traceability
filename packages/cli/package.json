@@ -14,6 +14,7 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
+    "@traceability/client": "workspace:*",
     "@traceability/protocol": "workspace:*",
     "commander": "^12.0.0"
   },
