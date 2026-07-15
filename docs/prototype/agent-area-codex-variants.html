@@ -1,0 +1,1819 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traceability · Codex Agent Area Variants</title>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --canvas: #090a0c;
+        --surface-1: #101115;
+        --surface-2: #14151a;
+        --surface-3: #1a1b21;
+        --surface-hover: #202127;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --ink: #f5f5f7;
+        --muted: #b6b7bc;
+        --tertiary: #808189;
+        --primary: #8f9cff;
+        --primary-hover: #aeb7ff;
+        --primary-soft: rgba(143, 156, 255, 0.13);
+        --info: #6db9ff;
+        --success: #58c77b;
+        --warning: #e4b55a;
+        --danger: #f17c7c;
+        --agent-width: 500px;
+        font-family:
+          Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-width: 1100px;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        color: var(--ink);
+        background: var(--canvas);
+        font-size: 13px;
+        line-height: 1.45;
+        letter-spacing: -0.01em;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      button:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .icon {
+        width: 15px;
+        height: 15px;
+        stroke-width: 1.75;
+      }
+
+      .prototype-bar {
+        position: relative;
+        z-index: 100;
+        display: grid;
+        grid-template-columns: minmax(280px, 0.8fr) minmax(580px, 1.6fr) auto;
+        min-height: 72px;
+        align-items: center;
+        gap: 18px;
+        border-bottom: 1px solid var(--line);
+        padding: 10px 16px;
+        background: rgba(16, 17, 21, 0.96);
+        backdrop-filter: blur(20px);
+      }
+
+      .prototype-title {
+        min-width: 0;
+      }
+
+      .eyebrow {
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 720;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .prototype-title strong {
+        display: block;
+        margin-top: 3px;
+        overflow: hidden;
+        font-size: 14px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .version-switcher {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .version-button {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        padding: 7px 8px;
+        text-align: left;
+        background: transparent;
+        color: var(--tertiary);
+      }
+
+      .version-button:hover {
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--muted);
+      }
+
+      .version-button.active {
+        border-color: rgba(143, 156, 255, 0.32);
+        background: var(--primary-soft);
+        color: var(--ink);
+      }
+
+      .version-key {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--primary-hover);
+        font-size: 10px;
+        font-weight: 760;
+      }
+
+      .version-copy {
+        min-width: 0;
+      }
+
+      .version-copy strong,
+      .version-copy small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .version-copy strong {
+        font-size: 11px;
+        font-weight: 650;
+      }
+
+      .version-copy small {
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .state-switcher {
+        display: flex;
+        justify-content: flex-end;
+        gap: 4px;
+      }
+
+      .state-button {
+        border-radius: 6px;
+        padding: 6px 8px;
+        background: transparent;
+        color: var(--tertiary);
+        font-size: 10px;
+      }
+
+      .state-button:hover,
+      .state-button.active {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--ink);
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 54px minmax(460px, 1fr) 1px var(--agent-width);
+        height: calc(100vh - 72px);
+        background:
+          radial-gradient(ellipse at 58% -20%, rgba(90, 101, 195, 0.09), transparent 35rem),
+          var(--canvas);
+      }
+
+      .product-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        border-right: 1px solid var(--line);
+        padding: 12px 8px;
+        background: rgba(12, 13, 16, 0.76);
+      }
+
+      .brand,
+      .rail-button,
+      .icon-button {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--tertiary);
+      }
+
+      .brand {
+        margin-bottom: 6px;
+        border: 1px solid rgba(143, 156, 255, 0.28);
+        background: var(--primary-soft);
+        color: var(--primary-hover);
+      }
+
+      .rail-button:hover,
+      .rail-button.active,
+      .icon-button:hover {
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--ink);
+      }
+
+      .rail-button.active {
+        color: var(--primary-hover);
+      }
+
+      .rail-spacer {
+        flex: 1;
+      }
+
+      .monitor {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .monitor-header {
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        padding: 0 20px;
+        color: var(--tertiary);
+        font-size: 11px;
+      }
+
+      .monitor-header strong {
+        color: var(--muted);
+        font-weight: 580;
+      }
+
+      .live {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+      }
+
+      .live::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 0 4px rgba(88, 199, 123, 0.08);
+        content: "";
+      }
+
+      .monitor-content {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        padding: 18px 20px;
+      }
+
+      .monitor-card {
+        min-height: 142px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 15px;
+        background: rgba(16, 17, 21, 0.54);
+      }
+
+      .monitor-card.wide {
+        grid-column: 1 / -1;
+        min-height: 260px;
+      }
+
+      .monitor-card .eyebrow {
+        margin-bottom: 8px;
+      }
+
+      .monitor-card h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 620;
+      }
+
+      .skeleton {
+        height: 7px;
+        margin-top: 18px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .skeleton.short {
+        width: 58%;
+        margin-top: 8px;
+      }
+
+      .resize-handle {
+        position: relative;
+        z-index: 5;
+        background: var(--line);
+      }
+
+      .resize-handle:hover {
+        background: rgba(143, 156, 255, 0.65);
+      }
+
+      .agent-panel {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        overflow: hidden;
+        background: rgba(18, 19, 23, 0.92);
+        backdrop-filter: blur(22px);
+      }
+
+      .agent-header {
+        position: relative;
+        display: flex;
+        min-height: 49px;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        padding: 0 10px;
+      }
+
+      .agent-mark {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 1px solid rgba(143, 156, 255, 0.25);
+        border-radius: 8px;
+        background: var(--primary-soft);
+        color: var(--primary-hover);
+      }
+
+      .session-trigger {
+        min-width: 0;
+        flex: 1;
+        border-radius: 7px;
+        padding: 4px 6px;
+        text-align: left;
+        background: transparent;
+      }
+
+      .session-trigger:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .session-trigger strong,
+      .session-trigger small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .session-trigger strong {
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .session-trigger small {
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .session-menu {
+        position: absolute;
+        z-index: 30;
+        top: 44px;
+        right: 8px;
+        left: 8px;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        padding: 5px;
+        background: rgba(30, 31, 37, 0.98);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+      }
+
+      .menu-label {
+        padding: 5px 7px;
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .session-row,
+      .slash-row {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 7px;
+        border-radius: 7px;
+        padding: 7px;
+        text-align: left;
+        background: transparent;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .session-row:hover,
+      .session-row.active,
+      .slash-row:hover {
+        background: rgba(255, 255, 255, 0.065);
+        color: var(--ink);
+      }
+
+      .session-row small,
+      .slash-row small {
+        color: var(--tertiary);
+      }
+
+      .context-strip {
+        display: flex;
+        min-height: 39px;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        padding: 7px 11px;
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      .context-label {
+        margin-right: 2px;
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 690;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .context-chip {
+        display: inline-flex;
+        min-width: 0;
+        max-width: 190px;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 7px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.025);
+        font-size: 9px;
+      }
+
+      .context-chip span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .context-chip.primary {
+        border-color: rgba(143, 156, 255, 0.25);
+        color: #d9dcff;
+        background: rgba(143, 156, 255, 0.09);
+      }
+
+      .chip-clear {
+        display: grid;
+        width: 14px;
+        height: 14px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 50%;
+        padding: 0;
+        background: transparent;
+        color: var(--tertiary);
+      }
+
+      .chip-clear:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--ink);
+      }
+
+      .context-mode {
+        margin-left: auto;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .message-scroll {
+        min-height: 0;
+        flex: 1;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+      }
+
+      .message-inner {
+        width: min(100%, 720px);
+        margin: 0 auto;
+        padding: 16px 16px 24px;
+      }
+
+      .turn {
+        position: relative;
+        margin-bottom: 18px;
+      }
+
+      .turn-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 7px;
+        color: var(--tertiary);
+        font-size: 9px;
+        font-weight: 620;
+      }
+
+      .turn-meta .spark {
+        color: var(--primary-hover);
+      }
+
+      .user-turn {
+        display: flex;
+        justify-content: flex-end;
+        padding-left: 42px;
+      }
+
+      .user-bubble {
+        max-width: 90%;
+        border: 1px solid rgba(143, 156, 255, 0.22);
+        border-radius: 12px 12px 4px 12px;
+        padding: 8px 10px;
+        color: #e4e7ff;
+        background: rgba(143, 156, 255, 0.12);
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .assistant-copy {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.62;
+      }
+
+      .assistant-copy p {
+        margin: 0;
+      }
+
+      .assistant-copy p + p {
+        margin-top: 8px;
+      }
+
+      .activity {
+        margin-top: 10px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .activity > summary {
+        display: flex;
+        min-height: 34px;
+        list-style: none;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 10px;
+      }
+
+      .activity > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .activity > summary .chevron {
+        margin-left: auto;
+        transition: transform 150ms ease;
+      }
+
+      .activity[open] > summary .chevron {
+        transform: rotate(180deg);
+      }
+
+      .activity-content {
+        display: grid;
+        gap: 2px;
+        border-top: 1px solid var(--line);
+        padding: 6px 0 8px;
+      }
+
+      .activity-row {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 7px;
+        min-height: 38px;
+        border-radius: 7px;
+        padding: 5px 6px;
+      }
+
+      .activity-row:hover {
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .activity-glyph {
+        display: grid;
+        width: 22px;
+        height: 22px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--tertiary);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .activity-copy {
+        min-width: 0;
+      }
+
+      .activity-copy strong,
+      .activity-copy small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .activity-copy strong {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .activity-copy small {
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--tertiary);
+      }
+
+      .status.running {
+        color: var(--primary-hover);
+      }
+
+      .status.running .status-dot {
+        background: var(--primary);
+        box-shadow: 0 0 0 3px rgba(143, 156, 255, 0.1);
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      .status.done {
+        color: var(--success);
+      }
+
+      .status.done .status-dot {
+        background: var(--success);
+      }
+
+      .status.failed {
+        color: var(--danger);
+      }
+
+      .status.failed .status-dot {
+        background: var(--danger);
+      }
+
+      @keyframes pulse {
+        50% {
+          opacity: 0.45;
+        }
+      }
+
+      .decision {
+        margin: 14px 0 20px;
+        border: 1px solid rgba(228, 181, 90, 0.3);
+        border-radius: 10px;
+        padding: 11px;
+        background: rgba(228, 181, 90, 0.06);
+      }
+
+      .decision-head {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .decision-head strong {
+        font-size: 11px;
+        font-weight: 650;
+      }
+
+      .decision-head span {
+        margin-left: auto;
+        color: var(--warning);
+        font-size: 9px;
+      }
+
+      .decision > p {
+        margin: 6px 0 9px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .decision-options {
+        display: grid;
+        gap: 5px;
+      }
+
+      .decision-option {
+        display: grid;
+        grid-template-columns: 14px minmax(0, 1fr);
+        gap: 7px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 7px 8px;
+        text-align: left;
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      .decision-option:hover,
+      .decision-option.selected {
+        border-color: rgba(143, 156, 255, 0.45);
+        background: rgba(143, 156, 255, 0.09);
+      }
+
+      .radio {
+        width: 13px;
+        height: 13px;
+        margin-top: 1px;
+        border: 1px solid var(--tertiary);
+        border-radius: 50%;
+      }
+
+      .decision-option.selected .radio {
+        border: 4px solid var(--primary);
+      }
+
+      .decision-option strong,
+      .decision-option small {
+        display: block;
+      }
+
+      .decision-option strong {
+        color: var(--ink);
+        font-size: 10px;
+        font-weight: 610;
+      }
+
+      .decision-option small {
+        margin-top: 1px;
+        color: var(--tertiary);
+        font-size: 9px;
+      }
+
+      .decision-note {
+        width: 100%;
+        min-height: 44px;
+        margin-top: 7px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 7px 8px;
+        color: var(--ink);
+        background: rgba(0, 0, 0, 0.15);
+        outline: 0;
+        font-size: 10px;
+      }
+
+      .decision-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-top: 7px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 27px;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 0 9px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 620;
+      }
+
+      .button:hover {
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--ink);
+      }
+
+      .button.primary {
+        border-color: transparent;
+        background: var(--primary);
+        color: #111329;
+      }
+
+      .button.primary:hover {
+        background: var(--primary-hover);
+      }
+
+      .error-message {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        margin-top: 8px;
+        border-left: 2px solid var(--danger);
+        padding: 5px 8px;
+        color: var(--danger);
+        background: rgba(241, 124, 124, 0.055);
+        font-size: 9px;
+      }
+
+      .empty-state {
+        display: grid;
+        min-height: 100%;
+        place-items: center;
+        padding: 28px;
+        text-align: center;
+      }
+
+      .empty-state > div {
+        max-width: 300px;
+      }
+
+      .empty-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        margin: 0 auto 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--primary-hover);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .empty-state strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 630;
+      }
+
+      .empty-state p {
+        margin: 6px 0 0;
+        color: var(--tertiary);
+        font-size: 10px;
+        line-height: 1.55;
+      }
+
+      .agent-footer {
+        position: relative;
+        z-index: 10;
+        flex: 0 0 auto;
+        border-top: 1px solid var(--line);
+        padding: 8px 10px 7px;
+        background: rgba(14, 15, 18, 0.94);
+      }
+
+      .pending-row {
+        display: flex;
+        min-height: 27px;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        border: 1px solid rgba(228, 181, 90, 0.2);
+        border-radius: 7px;
+        padding: 4px 7px;
+        color: var(--muted);
+        background: rgba(228, 181, 90, 0.055);
+        font-size: 9px;
+      }
+
+      .pending-row strong {
+        color: var(--warning);
+        font-weight: 640;
+      }
+
+      .pending-row span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pending-row button {
+        margin-left: auto;
+        padding: 0;
+        background: transparent;
+        color: var(--tertiary);
+      }
+
+      .composer {
+        position: relative;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+        transition:
+          border-color 150ms ease,
+          box-shadow 150ms ease;
+      }
+
+      .composer:focus-within {
+        border-color: rgba(143, 156, 255, 0.55);
+        box-shadow: 0 0 0 3px rgba(143, 156, 255, 0.075);
+      }
+
+      .skill-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 7px 8px 0;
+        border: 1px solid rgba(143, 156, 255, 0.28);
+        border-radius: 5px;
+        padding: 2px 5px;
+        color: #d9dcff;
+        background: rgba(143, 156, 255, 0.09);
+        font-size: 9px;
+      }
+
+      .skill-chip button {
+        display: grid;
+        place-items: center;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+      }
+
+      .prompt {
+        display: block;
+        width: 100%;
+        min-height: 54px;
+        max-height: 110px;
+        resize: none;
+        border: 0;
+        padding: 10px 10px 7px;
+        color: var(--ink);
+        background: transparent;
+        outline: 0;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .prompt::placeholder {
+        color: var(--tertiary);
+      }
+
+      .composer-foot {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        border-top: 1px solid var(--line);
+        padding: 5px;
+      }
+
+      .composer-button {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        place-items: center;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--tertiary);
+      }
+
+      .composer-button:hover {
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--ink);
+      }
+
+      .model-select {
+        min-width: 0;
+        max-width: 150px;
+        height: 26px;
+        border: 0;
+        border-radius: 6px;
+        padding: 0 6px;
+        color: var(--muted);
+        background: transparent;
+        outline: 0;
+        font-size: 9px;
+      }
+
+      .model-select:hover {
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .composer-spacer {
+        flex: 1;
+      }
+
+      .send-button {
+        display: grid;
+        width: 27px;
+        height: 27px;
+        place-items: center;
+        border-radius: 7px;
+        background: var(--primary);
+        color: #111329;
+      }
+
+      .send-button:hover {
+        background: var(--primary-hover);
+      }
+
+      .send-button.stop {
+        border: 1px solid rgba(241, 124, 124, 0.24);
+        background: rgba(241, 124, 124, 0.13);
+        color: var(--danger);
+      }
+
+      .slash-menu {
+        position: absolute;
+        z-index: 40;
+        right: 0;
+        bottom: calc(100% + 7px);
+        left: 0;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 9px;
+        padding: 5px;
+        background: rgba(30, 31, 37, 0.98);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+      }
+
+      .composer-hints {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 5px 2px 0;
+        color: var(--tertiary);
+        font-size: 8px;
+      }
+
+      .readonly {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
+      .toast {
+        position: fixed;
+        z-index: 200;
+        right: 16px;
+        bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 300px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--ink);
+        background: rgba(35, 36, 42, 0.98);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+        font-size: 10px;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition:
+          opacity 150ms ease,
+          transform 150ms ease;
+      }
+
+      .toast.visible {
+        opacity: 1;
+        transform: none;
+      }
+
+      .version-note {
+        display: none;
+      }
+
+      /* Direction A: closest to the current four-region DOM. */
+      .version-chat {
+        --agent-width: 470px;
+      }
+
+      .version-chat .activity:not([open]) {
+        background: transparent;
+      }
+
+      .version-chat .decision {
+        border-color: rgba(143, 156, 255, 0.25);
+        background: rgba(143, 156, 255, 0.055);
+      }
+
+      /* Direction B: same content DOM, activity rows become the hierarchy. */
+      .version-timeline {
+        --agent-width: 530px;
+      }
+
+      .version-timeline .message-inner {
+        padding-left: 28px;
+      }
+
+      .version-timeline .assistant-turn {
+        padding-left: 18px;
+      }
+
+      .version-timeline .assistant-turn::before {
+        position: absolute;
+        top: 4px;
+        bottom: -14px;
+        left: 3px;
+        width: 1px;
+        background: var(--line);
+        content: "";
+      }
+
+      .version-timeline .assistant-turn::after {
+        position: absolute;
+        top: 3px;
+        left: -1px;
+        width: 9px;
+        height: 9px;
+        border: 2px solid var(--surface-1);
+        border-radius: 50%;
+        background: var(--primary);
+        content: "";
+      }
+
+      .version-timeline .activity {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.018);
+      }
+
+      .version-timeline .activity > summary {
+        padding: 0 9px;
+      }
+
+      .version-timeline .activity-content {
+        padding-right: 5px;
+        padding-left: 5px;
+      }
+
+      .version-timeline .activity-row {
+        min-height: 42px;
+      }
+
+      /* Direction C: decision is visually pinned as the current blocking step. */
+      .version-decision {
+        --agent-width: 510px;
+      }
+
+      .version-decision .message-inner {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 24px;
+      }
+
+      .version-decision .activity {
+        opacity: 0.74;
+      }
+
+      .version-decision .decision {
+        position: sticky;
+        z-index: 6;
+        top: 8px;
+        order: -1;
+        margin-top: 0;
+        border-color: rgba(228, 181, 90, 0.38);
+        background: rgba(27, 25, 20, 0.96);
+        box-shadow: 0 14px 32px rgba(9, 10, 12, 0.55);
+        backdrop-filter: blur(18px);
+      }
+
+      .version-decision .context-strip {
+        background: rgba(228, 181, 90, 0.025);
+      }
+
+      .version-decision .agent-footer {
+        border-top-color: rgba(228, 181, 90, 0.2);
+      }
+
+      @media (max-width: 1220px) {
+        .prototype-bar {
+          grid-template-columns: 240px minmax(560px, 1fr);
+        }
+
+        .state-switcher {
+          display: none;
+        }
+
+        .app-shell {
+          grid-template-columns: 48px minmax(380px, 1fr) 1px var(--agent-width);
+        }
+
+        .monitor-content {
+          grid-template-columns: 1fr;
+        }
+
+        .monitor-card:nth-child(2) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="version-chat">
+    <header class="prototype-bar">
+      <div class="prototype-title">
+        <span class="eyebrow">Traceability · Agent area HTML exploration</span>
+        <strong id="direction-title">A · Quiet conversation</strong>
+      </div>
+      <nav class="version-switcher" aria-label="选择交互方向">
+        <button class="version-button active" data-version="chat" type="button">
+          <span class="version-key">A</span>
+          <span class="version-copy">
+            <strong>对话流</strong>
+            <small>最贴近当前 DOM</small>
+          </span>
+        </button>
+        <button class="version-button" data-version="timeline" type="button">
+          <span class="version-key">B</span>
+          <span class="version-copy">
+            <strong>执行时间线</strong>
+            <small>突出 tools / subagents</small>
+          </span>
+        </button>
+        <button class="version-button" data-version="decision" type="button">
+          <span class="version-key">C</span>
+          <span class="version-copy">
+            <strong>决策优先</strong>
+            <small>human loop 常驻前景</small>
+          </span>
+        </button>
+      </nav>
+      <nav class="state-switcher" aria-label="切换演示状态">
+        <button class="state-button active" data-state="running" type="button">运行中</button>
+        <button class="state-button" data-state="empty" type="button">空状态</button>
+        <button class="state-button" data-state="error" type="button">异常</button>
+      </nav>
+    </header>
+
+    <main class="app-shell">
+      <nav class="product-rail" aria-label="产品导航">
+        <span class="brand" title="Traceability"><i class="icon" data-lucide="radar"></i></span>
+        <button class="rail-button active" title="Issues" type="button">
+          <i class="icon" data-lucide="triangle-alert"></i>
+        </button>
+        <button class="rail-button" title="Performance" type="button">
+          <i class="icon" data-lucide="chart-no-axes-combined"></i>
+        </button>
+        <button class="rail-button" title="Replay" type="button">
+          <i class="icon" data-lucide="clapperboard"></i>
+        </button>
+        <span class="rail-spacer"></span>
+        <button class="rail-button" title="Settings" type="button">
+          <i class="icon" data-lucide="settings-2"></i>
+        </button>
+      </nav>
+
+      <section class="monitor" aria-label="监控区域">
+        <header class="monitor-header">
+          <span>Storefront Web</span>
+          <span>/</span>
+          <strong>Issues / checkout blank screen</strong>
+          <span class="live">Live updates</span>
+          <button class="icon-button" title="刷新" type="button">
+            <i class="icon" data-lucide="refresh-cw"></i>
+          </button>
+        </header>
+        <div class="monitor-content">
+          <article class="monitor-card">
+            <div class="eyebrow">Issue status</div>
+            <h3>Checkout blank screen</h3>
+            <div class="skeleton"></div>
+            <div class="skeleton short"></div>
+          </article>
+          <article class="monitor-card">
+            <div class="eyebrow">Most recent replay</div>
+            <h3>Safari · macOS · 11:02</h3>
+            <div class="skeleton"></div>
+            <div class="skeleton short"></div>
+          </article>
+          <article class="monitor-card wide">
+            <div class="eyebrow">Event trail</div>
+            <div class="skeleton"></div>
+            <div class="skeleton short"></div>
+          </article>
+        </div>
+      </section>
+
+      <div class="resize-handle" title="Drag to resize the Agent panel"></div>
+
+      <aside class="agent-panel" aria-label="Traceability Agent">
+        <span class="version-note" id="version-note"
+          >DOM：header / context / messages / footer 保持不变，仅重排视觉层级。</span
+        >
+        <header class="agent-header">
+          <span class="agent-mark"><i class="icon" data-lucide="sparkles"></i></span>
+          <button class="session-trigger" id="session-trigger" type="button">
+            <strong id="session-title">定位 checkout 空白页根因</strong>
+            <small><span id="run-label">Investigating</span> · 会话切换 ⌘G</small>
+          </button>
+          <button class="icon-button" id="new-session" title="New conversation" type="button">
+            <i class="icon" data-lucide="square-pen"></i>
+          </button>
+          <div class="session-menu" id="session-menu" hidden>
+            <div class="menu-label">Switch conversation</div>
+            <button class="session-row active" data-session="定位 checkout 空白页根因" type="button">
+              <i class="icon" data-lucide="message-circle"></i>
+              <span>定位 checkout 空白页根因</span>
+              <small>Now</small>
+            </button>
+            <button class="session-row" data-session="分析 INP 回归" type="button">
+              <i class="icon" data-lucide="message-circle"></i>
+              <span>分析 INP 回归</span>
+              <small>12m</small>
+            </button>
+            <button class="session-row" data-session="Safari replay 对比" type="button">
+              <i class="icon" data-lucide="message-circle"></i>
+              <span>Safari replay 对比</span>
+              <small>1h</small>
+            </button>
+          </div>
+        </header>
+
+        <section class="context-strip" aria-label="Agent context">
+          <span class="context-label">Context</span>
+          <span class="context-chip">
+            <i class="icon" data-lucide="app-window"></i><span>Storefront Web</span>
+          </span>
+          <span class="context-chip primary" id="issue-chip">
+            <i class="icon" data-lucide="triangle-alert"></i>
+            <span>ISS-204 · checkout blank screen</span>
+            <button class="chip-clear" id="clear-context" title="Clear context" type="button">
+              <i class="icon" data-lucide="x"></i>
+            </button>
+          </span>
+          <button class="button" id="restore-context" type="button" hidden>Restore issue</button>
+          <span class="context-mode" id="context-mode">Pinned</span>
+        </section>
+
+        <section class="message-scroll" id="message-scroll">
+          <div class="empty-state" id="empty-state" hidden>
+            <div>
+              <span class="empty-mark"><i class="icon" data-lucide="sparkles"></i></span>
+              <strong>调查这个应用</strong>
+              <p>从当前 issue、performance 或 replay 上下文开始，Agent 会保留会话与执行记录。</p>
+            </div>
+          </div>
+
+          <div class="message-inner" id="chat-content">
+            <article class="turn user-turn">
+              <div class="user-bubble">
+                为什么用户在 Safari 提交订单后会看到空白页？给我可执行的修复路径。
+              </div>
+            </article>
+
+            <article class="turn assistant-turn">
+              <div class="turn-meta">
+                <i class="icon spark" data-lucide="sparkles"></i>
+                <span>Traceability Agent</span>
+                <span>·</span>
+                <span id="assistant-status">Working</span>
+              </div>
+              <div class="assistant-copy">
+                <p>
+                  我把排查拆成了三条可独立验证的路径。主对话继续汇总，只有证据产生分歧时才需要你介入。
+                </p>
+              </div>
+
+              <details class="activity" id="activity">
+                <summary>
+                  <i class="icon" data-lucide="list-tree"></i>
+                  <strong>Worked for 2m 14s</strong>
+                  <span>· 3 subagents · 2 tools</span>
+                  <i class="icon chevron" data-lucide="chevron-down"></i>
+                </summary>
+                <div class="activity-content">
+                  <div class="activity-row">
+                    <span class="activity-glyph"><i class="icon" data-lucide="brain"></i></span>
+                    <span class="activity-copy">
+                      <strong>Reasoning summary</strong>
+                      <small>Safari replay 指向 redirect state 缺失，而不是网络超时</small>
+                    </span>
+                    <span class="status done"><span class="status-dot"></span>Done</span>
+                  </div>
+                  <div class="activity-row">
+                    <span class="activity-glyph"><i class="icon" data-lucide="terminal-square"></i></span>
+                    <span class="activity-copy">
+                      <strong>Query issue events</strong>
+                      <small>检索 24h breadcrumbs 与 replay metadata</small>
+                    </span>
+                    <span class="status done"><span class="status-dot"></span>Done</span>
+                  </div>
+                  <div class="activity-row">
+                    <span class="activity-glyph"><i class="icon" data-lucide="git-branch"></i></span>
+                    <span class="activity-copy">
+                      <strong>复现路径</strong>
+                      <small>正在比对 Safari replay 与 checkout breadcrumbs</small>
+                    </span>
+                    <span class="status running"><span class="status-dot"></span>Running</span>
+                  </div>
+                  <div class="activity-row">
+                    <span class="activity-glyph"><i class="icon" data-lucide="git-branch"></i></span>
+                    <span class="activity-copy">
+                      <strong>代码归因</strong>
+                      <small>已定位 payment redirect 的空状态分支</small>
+                    </span>
+                    <span class="status done"><span class="status-dot"></span>Done</span>
+                  </div>
+                  <div class="activity-row">
+                    <span class="activity-glyph"><i class="icon" data-lucide="git-branch"></i></span>
+                    <span class="activity-copy">
+                      <strong>影响评估</strong>
+                      <small>等待修复策略后继续验证</small>
+                    </span>
+                    <span class="status"><span class="status-dot"></span>Queued</span>
+                  </div>
+                </div>
+              </details>
+
+              <div class="error-message" id="error-message" hidden>
+                <i class="icon" data-lucide="circle-alert"></i>
+                <span>一次 replay 查询超时。已保留现有证据，可重试或继续当前结论。</span>
+              </div>
+            </article>
+
+            <section class="decision" id="decision-card">
+              <div class="decision-head">
+                <i class="icon" data-lucide="circle-help"></i>
+                <strong>需要你决定修复策略</strong>
+                <span>阻塞影响评估</span>
+              </div>
+              <p>证据已足够。你想先减少本周损失，还是直接推进根因修复？</p>
+              <div class="decision-options">
+                <button class="decision-option selected" data-choice="先止血" type="button">
+                  <span class="radio"></span>
+                  <span>
+                    <strong>先止血</strong>
+                    <small>Safari 跳回 checkout，并记录诊断事件</small>
+                  </span>
+                </button>
+                <button class="decision-option" data-choice="根因修复" type="button">
+                  <span class="radio"></span>
+                  <span>
+                    <strong>根因修复</strong>
+                    <small>修复 redirect state 缺失，预计需完整回归</small>
+                  </span>
+                </button>
+              </div>
+              <textarea
+                class="decision-note"
+                id="decision-note"
+                placeholder="可选：补充发布窗口或额外约束"
+              ></textarea>
+              <div class="decision-actions">
+                <button class="button" id="view-evidence" type="button">查看证据</button>
+                <button class="button primary" id="confirm-decision" type="button">
+                  Continue
+                </button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="agent-footer">
+          <div class="pending-row" id="pending-row">
+            <strong>Steer · 1</strong>
+            <span>优先确认是否只影响 Safari 17</span>
+            <button id="clear-pending" title="Clear pending message" type="button">
+              <i class="icon" data-lucide="x"></i>
+            </button>
+          </div>
+
+          <div class="composer">
+            <div class="skill-chip" id="skill-chip">
+              <i class="icon" data-lucide="box"></i>
+              <span>subagent</span>
+              <button id="remove-skill" title="Remove skill" type="button">
+                <i class="icon" data-lucide="x"></i>
+              </button>
+            </div>
+            <textarea
+              class="prompt"
+              id="prompt"
+              placeholder="Ask about this application…  输入 / 使用 skills"
+            ></textarea>
+            <div class="composer-foot">
+              <button class="composer-button" id="slash-button" title="Skills" type="button">
+                <i class="icon" data-lucide="plus"></i>
+              </button>
+              <select class="model-select" id="model-select" aria-label="Select model">
+                <option>GPT-5.2 Codex</option>
+                <option>GPT-5.1 Codex mini</option>
+                <option>Claude Sonnet 4.5</option>
+              </select>
+              <span class="composer-spacer"></span>
+              <button class="send-button stop" id="send-button" title="Stop response" type="button">
+                <i class="icon" id="send-icon" data-lucide="square"></i>
+              </button>
+            </div>
+            <div class="slash-menu" id="slash-menu" hidden>
+              <div class="menu-label">Skills</div>
+              <button class="slash-row" data-skill="subagent" type="button">
+                <i class="icon" data-lucide="git-branch"></i>
+                <span>subagent <small>并行执行多个调查任务</small></span>
+                <small>Project</small>
+              </button>
+              <button class="slash-row" data-skill="analyze-replay" type="button">
+                <i class="icon" data-lucide="clapperboard"></i>
+                <span>analyze-replay <small>分析当前 session replay</small></span>
+                <small>System</small>
+              </button>
+            </div>
+          </div>
+          <div class="composer-hints">
+            <span id="keyboard-hint">Enter steer · ⌘/Ctrl+Enter follow-up</span>
+            <span class="readonly"><i class="icon" data-lucide="lock-keyhole"></i> Read-only monitoring</span>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast">
+      <i class="icon" data-lucide="check"></i>
+      <span id="toast-copy">Updated</span>
+    </div>
+
+    <script>
+      var qs = function (selector, root) {
+        return (root || document).querySelector(selector);
+      };
+      var qsa = function (selector, root) {
+        return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+      };
+      var toastTimer;
+      var selectedChoice = "先止血";
+      var running = true;
+
+      function refreshIcons() {
+        if (window.lucide) {
+          window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
+        }
+      }
+
+      function showToast(message) {
+        qs("#toast-copy").textContent = message;
+        qs("#toast").classList.add("visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () {
+          qs("#toast").classList.remove("visible");
+        }, 1800);
+      }
+
+      function scrollLatest() {
+        var container = qs("#message-scroll");
+        container.scrollTop = container.scrollHeight;
+      }
+
+      function setRunning(nextRunning) {
+        running = nextRunning;
+        qs("#run-label").textContent = running ? "Investigating" : "Traceability Agent";
+        qs("#assistant-status").textContent = running ? "Working" : "Stopped";
+        qs("#send-button").classList.toggle("stop", running);
+        qs("#send-button").title = running ? "Stop response" : "Send prompt";
+        qs("#send-icon").setAttribute("data-lucide", running ? "square" : "arrow-up");
+        qs("#keyboard-hint").textContent = running
+          ? "Enter steer · ⌘/Ctrl+Enter follow-up"
+          : "Enter send · Shift+Enter newline";
+        refreshIcons();
+      }
+
+      function appendTurn(text, mode) {
+        var wrapper = document.createElement("article");
+        wrapper.className = "turn user-turn";
+        var bubble = document.createElement("div");
+        bubble.className = "user-bubble";
+        bubble.textContent = (mode === "steer" ? "Steering · " : mode === "follow" ? "Follow-up · " : "") + text;
+        wrapper.appendChild(bubble);
+        qs("#chat-content").appendChild(wrapper);
+        scrollLatest();
+      }
+
+      function submitPrompt(mode) {
+        var prompt = qs("#prompt");
+        var value = prompt.value.trim();
+        if (!value) {
+          showToast("先输入一条消息");
+          return;
+        }
+        appendTurn(value, mode);
+        prompt.value = "";
+        if (running) {
+          qs("#pending-row").hidden = false;
+          qs("#pending-row span").textContent = value;
+          qs("#pending-row strong").textContent = mode === "follow" ? "Follow-up · 1" : "Steer · 1";
+          showToast(mode === "follow" ? "已加入 follow-up 队列" : "已 steering 当前任务");
+        } else {
+          setRunning(true);
+          showToast("Agent 已开始调查");
+        }
+      }
+
+      qsa("[data-version]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var version = button.getAttribute("data-version");
+          document.body.classList.remove("version-chat", "version-timeline", "version-decision");
+          document.body.classList.add("version-" + version);
+          qsa("[data-version]").forEach(function (candidate) {
+            candidate.classList.toggle("active", candidate === button);
+          });
+          var meta = {
+            chat: {
+              title: "A · Quiet conversation",
+              note: "DOM：header / context / messages / footer 保持不变，仅重排视觉层级。",
+            },
+            timeline: {
+              title: "B · Execution timeline",
+              note: "小调整：assistant turn 增加时间线装饰，activity 默认展开。",
+            },
+            decision: {
+              title: "C · Decision first",
+              note: "小调整：human-loop 容器在消息区 sticky，业务结构不变。",
+            },
+          };
+          qs("#direction-title").textContent = meta[version].title;
+          qs("#version-note").textContent = meta[version].note;
+          qs("#activity").open = version === "timeline";
+          qs("#message-scroll").scrollTop = 0;
+        });
+      });
+
+      qsa("[data-state]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var state = button.getAttribute("data-state");
+          qsa("[data-state]").forEach(function (candidate) {
+            candidate.classList.toggle("active", candidate === button);
+          });
+          qs("#empty-state").hidden = state !== "empty";
+          qs("#chat-content").hidden = state === "empty";
+          qs("#error-message").hidden = state !== "error";
+          qs("#decision-card").hidden = state === "empty";
+          qs("#prompt").disabled = state === "empty";
+          showToast(state === "empty" ? "空会话状态" : state === "error" ? "异常恢复状态" : "运行中状态");
+        });
+      });
+
+      qs("#session-trigger").addEventListener("click", function () {
+        qs("#session-menu").hidden = !qs("#session-menu").hidden;
+      });
+
+      qsa("[data-session]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          qsa("[data-session]").forEach(function (candidate) {
+            candidate.classList.toggle("active", candidate === button);
+          });
+          qs("#session-title").textContent = button.getAttribute("data-session");
+          qs("#session-menu").hidden = true;
+          showToast("会话已切换，运行状态已保留");
+        });
+      });
+
+      qs("#new-session").addEventListener("click", function () {
+        qs("#session-title").textContent = "New conversation";
+        qs("#empty-state").hidden = false;
+        qs("#chat-content").hidden = true;
+        qs("#prompt").disabled = false;
+        setRunning(false);
+        showToast("已创建新会话");
+      });
+
+      qs("#clear-context").addEventListener("click", function () {
+        qs("#issue-chip").hidden = true;
+        qs("#restore-context").hidden = false;
+        qs("#context-mode").textContent = "Automatic";
+        showToast("已清除固定 issue，上下文改为自动");
+      });
+
+      qs("#restore-context").addEventListener("click", function () {
+        qs("#issue-chip").hidden = false;
+        qs("#restore-context").hidden = true;
+        qs("#context-mode").textContent = "Pinned";
+        showToast("已恢复 ISS-204 上下文");
+      });
+
+      qsa("[data-choice]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          selectedChoice = button.getAttribute("data-choice");
+          qsa("[data-choice]").forEach(function (candidate) {
+            candidate.classList.toggle("selected", candidate === button);
+          });
+        });
+      });
+
+      qs("#confirm-decision").addEventListener("click", function () {
+        var note = qs("#decision-note").value.trim();
+        qs("#decision-card").hidden = true;
+        qs("#pending-row").hidden = true;
+        showToast("已选择“" + selectedChoice + "”" + (note ? "并附加约束" : ""));
+      });
+
+      qs("#view-evidence").addEventListener("click", function () {
+        qs("#activity").open = true;
+        qs("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
+        showToast("已展开 reasoning、tools 与 subagents");
+      });
+
+      qs("#clear-pending").addEventListener("click", function () {
+        qs("#pending-row").hidden = true;
+        showToast("排队消息已清除");
+      });
+
+      qs("#slash-button").addEventListener("click", function () {
+        qs("#slash-menu").hidden = !qs("#slash-menu").hidden;
+      });
+
+      qsa("[data-skill]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          qs("#skill-chip span").textContent = button.getAttribute("data-skill");
+          qs("#skill-chip").hidden = false;
+          qs("#slash-menu").hidden = true;
+          qs("#prompt").focus();
+          showToast("Skill 已加入 prompt");
+        });
+      });
+
+      qs("#remove-skill").addEventListener("click", function () {
+        qs("#skill-chip").hidden = true;
+      });
+
+      qs("#prompt").addEventListener("input", function () {
+        qs("#slash-menu").hidden = qs("#prompt").value.charAt(0) !== "/";
+      });
+
+      qs("#prompt").addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" || event.shiftKey || qs("#slash-menu").hidden === false) return;
+        event.preventDefault();
+        if (running && (event.metaKey || event.ctrlKey)) submitPrompt("follow");
+        else if (running) submitPrompt("steer");
+        else submitPrompt("prompt");
+      });
+
+      qs("#send-button").addEventListener("click", function () {
+        if (running) {
+          setRunning(false);
+          showToast("已停止当前响应，可继续追问");
+        } else {
+          submitPrompt("prompt");
+        }
+      });
+
+      qs("#model-select").addEventListener("change", function () {
+        showToast("模型已切换为 " + qs("#model-select").value);
+      });
+
+      document.addEventListener("click", function (event) {
+        if (!event.target.closest(".agent-header")) qs("#session-menu").hidden = true;
+        if (!event.target.closest(".composer")) qs("#slash-menu").hidden = true;
+      });
+
+      refreshIcons();
+      qs("#message-scroll").scrollTop = 0;
+    </script>
+  </body>
+</html>

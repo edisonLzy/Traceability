@@ -47,7 +47,9 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
+  /* `text-muted` is the readable secondary text color declared above. Keep
+     the shadcn muted surface separate so it cannot overwrite that token. */
+  --color-muted-surface: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);

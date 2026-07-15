@@ -5,25 +5,31 @@ import { app, BrowserWindow } from "electron";
 import { AgentPool } from "./agent-pool.js";
 import { SessionPersistence } from "./sessions/index.js";
 
-app.whenReady().then(() => {
-  let browserWindow: BrowserWindow | null = createWindow();
+void app
+  .whenReady()
+  .then(() => {
+    let browserWindow: BrowserWindow | null = createWindow();
 
-  const agentPool = new AgentPool(browserWindow);
-  const sessionPersistence = new SessionPersistence(browserWindow);
+    const agentPool = new AgentPool(browserWindow);
+    const sessionPersistence = new SessionPersistence(browserWindow);
 
-  app.on("activate", () => {
-    if (!browserWindow || browserWindow.isDestroyed()) {
-      browserWindow = createWindow();
-      agentPool.updateBrowserWindow(browserWindow);
-      sessionPersistence.updateBrowserWindow(browserWindow);
-    }
+    app.on("activate", () => {
+      if (!browserWindow || browserWindow.isDestroyed()) {
+        browserWindow = createWindow();
+        agentPool.updateBrowserWindow(browserWindow);
+        sessionPersistence.updateBrowserWindow(browserWindow);
+      }
+    });
+
+    app.on("quit", () => {
+      void agentPool.destroyAll();
+      void sessionPersistence.destroyAll();
+    });
+  })
+  .catch((error: unknown) => {
+    console.error("Failed to initialize Traceability main process:", error);
+    app.quit();
   });
-
-  app.on("quit", () => {
-    void agentPool.destroyAll();
-    void sessionPersistence.destroyAll();
-  });
-});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();

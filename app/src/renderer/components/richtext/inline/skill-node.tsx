@@ -7,7 +7,7 @@ import {
   type Editor,
   type NodeViewProps,
 } from "@tiptap/react";
-import { Wrench } from "lucide-react";
+import { Box } from "lucide-react";
 
 import { IconNode } from "../components/icon-node";
 
@@ -92,15 +92,12 @@ export const skillNode = Mention.extend({
   },
 });
 
-function SkillNodeView({ node }: NodeViewProps) {
+function SkillNodeView({ deleteNode, node }: NodeViewProps) {
   const label = node.attrs.label ?? node.attrs.id ?? "";
 
   return (
-    <NodeViewWrapper as="span" className="inline-flex" contentEditable={false}>
-      <IconNode
-        icon={<Wrench aria-hidden="true" />}
-        className="border border-border bg-signal-yellow text-accent-foreground"
-      >
+    <NodeViewWrapper as="span" className="inline-flex align-baseline" contentEditable={false}>
+      <IconNode icon={<Box aria-hidden="true" />} onRemove={deleteNode}>
         {label}
       </IconNode>
     </NodeViewWrapper>

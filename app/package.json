@@ -5,8 +5,8 @@
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
-    "build": "electron-vite build",
-    "dev": "electron-vite dev --inspect --sourcemap",
+    "build": "node ./scripts/run-electron-vite.mjs build",
+    "dev": "node ./scripts/run-electron-vite.mjs dev --inspect --sourcemap",
     "package": "pnpm build && electron-builder",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",

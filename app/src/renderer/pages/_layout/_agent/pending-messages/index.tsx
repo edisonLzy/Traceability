@@ -7,9 +7,6 @@ export function PendingMessages({ sessionId }: { sessionId: string }) {
 
   return (
     <section className="mb-2 flex max-h-20 items-start gap-2 overflow-hidden rounded-[7px] border border-warning/20 bg-warning/[0.055] px-2 py-1.5">
-      <strong className="shrink-0 text-[9px] font-[660] text-warning">
-        Pending · {messages.length}
-      </strong>
       <div className="min-w-0 flex-1 overflow-y-auto">
         {messages.map((message) => (
           <p key={message.timestamp} className="truncate text-[9px] leading-4 text-muted">

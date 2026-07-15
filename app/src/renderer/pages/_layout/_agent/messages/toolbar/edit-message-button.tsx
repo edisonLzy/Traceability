@@ -18,7 +18,7 @@ export function EditMessageButton({ isRunning, onEdit }: EditMessageButtonProps)
       onClick={onEdit}
       title="编辑"
       aria-label="编辑"
-      className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+      className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:bg-muted-surface hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
     >
       <Pencil className="size-3.5" />
     </button>

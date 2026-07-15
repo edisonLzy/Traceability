@@ -26,7 +26,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-full items-center justify-between gap-1.5 rounded-lg border border-hairline bg-surface-1 py-0 pr-7 pl-3 text-muted outline-none transition-colors hover:bg-surface-2 focus:border-primary disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-7.5 data-[size=sm]:text-xs data-placeholder:text-tertiary [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex w-full items-center justify-between gap-1.5 rounded-lg border border-hairline bg-surface-1 py-0 pr-7 pl-3 text-muted outline-none transition-colors hover:bg-surface-2 focus:border-primary disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-7.5 data-[size=sm]:text-xs data-placeholder:text-tertiary [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
         className,
       )}
       {...props}

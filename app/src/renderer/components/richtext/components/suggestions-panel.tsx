@@ -108,7 +108,7 @@ export function SuggestionsPanel({
                 "flex w-full items-center gap-2.5 rounded-sm border-2 px-2.5 py-2 text-left transition-colors",
                 index === selectedIndex
                   ? "border-border bg-accent text-accent-foreground"
-                  : "border-transparent text-popover-foreground hover:bg-muted",
+                  : "border-transparent text-popover-foreground hover:bg-muted-surface",
               )}
               onClick={() => onSelect(item)}
               onMouseDown={(event) => event.preventDefault()}
