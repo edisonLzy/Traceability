@@ -51,4 +51,13 @@ export interface SessionPersistenceIPC {
   renameSession: (sessionId: string, name: string) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
   appendSessionEntries: (sessionId: string, entries: Entry[]) => Promise<void>;
+  getBranch: (sessionId: string, leafId?: string) => Promise<Entry[]>;
+  setLeaf: (sessionId: string, entryId: string) => Promise<void>;
+  buildContext: (
+    sessionId: string,
+    leafId?: string,
+  ) => Promise<{
+    messages: Array<{ id: string; role: string; content: unknown }>;
+    model: { providerId: string; modelId: string } | null;
+  }>;
 }

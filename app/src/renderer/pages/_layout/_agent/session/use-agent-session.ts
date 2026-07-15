@@ -26,7 +26,7 @@ export function useAgentSession(appId: string | undefined) {
       setError(null);
 
       try {
-        const entries = await invoke("getSessionEntries", session.id);
+        const entries = await invoke("getBranch", session.id);
         if (activationVersion !== activationVersionRef.current) return false;
 
         const sessionEntries = entries.map(toSessionEntry);

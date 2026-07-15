@@ -63,6 +63,9 @@ export const ALLOWED_RENDER_INVOKE_EVENTS: (keyof AgentRuntimeIPC)[] = [
   "renameSession",
   "deleteSession",
   "appendSessionEntries",
+  "getBranch",
+  "setLeaf",
+  "buildContext",
 ];
 
 export type AllowedRenderInvokeEvents = (typeof ALLOWED_RENDER_INVOKE_EVENTS)[number];

@@ -221,6 +221,16 @@ function EditableUserMessage({
 
       const rewindEntries = entries.slice(0, targetIndex);
 
+      // Persist the leaf pointer to the entry before the edited one
+      if (targetIndex > 0) {
+        const parentEntry = entries[targetIndex - 1];
+        if (parentEntry) {
+          await invoke("setLeaf", sessionId, parentEntry.id).catch((error) => {
+            console.error("Failed to set leaf on edit:", error);
+          });
+        }
+      }
+
       agentStore.getState().setSessionEntries(sessionId, rewindEntries);
 
       const runtimeMessages = rewindEntries

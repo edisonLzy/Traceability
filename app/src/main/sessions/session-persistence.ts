@@ -34,6 +34,9 @@ export class SessionPersistence
       "renameSession",
       "deleteSession",
       "appendSessionEntries",
+      "getBranch",
+      "setLeaf",
+      "buildContext",
     ] as const;
     for (const channel of channels) {
       this.typedIpcMain.handle(
@@ -160,6 +163,91 @@ export class SessionPersistence
           .run(lastEntry.id, Date.now(), sessionId);
       }
     });
+  };
+
+  // ── getBranch ─────────────────────────────────────────────────────────────────
+
+  public getBranch: SessionPersistenceIPC["getBranch"] = async (sessionId, leafId) => {
+    let targetLeafId = leafId;
+
+    if (!targetLeafId) {
+      const session = this.db.db
+        .prepare("SELECT leaf_entry_id FROM agent_sessions WHERE id = ?")
+        .get(sessionId) as { leaf_entry_id: string | null } | undefined;
+      if (!session?.leaf_entry_id) return [];
+      targetLeafId = session.leaf_entry_id;
+    }
+
+    const rows = this.db.db
+      .prepare("SELECT * FROM agent_entries WHERE session_id = ?")
+      .all(sessionId) as never[];
+
+    const entryMap = new Map<string, ReturnType<typeof toEntry>>();
+    for (const row of rows) {
+      const entry = toEntry(row as never);
+      entryMap.set(entry.id, entry);
+    }
+
+    const branch: ReturnType<typeof toEntry>[] = [];
+    let currentId: string | null | undefined = targetLeafId;
+
+    while (currentId) {
+      const currentEntry = entryMap.get(currentId);
+      if (!currentEntry) break;
+
+      branch.push(currentEntry);
+      currentId = currentEntry.parentId;
+    }
+
+    branch.reverse();
+    return branch;
+  };
+
+  // ── setLeaf ───────────────────────────────────────────────────────────────────
+
+  public setLeaf: SessionPersistenceIPC["setLeaf"] = async (sessionId, entryId) => {
+    const entry = this.db.db
+      .prepare("SELECT id, session_id FROM agent_entries WHERE id = ?")
+      .get(entryId) as { id: string; session_id: string } | undefined;
+
+    if (!entry) {
+      throw new Error(`Entry not found: ${entryId}`);
+    }
+
+    if (entry.session_id !== sessionId) {
+      throw new Error(`Entry ${entryId} does not belong to session ${sessionId}`);
+    }
+
+    this.db.db
+      .prepare("UPDATE agent_sessions SET leaf_entry_id = ?, updated_at = ? WHERE id = ?")
+      .run(entryId, Date.now(), sessionId);
+  };
+
+  // ── buildContext ──────────────────────────────────────────────────────────────
+
+  public buildContext: SessionPersistenceIPC["buildContext"] = async (sessionId, leafId) => {
+    const branch = await this.getBranch(sessionId, leafId);
+
+    const messages: Array<{ id: string; role: string; content: unknown }> = [];
+    let model: { providerId: string; modelId: string } | null = null;
+
+    for (const entry of branch) {
+      if (entry.type === "message") {
+        const data = entry.data as { role?: string; content?: unknown };
+        messages.push({
+          id: entry.id,
+          role: data.role ?? "unknown",
+          content: data.content ?? "",
+        });
+      } else if (entry.type === "model_change") {
+        const data = entry.data as { providerId?: string; modelId?: string };
+        if (data.providerId && data.modelId) {
+          model = { providerId: data.providerId, modelId: data.modelId };
+        }
+      }
+    }
+
+    return { messages, model };
   };
 
   public destroyAll() {
