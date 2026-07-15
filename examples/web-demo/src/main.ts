@@ -1,6 +1,9 @@
 import { captureException, init, report } from "@traceability/core";
 
 import { throwPreviewSourceMapError } from "./previewFailure";
+import { setupRegisterForm } from "./register";
+
+import "./styles.css";
 
 declare const __TRACEABILITY_RELEASE__: string;
 
@@ -45,3 +48,6 @@ document.querySelector("#white")!.addEventListener("click", () => {
 document.querySelector("#custom")!.addEventListener("click", () => {
   report({ type: "demo-custom-event", payload: { at: Date.now() }, tags: { feature: "demo" } });
 });
+
+// 用户注册表单（纯前端，不联动 SDK）
+setupRegisterForm();
