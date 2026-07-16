@@ -79,24 +79,14 @@ export function Layout() {
 
   if (loading) {
     return (
-      <div className="h-screen overflow-hidden">
-        <Titlebar />
-        <div className="flex h-full items-center justify-center pt-[30px] text-[12px] text-tertiary">
-          Loading…
-        </div>
+      <div className="app-drag-region flex h-screen items-center justify-center bg-canvas text-[12px] text-tertiary">
+        Loading…
       </div>
     );
   }
 
   if (apps.length === 0) {
-    return (
-      <div className="h-screen overflow-hidden">
-        <Titlebar />
-        <div className="h-full pt-[30px]">
-          <AppOnboardingGuide />
-        </div>
-      </div>
-    );
+    return <AppOnboardingGuide />;
   }
 
   return (

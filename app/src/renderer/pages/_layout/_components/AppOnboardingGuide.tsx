@@ -55,9 +55,9 @@ export function AppOnboardingGuide() {
   };
 
   return (
-    <div className="relative h-full overflow-hidden bg-canvas">
+    <div className="app-drag-region relative h-screen overflow-hidden bg-canvas">
       <AmbientBackground />
-      <div className="relative flex h-full flex-col items-center justify-center px-6 py-8">
+      <div className="app-no-drag select-text relative flex h-full flex-col items-center justify-center px-6 py-8">
         <div className="w-full max-w-[560px]">
           <Stepper current={step} />
 
