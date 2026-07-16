@@ -4,10 +4,12 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@renderer/components/ui/resizable";
+import { useCurrentApp } from "@renderer/context/current-app";
 import { AlertTriangle, BarChart3, Command, Compass, Inbox, Radio } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { AgentPanel } from "./_agent";
+import { AppOnboardingGuide } from "./_components/AppOnboardingGuide";
 import { CommandPalette } from "./_components/CommandPalette";
 import { HeaderAppSwitcher } from "./_components/HeaderAppSwitcher";
 import { RefreshButton } from "./_components/RefreshButton";
@@ -18,6 +20,7 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { open: openCommands } = useCommandPalette();
+  const { apps, loading } = useCurrentApp();
 
   const crumb = (() => {
     if (location.pathname === "/inbox") return "Inbox";
@@ -73,6 +76,28 @@ export function Layout() {
     ],
     [navigate],
   );
+
+  if (loading) {
+    return (
+      <div className="h-screen overflow-hidden">
+        <Titlebar />
+        <div className="flex h-full items-center justify-center pt-[30px] text-[12px] text-tertiary">
+          Loading…
+        </div>
+      </div>
+    );
+  }
+
+  if (apps.length === 0) {
+    return (
+      <div className="h-screen overflow-hidden">
+        <Titlebar />
+        <div className="h-full pt-[30px]">
+          <AppOnboardingGuide />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen overflow-hidden">
