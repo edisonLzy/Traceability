@@ -1,4 +1,3 @@
-import { NoAppState } from "@renderer/components/NoAppState";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { promptAgent } from "@renderer/lib/agent-events";
 import { cn, relativeTime } from "@renderer/lib/utils";
@@ -39,8 +38,6 @@ export function PerformancePage() {
     .map(([, m]) => new Date(m.lastSeen).getTime())
     .filter(Number.isFinite)
     .sort((a, b) => b - a)[0];
-
-  if (!currentApp) return <NoAppState />;
 
   const analyzeView = () => {
     if (!currentApp) return;

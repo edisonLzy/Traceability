@@ -1,4 +1,3 @@
-import { NoAppState } from "@renderer/components/NoAppState";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { useInvalidateIssues, useIssues } from "@renderer/hooks/use-issues";
 import { promptAgent } from "@renderer/lib/agent-events";
@@ -46,8 +45,6 @@ export function IssuesPage() {
       return true;
     });
   }, [issues, status, q]);
-
-  if (!currentApp) return <NoAppState />;
 
   const open = issues.filter((i) => statusGroup(i.status) === "open").length;
   const investigating = issues.filter((i) => statusGroup(i.status) === "investigating").length;
