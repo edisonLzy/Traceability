@@ -8,6 +8,7 @@ import {
   type ExtensionsContextAPI,
   type RendererExtensionDefinition,
 } from "@extensions/core/renderer";
+import { CommandProvider } from "@renderer/commands";
 import { Toaster } from "@renderer/components/ui/sonner";
 import { CurrentAppProvider } from "@renderer/context/current-app";
 import { ElectronIPCProvider } from "@renderer/context/ElectronIPCProvider";
@@ -50,12 +51,14 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ElectronIPCProvider>
         <CurrentAppProvider>
-          <ExtensionProvider extensions={installedRendererExtensions}>
-            <ExtensionsContextAPIProvider api={extensionsContextAPI}>
-              <RouterProvider router={router} />
-              <Toaster />
-            </ExtensionsContextAPIProvider>
-          </ExtensionProvider>
+          <CommandProvider>
+            <ExtensionProvider extensions={installedRendererExtensions}>
+              <ExtensionsContextAPIProvider api={extensionsContextAPI}>
+                <RouterProvider router={router} />
+                <Toaster />
+              </ExtensionsContextAPIProvider>
+            </ExtensionProvider>
+          </CommandProvider>
         </CurrentAppProvider>
       </ElectronIPCProvider>
     </QueryClientProvider>

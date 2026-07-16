@@ -18,15 +18,16 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogContent({
   className,
+  backdropClassName,
   children,
   showCloseButton = true,
   ...props
-}: DialogPrimitive.Popup.Props & { showCloseButton?: boolean }) {
+}: DialogPrimitive.Popup.Props & { backdropClassName?: string; showCloseButton?: boolean }) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop
         data-slot="dialog-overlay"
-        className="fixed inset-0 z-20 bg-black/75"
+        className={cn("fixed inset-0 z-20 bg-black/75", backdropClassName)}
       />
       <DialogPrimitive.Popup
         data-slot="dialog-content"

@@ -1,290 +1,261 @@
+import { useCommandPalette, useRegisteredCommands } from "@renderer/commands";
+import type { CommandDefinition } from "@renderer/commands";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from "@renderer/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@renderer/components/ui/dialog";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
-import { cn } from "@renderer/lib/utils";
 import type { Session } from "@renderer/store/agent";
-import {
-  AlertTriangle,
-  AppWindow,
-  BarChart3,
-  MessageCircle,
-  MessagesSquare,
-  Search,
-  SquarePen,
-} from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-type Mode = "global" | "sessions";
-
-interface Entry {
-  id: string;
-  icon: typeof AlertTriangle;
-  title: string;
-  subtitle: string;
-  key: string;
-}
 
 export function CommandPalette() {
   const { invoke } = useElectronIPC();
   const { currentApp, appId } = useCurrentApp();
-  const nav = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>("global");
+  const palette = useCommandPalette();
+  const commands = useRegisteredCommands();
   const [query, setQuery] = useState("");
-  const [activeIndex, setActiveIndex] = useState(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const openPalette = useCallback((m: Mode) => {
-    setMode(m);
-    setQuery("");
-    setActiveIndex(0);
-    setOpen(true);
-  }, []);
+  const commandGroups = useMemo(() => groupCommands(commands), [commands]);
 
-  // Open via ⌘K (global) / ⌘G (sessions), or via the layout command trigger.
   useEffect(() => {
     const onEvent = (event: Event) => {
-      const detail = (event as CustomEvent<{ mode?: Mode }>).detail;
-      openPalette(detail?.mode === "sessions" ? "sessions" : "global");
+      const detail = (event as CustomEvent<{ mode?: "sessions" }>).detail;
+      if (detail?.mode === "sessions") palette.openSessions();
+      else palette.open();
     };
-    const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        openPalette("global");
-        return;
+    const onKey = (event: KeyboardEvent) => {
+      const mod = event.metaKey || event.ctrlKey;
+      if (!mod) return;
+
+      if (event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        palette.open();
       }
-      if (mod && e.key.toLowerCase() === "g") {
-        e.preventDefault();
-        openPalette("sessions");
+      if (event.key.toLowerCase() === "g") {
+        event.preventDefault();
+        palette.openSessions();
       }
     };
+
     window.addEventListener("traceability:command-palette", onEvent);
     document.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("traceability:command-palette", onEvent);
       document.removeEventListener("keydown", onKey);
     };
-  }, [openPalette]);
+  }, [palette]);
 
-  // Load sessions when entering sessions mode.
   useEffect(() => {
-    if (!open || mode !== "sessions" || !appId) return;
+    if (!palette.isOpen) return;
+    setQuery("");
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 0);
+    return () => window.clearTimeout(focusTimer);
+  }, [palette.isOpen, palette.view]);
+
+  useEffect(() => {
+    if (!palette.isOpen || palette.view !== "sessions" || !appId) return;
+
+    let cancelled = false;
     void invoke("listSessions", appId)
-      .then(setSessions)
-      .catch(() => setSessions([]));
-  }, [open, mode, appId, invoke]);
+      .then((nextSessions) => {
+        if (!cancelled) setSessions(nextSessions);
+      })
+      .catch(() => {
+        if (!cancelled) setSessions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appId, invoke, palette.isOpen, palette.view]);
 
-  // Focus input on open.
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 180);
-  }, [open]);
+  const runCommand = useCallback(
+    (command: CommandDefinition) => {
+      if (command.disabled) return;
+      if (command.closeOnSelect !== false) palette.close();
 
-  const entries: Entry[] = useMemo(() => {
-    if (mode === "sessions") {
-      return sessions.map((s) => ({
-        id: `session:${s.id}`,
-        icon: MessageCircle,
-        title: s.name || "New conversation",
-        subtitle: relativeUpdated(s.updatedAt),
-        key: "",
-      }));
-    }
-    return [
-      {
-        id: "navigate:issues",
-        icon: AlertTriangle,
-        title: "Go to Issues",
-        subtitle: "Monitor",
-        key: "G I",
-      },
-      {
-        id: "navigate:performance",
-        icon: BarChart3,
-        title: "Go to Performance",
-        subtitle: "Monitor",
-        key: "G P",
-      },
-      {
-        id: "session:new",
-        icon: SquarePen,
-        title: "New conversation",
-        subtitle: `Agent · ${currentApp?.name ?? "-"}`,
-        key: "⌘N",
-      },
-      {
-        id: "session:picker",
-        icon: MessagesSquare,
-        title: "Switch conversation",
-        subtitle: `${sessions.length || "—"} conversations in this application`,
-        key: "⌘G",
-      },
-      {
-        id: "application:switch",
-        icon: AppWindow,
-        title: "Switch application",
-        subtitle: "Change monitor and agent scope",
-        key: "⌘A",
-      },
-    ];
-  }, [mode, sessions, currentApp]);
-
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return entries.filter((e) => !q || `${e.title} ${e.subtitle}`.toLowerCase().includes(q));
-  }, [entries, query]);
-
-  useEffect(() => {
-    if (activeIndex >= visible.length) setActiveIndex(Math.max(0, visible.length - 1));
-  }, [visible, activeIndex]);
-
-  const close = useCallback(() => setOpen(false), []);
-
-  const execute = useCallback(
-    (id: string) => {
-      if (id === "navigate:issues") {
-        close();
-        nav("/issues");
-        return;
-      }
-      if (id === "navigate:performance") {
-        close();
-        nav("/performance");
-        return;
-      }
-      if (id === "session:new") {
-        close();
-        window.dispatchEvent(new CustomEvent("traceability:agent-new-session"));
-        toast("New conversation started");
-        return;
-      }
-      if (id === "session:picker") {
-        setMode("sessions");
-        setQuery("");
-        setActiveIndex(0);
-        return;
-      }
-      if (id === "application:switch") {
-        close();
-        window.dispatchEvent(new CustomEvent("traceability:open-app-switcher"));
-        return;
-      }
-      if (id.startsWith("session:")) {
-        const sid = id.slice("session:".length);
-        close();
-        window.dispatchEvent(
-          new CustomEvent("traceability:agent-select-session", { detail: { sessionId: sid } }),
-        );
-        toast("Conversation switched");
+      try {
+        void Promise.resolve(command.action()).catch((error: unknown) => {
+          console.error(`Failed to run command ${command.id}`, error);
+          toast.error(`Failed to run ${command.title}`);
+        });
+      } catch (error) {
+        console.error(`Failed to run command ${command.id}`, error);
+        toast.error(`Failed to run ${command.title}`);
       }
     },
-    [close, nav],
+    [palette],
   );
 
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      close();
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(visible.length - 1, i + 1));
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(0, i - 1));
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const entry = visible[activeIndex];
-      if (entry) execute(entry.id);
-    }
-  };
+  const selectSession = useCallback(
+    (sessionId: string) => {
+      palette.close();
+      window.dispatchEvent(
+        new CustomEvent("traceability:agent-select-session", { detail: { sessionId } }),
+      );
+      toast("Conversation switched");
+    },
+    [palette],
+  );
 
-  if (!open) return null;
-
-  const title = mode === "sessions" ? "Switch conversation" : "Commands";
-  const placeholder =
-    mode === "sessions"
-      ? `Search conversations in ${currentApp?.name ?? "application"}`
-      : "Search commands";
+  const isSessionsView = palette.view === "sessions";
+  const title = isSessionsView ? "Switch conversation" : "Commands";
+  const description = isSessionsView
+    ? `Search conversations in ${currentApp?.name ?? "application"}`
+    : "Search registered commands";
 
   return (
-    <div
-      className="fixed inset-0 z-[90] grid justify-center bg-black/40 pt-[min(16vh,142px)]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
+    <Dialog
+      open={palette.isOpen}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          palette.close();
+          return;
+        }
+        if (palette.view === "sessions") palette.openSessions();
+        else palette.open();
       }}
     >
-      <div className="w-[min(570px,calc(100vw-48px))] overflow-hidden rounded-[14px] border border-hairline-strong bg-[rgba(31,32,38,0.9)] shadow-[0_16px_50px_rgba(0,0,0,0.34),0_2px_12px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
-        <div className="flex h-12 items-center gap-2.5 border-b border-hairline px-3 text-tertiary">
-          <Search size={16} />
-          <input
+      <DialogContent
+        showCloseButton={false}
+        backdropClassName="z-[89] bg-black/40"
+        className="z-[90] w-[min(570px,calc(100vw-48px))] max-w-none overflow-hidden border-hairline-strong bg-[rgba(31,32,38,0.9)] p-0 shadow-[0_16px_50px_rgba(0,0,0,0.34),0_2px_12px_rgba(0,0,0,0.22)] backdrop-blur-2xl"
+      >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        <DialogDescription className="sr-only">{description}</DialogDescription>
+        <Command key={palette.view} className="rounded-none bg-transparent">
+          {isSessionsView ? (
+            <button
+              type="button"
+              onClick={() => palette.open()}
+              className="flex h-9 items-center gap-1.5 border-b border-hairline px-3 text-[11px] text-tertiary transition-colors hover:text-ink"
+            >
+              <ArrowLeft size={13} /> Commands
+            </button>
+          ) : null}
+          <CommandInput
             ref={inputRef}
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActiveIndex(0);
-            }}
-            onKeyDown={onKey}
-            placeholder={placeholder}
-            className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-ink outline-none placeholder:text-tertiary"
+            onValueChange={setQuery}
+            placeholder={description}
           />
-          <kbd className="font-mono text-[10px] text-tertiary">
-            {mode === "sessions" ? "⌘G" : "⌘K"}
-          </kbd>
-        </div>
-        <div className="px-3 pt-2.5 pb-1 text-[10px] font-[660] uppercase tracking-[0.08em] text-tertiary">
-          {title}
-        </div>
-        <div className="max-h-[390px] overflow-auto p-1.5 pb-2">
-          {visible.length === 0 && (
-            <div className="px-3 py-6 text-center text-[11px] text-tertiary">
-              No matching commands or conversations.
-            </div>
-          )}
-          {visible.map((entry, index) => (
-            <button
-              key={entry.id}
-              type="button"
-              onMouseEnter={() => setActiveIndex(index)}
-              onClick={() => execute(entry.id)}
-              className={cn(
-                "grid w-full grid-cols-[27px_minmax(0,1fr)_auto] items-center gap-2 rounded-[9px] px-2 py-2 text-left text-muted transition-colors",
-                index === activeIndex ? "bg-white/[0.075] text-ink" : "hover:bg-white/[0.05]",
-              )}
-            >
-              <span className="grid size-[27px] place-items-center rounded-[7px] bg-white/[0.06] text-primary-hover">
-                <entry.icon size={14} />
-              </span>
-              <span className="min-w-0">
-                <strong className="block truncate text-[12px] font-[620]">{entry.title}</strong>
-                <small className="mt-0.5 block truncate text-[10px] text-tertiary">
-                  {entry.subtitle}
-                </small>
-              </span>
-              {entry.key && (
-                <span className="font-mono text-[10px] text-tertiary">{entry.key}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+          <CommandList>
+            <CommandEmpty>
+              {isSessionsView ? "No matching conversations." : "No matching registered commands."}
+            </CommandEmpty>
+            {isSessionsView ? (
+              <CommandGroup heading="Conversations">
+                {sessions.map((session) => (
+                  <CommandItem
+                    key={session.id}
+                    value={session.id}
+                    keywords={[
+                      session.name ?? "New conversation",
+                      relativeUpdated(session.updatedAt),
+                    ]}
+                    onSelect={() => selectSession(session.id)}
+                  >
+                    <CommandIcon icon={MessageCircle} />
+                    <CommandCopy
+                      title={session.name || "New conversation"}
+                      description={relativeUpdated(session.updatedAt)}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ) : (
+              commandGroups.map((group) => (
+                <CommandGroup key={group.id} heading={group.label}>
+                  {group.commands.map((command) => (
+                    <CommandItem
+                      key={command.id}
+                      value={command.id}
+                      keywords={commandKeywords(command)}
+                      disabled={command.disabled}
+                      onSelect={() => runCommand(command)}
+                    >
+                      <CommandIcon icon={command.icon} />
+                      <CommandCopy title={command.title} description={command.description} />
+                      {command.shortcut ? (
+                        <CommandShortcut>{command.shortcut}</CommandShortcut>
+                      ) : null}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))
+            )}
+          </CommandList>
+          <div className="flex items-center justify-between gap-4 border-t border-hairline px-3 py-2 text-[10px] text-tertiary">
+            <span>↑↓ to navigate</span>
+            <span>↵ to run</span>
+            <kbd className="font-mono">{isSessionsView ? "⌘G" : "⌘K"}</kbd>
+          </div>
+        </Command>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CommandIcon({ icon: Icon }: { icon?: CommandDefinition["icon"] }) {
+  return (
+    <span className="grid size-[27px] place-items-center rounded-[7px] bg-white/[0.06] text-primary-hover">
+      {Icon ? <Icon size={14} /> : null}
+    </span>
+  );
+}
+
+function CommandCopy({ title, description }: { title: string; description?: string }) {
+  return (
+    <span className="min-w-0">
+      <strong className="block truncate text-[12px] font-[620]">{title}</strong>
+      {description ? (
+        <small className="mt-0.5 block truncate text-[10px] text-tertiary">{description}</small>
+      ) : null}
+    </span>
+  );
+}
+
+function groupCommands(commands: readonly CommandDefinition[]) {
+  const groups = new Map<string, { id: string; label: string; commands: CommandDefinition[] }>();
+  for (const command of commands) {
+    const group = groups.get(command.group.id) ?? {
+      id: command.group.id,
+      label: command.group.label,
+      commands: [],
+    };
+    group.commands.push(command);
+    groups.set(command.group.id, group);
+  }
+  return Array.from(groups.values());
+}
+
+function commandKeywords(command: CommandDefinition) {
+  return [command.title, command.description, ...(command.keywords ?? [])].filter(
+    (value): value is string => Boolean(value),
   );
 }
 
 function relativeUpdated(ts: number): string {
   const diff = Math.max(0, Date.now() - ts);
-  const min = Math.round(diff / 60000);
+  const min = Math.round(diff / 60_000);
   if (min < 1) return "Now";
   if (min < 60) return `${min}m`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h`;
-  return `${Math.round(hr / 24)}d`;
+  const hour = Math.round(min / 60);
+  if (hour < 24) return `${hour}h`;
+  return `${Math.round(hour / 24)}d`;
 }
