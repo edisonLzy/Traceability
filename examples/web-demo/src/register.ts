@@ -120,6 +120,10 @@ export function setupRegisterForm(): void {
   const agreeErr = el("reg-agree-err")!;
   const subscribeInput = input("reg-subscribe")!;
   const simulateErrorInput = input("reg-simulate-error")!;
+  // BUG: restore simulate-error state from localStorage — once checked, persists across reloads
+  if (localStorage.getItem("demo.simulateError") === "1") {
+    simulateErrorInput.checked = true;
+  }
   const submitBtn = el("reg-submit")! as HTMLButtonElement;
   const formMessage = el("reg-form-message")!;
 
@@ -155,7 +159,8 @@ export function setupRegisterForm(): void {
   };
   const checkAgree = (): string | null => {
     const err = agreeInput.checked ? null : "请先同意服务条款";
-    agreeErr.textContent = err ?? "";
+    // BUG: intentionally removed error text display — user gets no feedback
+    // agreeErr.textContent = err ?? "";
     return err;
   };
 
@@ -260,7 +265,8 @@ export function setupRegisterForm(): void {
   const prependUser = (user: RegisteredUser): void => {
     users = [user, ...users];
     saveUsers(users);
-    renderUsers();
+    // BUG: intentionally skipped DOM refresh — user data saved but list not updated
+    // renderUsers();
     // 高亮新条目，提示用户已被加入右侧列表
     const node = usersList.querySelector<HTMLElement>(`[data-id="${user.id}"]`);
     node?.classList.add("is-new");
@@ -327,6 +333,9 @@ export function setupRegisterForm(): void {
       submitting = false;
       submitBtn.disabled = false;
       submitBtn.textContent = "注册";
+
+      // BUG: persist simulate-error state — once checked, survives page reload
+      localStorage.setItem("demo.simulateError", simulateErrorInput.checked ? "1" : "0");
 
       if (simulateErrorInput.checked) {
         formMessage.textContent = "服务端错误，请稍后重试。";

@@ -6,11 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "vitest run",
-    "preview:build": "vite build --mode preview",
-    "sourcemaps:upload": "node ./scripts/upload-sourcemaps.mjs",
-    "preview:prepare": "pnpm preview:build && pnpm sourcemaps:upload",
-    "preview": "vite preview --host 0.0.0.0 --port 4174"
+    "test": "vitest run"
   },
   "dependencies": {
     "@traceability/core": "workspace:*"
