@@ -1,8 +1,11 @@
 import type { AgentMessage, AppUserMessage } from "@earendil-works/pi-agent-core";
+import { useRegisterCommands } from "@renderer/commands";
 import { useElectronIPC } from "@renderer/context/ElectronIPCProvider";
+import { openCommandPalette } from "@renderer/lib/agent-events";
 import { agentStore, EntryStatus, type AgentSession, type Session } from "@renderer/store/agent";
 import { Check, MessageCircle, MessagesSquare, SquarePen } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useStore } from "zustand";
 
 import { PanelBody, PanelFooter, PanelHeader, PanelLayout } from "./components/panel-layout";
@@ -37,6 +40,15 @@ export function ActiveSessionContent({ sessionId }: { sessionId: string }) {
   );
   const sessionName = activeSession?.name.trim() || "untitled";
   const { createSession, selectSession } = useAgentSession();
+  const handleCreate = useCallback(() => {
+    void createSession();
+  }, [createSession]);
+  const handleSelect = useCallback(
+    (nextSessionId: string) => {
+      void selectSession(nextSessionId);
+    },
+    [selectSession],
+  );
 
   useAgentMessages();
   useAgentTokenUsage();
@@ -50,8 +62,8 @@ export function ActiveSessionContent({ sessionId }: { sessionId: string }) {
         actions={
           <SessionActions
             activeSessionId={sessionId}
-            onCreate={() => void createSession()}
-            onSelect={(nextSessionId) => void selectSession(nextSessionId)}
+            onCreate={handleCreate}
+            onSelect={handleSelect}
           />
         }
         isRunning={isRunning}
@@ -103,6 +115,34 @@ interface SessionActionsProps {
 }
 
 function SessionActions({ activeSessionId, onCreate, onSelect }: SessionActionsProps) {
+  useRegisterCommands(
+    () => [
+      {
+        id: "agent.new-session",
+        group: { id: "agent", label: "Agent", order: 40 },
+        title: "New conversation",
+        description: "Start an agent session for this application",
+        icon: SquarePen,
+        shortcut: "⌘ N",
+        action: () => {
+          onCreate();
+          toast("New conversation started");
+        },
+      },
+      {
+        id: "agent.switch-session",
+        group: { id: "agent", label: "Agent", order: 40 },
+        title: "Switch conversation",
+        description: "Choose an existing agent session",
+        icon: MessagesSquare,
+        shortcut: "⌘ G",
+        closeOnSelect: false,
+        action: () => openCommandPalette("sessions"),
+      },
+    ],
+    [onCreate],
+  );
+
   return (
     <div className="flex shrink-0 items-center gap-1">
       <SessionSwitcher activeSessionId={activeSessionId} onSelect={onSelect} />

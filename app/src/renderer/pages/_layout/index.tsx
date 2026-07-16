@@ -5,14 +5,12 @@ import {
   ResizablePanelGroup,
 } from "@renderer/components/ui/resizable";
 import { useCurrentApp } from "@renderer/context/current-app";
-import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, AppWindow, BarChart3, Command, Radio, RefreshCw } from "lucide-react";
-import { useCallback } from "react";
+import { AlertTriangle, BarChart3, Command, Radio } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 import { AgentPanel } from "./_agent";
 import { CommandPalette } from "./_components/CommandPalette";
+import { RefreshButton } from "./_components/RefreshButton";
 import { Sidebar } from "./_components/Sidebar";
 import { Titlebar } from "./_components/Titlebar";
 
@@ -20,7 +18,6 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentApp } = useCurrentApp();
-  const queryClient = useQueryClient();
   const { open: openCommands } = useCommandPalette();
 
   const crumb = (() => {
@@ -29,11 +26,6 @@ export function Layout() {
     if (issueMatch) return `Monitor / Issues / ${issueMatch[1]}`;
     return "Monitor / Issues";
   })();
-
-  const refresh = useCallback(async () => {
-    await queryClient.invalidateQueries();
-    toast("Monitoring data refreshed");
-  }, [queryClient]);
 
   useRegisterCommands(
     () => [
@@ -57,29 +49,8 @@ export function Layout() {
         shortcut: "G P",
         action: () => navigate("/performance"),
       },
-      {
-        id: "monitor.refresh",
-        group: { id: "monitor", label: "Monitor", order: 20 },
-        title: "Refresh monitoring data",
-        description: "Reload issues and performance data",
-        icon: RefreshCw,
-        keywords: ["reload"],
-        shortcut: "R",
-        action: refresh,
-      },
-      {
-        id: "application.switch",
-        group: { id: "application", label: "Application", order: 30 },
-        title: "Switch application",
-        description: "Change monitor and agent scope",
-        icon: AppWindow,
-        shortcut: "⌘ A",
-        action: () => {
-          window.dispatchEvent(new CustomEvent("traceability:open-app-switcher"));
-        },
-      },
     ],
-    [navigate, refresh],
+    [navigate],
   );
 
   return (
@@ -108,14 +79,7 @@ export function Layout() {
                   <span className="inline-flex items-center gap-1.5 text-[11px] text-tertiary">
                     <Radio size={11} className="text-success" /> Live updates
                   </span>
-                  <button
-                    type="button"
-                    onClick={refresh}
-                    title="Refresh data"
-                    className="grid size-7 place-items-center rounded-[7px] text-tertiary transition-colors hover:bg-white/10 hover:text-ink"
-                  >
-                    <RefreshCw size={15} />
-                  </button>
+                  <RefreshButton />
                 </div>
               </header>
               <div className="min-h-0 flex-1 overflow-auto">

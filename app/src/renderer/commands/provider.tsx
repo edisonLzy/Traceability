@@ -1,10 +1,8 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -20,25 +18,26 @@ interface CommandContextValue extends CommandPaletteController {
 const CommandContext = createContext<CommandContextValue | null>(null);
 
 export function CommandProvider({ children }: { children: ReactNode }) {
-  const registryRef = useRef<CommandRegistry | null>(null);
-  if (!registryRef.current) registryRef.current = new CommandRegistry();
-
+  const [registry] = useState(() => new CommandRegistry());
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<CommandPaletteView>("commands");
 
-  const open = useCallback(() => {
-    setView("commands");
-    setIsOpen(true);
-  }, []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const openSessions = useCallback(() => {
-    setView("sessions");
-    setIsOpen(true);
-  }, []);
-
   const value = useMemo<CommandContextValue>(
-    () => ({ registry: registryRef.current!, isOpen, view, open, close, openSessions }),
-    [close, isOpen, open, openSessions, view],
+    () => ({
+      registry,
+      isOpen,
+      view,
+      open: () => {
+        setView("commands");
+        setIsOpen(true);
+      },
+      close: () => setIsOpen(false),
+      openSessions: () => {
+        setView("sessions");
+        setIsOpen(true);
+      },
+    }),
+    [registry, isOpen, view],
   );
 
   return <CommandContext.Provider value={value}>{children}</CommandContext.Provider>;
