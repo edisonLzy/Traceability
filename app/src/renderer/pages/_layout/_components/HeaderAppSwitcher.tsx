@@ -39,9 +39,7 @@ export function HeaderAppSwitcher() {
         description: "Change monitor and agent scope",
         icon: AppWindow,
         shortcut: "⌘ A",
-        action: () => {
-          window.dispatchEvent(new CustomEvent("traceability:open-app-switcher"));
-        },
+        action: () => setOpen(true),
       },
       {
         id: "application.create",
@@ -49,9 +47,7 @@ export function HeaderAppSwitcher() {
         title: "Create application",
         description: "Register a new application to monitor",
         icon: Plus,
-        action: () => {
-          window.dispatchEvent(new CustomEvent("traceability:create-app"));
-        },
+        action: () => setShowCreate(true),
       },
     ],
     [],
