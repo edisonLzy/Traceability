@@ -17,12 +17,12 @@ export function NoAppState() {
         <p className="mt-2 max-w-[420px] text-[12px] text-tertiary">
           {apps.length === 0
             ? "Create an application to start monitoring runtime issues and performance."
-            : "Choose an application from the switcher in the sidebar to view its monitoring data."}
+            : "Choose an application from the switcher in the header to view its monitoring data."}
         </p>
         {apps.length === 0 && (
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("traceability:open-app-switcher"))}
+            onClick={() => window.dispatchEvent(new CustomEvent("traceability:create-app"))}
             className="mt-5 inline-flex h-9 items-center gap-2 rounded-[9px] border border-primary/40 bg-primary px-4 text-[12px] font-[590] text-[#111329] transition-colors hover:bg-primary-hover"
           >
             <AppWindow size={14} /> Add application

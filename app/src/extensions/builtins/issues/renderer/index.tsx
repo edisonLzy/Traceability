@@ -25,7 +25,7 @@ function IssuesListBlock({ props }: { props: Record<string, unknown> }) {
           <button
             key={issue.id}
             type="button"
-            onClick={() => navigate(`/issues/${issue.id}`)}
+            onClick={() => navigate(`/monitor/issues/${issue.id}`)}
             className="flex w-full items-center gap-2 rounded-[7px] px-1.5 py-1.5 text-left transition-colors hover:bg-white/[0.035]"
           >
             <span

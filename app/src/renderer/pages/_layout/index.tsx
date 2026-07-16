@@ -4,12 +4,12 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@renderer/components/ui/resizable";
-import { useCurrentApp } from "@renderer/context/current-app";
-import { AlertTriangle, BarChart3, Command, Radio } from "lucide-react";
+import { AlertTriangle, BarChart3, Command, Compass, Inbox, Radio } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { AgentPanel } from "./_agent";
 import { CommandPalette } from "./_components/CommandPalette";
+import { HeaderAppSwitcher } from "./_components/HeaderAppSwitcher";
 import { RefreshButton } from "./_components/RefreshButton";
 import { Sidebar } from "./_components/Sidebar";
 import { Titlebar } from "./_components/Titlebar";
@@ -17,18 +17,29 @@ import { Titlebar } from "./_components/Titlebar";
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentApp } = useCurrentApp();
   const { open: openCommands } = useCommandPalette();
 
   const crumb = (() => {
-    if (location.pathname.startsWith("/performance")) return "Monitor / Performance";
-    const issueMatch = location.pathname.match(/^\/issues\/(.+)$/);
+    if (location.pathname === "/inbox") return "Inbox";
+    if (location.pathname === "/explorer") return "Explorer";
+    if (location.pathname === "/monitor/performance") return "Monitor / Performance";
+    const issueMatch = location.pathname.match(/^\/monitor\/issues\/(.+)$/);
     if (issueMatch) return `Monitor / Issues / ${issueMatch[1]}`;
     return "Monitor / Issues";
   })();
 
   useRegisterCommands(
     () => [
+      {
+        id: "navigation.inbox",
+        group: { id: "navigation", label: "Navigation", order: 10 },
+        title: "Go to Inbox",
+        description: "Open the inbox",
+        icon: Inbox,
+        keywords: ["home"],
+        shortcut: "G B",
+        action: () => navigate("/inbox"),
+      },
       {
         id: "navigation.issues",
         group: { id: "navigation", label: "Navigation", order: 10 },
@@ -37,7 +48,7 @@ export function Layout() {
         icon: AlertTriangle,
         keywords: ["monitor", "errors"],
         shortcut: "G I",
-        action: () => navigate("/issues"),
+        action: () => navigate("/monitor/issues"),
       },
       {
         id: "navigation.performance",
@@ -47,7 +58,17 @@ export function Layout() {
         icon: BarChart3,
         keywords: ["monitor"],
         shortcut: "G P",
-        action: () => navigate("/performance"),
+        action: () => navigate("/monitor/performance"),
+      },
+      {
+        id: "navigation.explorer",
+        group: { id: "navigation", label: "Navigation", order: 10 },
+        title: "Go to Explorer",
+        description: "Open the explorer",
+        icon: Compass,
+        keywords: ["browse"],
+        shortcut: "G X",
+        action: () => navigate("/explorer"),
       },
     ],
     [navigate],
@@ -63,7 +84,7 @@ export function Layout() {
             <main className="flex h-full min-w-0 flex-col">
               <header className="flex h-12 shrink-0 items-center gap-2 border-b border-hairline bg-[rgba(12,13,16,0.55)] px-[22px] backdrop-blur-xl">
                 <nav className="flex min-w-0 items-center gap-2 text-[12px] text-tertiary">
-                  <span className="truncate">{currentApp?.name ?? "—"}</span>
+                  <HeaderAppSwitcher />
                   <span className="text-[#55565d]">/</span>
                   <b className="truncate font-[570] text-muted">{crumb}</b>
                 </nav>
