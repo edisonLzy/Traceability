@@ -1,3 +1,4 @@
+import { useRegisterCommands } from "@renderer/commands";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { useIssue, useIssueEvents, useIssueReplays, useReplay } from "@renderer/hooks/use-issue";
 import { promptAgent } from "@renderer/lib/agent-events";
@@ -6,7 +7,7 @@ import { RrwebReplayPlayer } from "@renderer/pages/issues/_components/RrwebRepla
 import { SourceLocation } from "@renderer/pages/issues/_components/SourceLocation";
 import type { RrwebReplay } from "@traceability/protocol";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -47,6 +48,36 @@ export function IssueDetailPage() {
   const replays = replaysQuery.data ?? [];
   const activeReplay: RrwebReplay | null = replayQuery.data ?? null;
   const replayLoading = tab === "replay" && Boolean(selectedReplayId) && replayQuery.isLoading;
+  const investigate = useCallback(() => {
+    if (!issue) return;
+    promptAgent({
+      context: { appId: issue.appId, source: "issue", issueId: issue.id },
+      prompt: `Investigate ${issue.id}`,
+    });
+  }, [issue]);
+
+  useRegisterCommands(() => {
+    if (!issue) return [];
+    return [
+      {
+        id: "issue.back",
+        group: { id: "issue", label: "Current issue", order: 50 },
+        title: "Back to Issues",
+        description: "Return to the issue list",
+        icon: ArrowLeft,
+        action: () => window.history.back(),
+      },
+      {
+        id: "issue.investigate",
+        group: { id: "issue", label: "Current issue", order: 50 },
+        title: "Investigate current issue",
+        description: issue.title,
+        icon: Sparkles,
+        keywords: [issue.id, issue.fingerprint],
+        action: investigate,
+      },
+    ];
+  }, [investigate, issue]);
 
   if (!issue)
     return (
@@ -54,13 +85,6 @@ export function IssueDetailPage() {
         <div className="px-5 py-12 text-center text-[12px] text-tertiary">Loading…</div>
       </div>
     );
-
-  const investigate = () => {
-    promptAgent({
-      context: { appId: issue.appId, source: "issue", issueId: issue.id },
-      prompt: `Investigate ${issue.id}`,
-    });
-  };
 
   return (
     <div className="mx-auto block min-h-full max-w-[1260px] px-[22px] pt-[22px] pb-12">

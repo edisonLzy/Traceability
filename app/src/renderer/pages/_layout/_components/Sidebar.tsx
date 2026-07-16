@@ -1,3 +1,4 @@
+import { useRegisterCommands } from "@renderer/commands";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ import { cn } from "@renderer/lib/utils";
 import {
   Activity,
   AlertTriangle,
+  AppWindow,
   BarChart3,
   Check,
   Fingerprint,
@@ -107,6 +109,23 @@ function AppSwitcher() {
     window.addEventListener("traceability:open-app-switcher", onOpen);
     return () => window.removeEventListener("traceability:open-app-switcher", onOpen);
   }, []);
+
+  useRegisterCommands(
+    () => [
+      {
+        id: "application.switch",
+        group: { id: "application", label: "Application", order: 30 },
+        title: "Switch application",
+        description: "Change monitor and agent scope",
+        icon: AppWindow,
+        shortcut: "⌘ A",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("traceability:open-app-switcher"));
+        },
+      },
+    ],
+    [],
+  );
 
   const filtered = apps.filter((app) => {
     const normalizedQuery = query.trim().toLowerCase();

@@ -1,23 +1,24 @@
+import { useCommandPalette, useRegisterCommands } from "@renderer/commands";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@renderer/components/ui/resizable";
 import { useCurrentApp } from "@renderer/context/current-app";
-import { useQueryClient } from "@tanstack/react-query";
-import { Command, Radio, RefreshCw } from "lucide-react";
-import { Outlet, useLocation } from "react-router-dom";
-import { toast } from "sonner";
+import { AlertTriangle, BarChart3, Command, Radio } from "lucide-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { AgentPanel } from "./_agent";
 import { CommandPalette } from "./_components/CommandPalette";
+import { RefreshButton } from "./_components/RefreshButton";
 import { Sidebar } from "./_components/Sidebar";
 import { Titlebar } from "./_components/Titlebar";
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentApp } = useCurrentApp();
-  const queryClient = useQueryClient();
+  const { open: openCommands } = useCommandPalette();
 
   const crumb = (() => {
     if (location.pathname.startsWith("/performance")) return "Monitor / Performance";
@@ -26,15 +27,31 @@ export function Layout() {
     return "Monitor / Issues";
   })();
 
-  const refresh = async () => {
-    await queryClient.invalidateQueries();
-    toast("Monitoring data refreshed");
-  };
-
-  const openCommands = () =>
-    window.dispatchEvent(
-      new CustomEvent("traceability:command-palette", { detail: { mode: "global" } }),
-    );
+  useRegisterCommands(
+    () => [
+      {
+        id: "navigation.issues",
+        group: { id: "navigation", label: "Navigation", order: 10 },
+        title: "Go to Issues",
+        description: "Open issue monitoring",
+        icon: AlertTriangle,
+        keywords: ["monitor", "errors"],
+        shortcut: "G I",
+        action: () => navigate("/issues"),
+      },
+      {
+        id: "navigation.performance",
+        group: { id: "navigation", label: "Navigation", order: 10 },
+        title: "Go to Performance",
+        description: "Open performance monitoring",
+        icon: BarChart3,
+        keywords: ["monitor"],
+        shortcut: "G P",
+        action: () => navigate("/performance"),
+      },
+    ],
+    [navigate],
+  );
 
   return (
     <div className="h-screen overflow-hidden">
@@ -62,14 +79,7 @@ export function Layout() {
                   <span className="inline-flex items-center gap-1.5 text-[11px] text-tertiary">
                     <Radio size={11} className="text-success" /> Live updates
                   </span>
-                  <button
-                    type="button"
-                    onClick={refresh}
-                    title="Refresh data"
-                    className="grid size-7 place-items-center rounded-[7px] text-tertiary transition-colors hover:bg-white/10 hover:text-ink"
-                  >
-                    <RefreshCw size={15} />
-                  </button>
+                  <RefreshButton />
                 </div>
               </header>
               <div className="min-h-0 flex-1 overflow-auto">
