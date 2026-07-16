@@ -8,7 +8,7 @@ import { SourceLocation } from "@renderer/pages/issues/_components/SourceLocatio
 import type { RrwebReplay } from "@traceability/protocol";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 type Tab = "stack" | "events" | "context" | "breadcrumbs" | "replay";
@@ -23,6 +23,7 @@ const TAB_LABELS: Array<{ id: Tab; label: (n: number) => string }> = [
 
 export function IssueDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { currentApp } = useCurrentApp();
   const issueQuery = useIssue(id);
   const eventsQuery = useIssueEvents(id);
@@ -65,7 +66,7 @@ export function IssueDetailPage() {
         title: "Back to Issues",
         description: "Return to the issue list",
         icon: ArrowLeft,
-        action: () => window.history.back(),
+        action: () => navigate(-1),
       },
       {
         id: "issue.investigate",
@@ -90,7 +91,7 @@ export function IssueDetailPage() {
     <div className="mx-auto block min-h-full max-w-[1260px] px-[22px] pt-[22px] pb-12">
       <button
         type="button"
-        onClick={() => window.history.back()}
+        onClick={() => navigate(-1)}
         className="mb-4 inline-flex items-center gap-1.5 text-[12px] text-tertiary transition-colors hover:text-ink"
       >
         <ArrowLeft size={14} /> Issues

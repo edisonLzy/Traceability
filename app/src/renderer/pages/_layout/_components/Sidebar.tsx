@@ -20,15 +20,7 @@ import {
 import { useCurrentApp } from "@renderer/context/current-app";
 import { useIssues } from "@renderer/hooks/use-issues";
 import { cn } from "@renderer/lib/utils";
-import {
-  Activity,
-  AlertTriangle,
-  BarChart3,
-  Compass,
-  Fingerprint,
-  Inbox,
-  type LucideIcon,
-} from "lucide-react";
+import { Activity, Bug, Compass, Fingerprint, Gauge, Inbox, type LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type NavigationItem = {
@@ -42,11 +34,11 @@ export function Sidebar() {
   return (
     <SidebarRoot
       aria-label="Primary navigation"
-      className="relative z-20 w-[60px] shrink-0 overflow-visible border-r border-hairline bg-[rgba(18,19,23,0.84)] px-2.5 pb-3 backdrop-blur-2xl"
+      className="relative z-20 w-[52px] shrink-0 overflow-visible border-r border-hairline bg-[rgba(18,19,23,0.84)] px-2 pb-3 backdrop-blur-2xl"
     >
       <SidebarHeader className="items-center pt-3">
-        <div className="grid h-7.5 w-9 place-items-center" aria-label="Traceability">
-          <Fingerprint size={20} className="text-primary-hover" />
+        <div className="grid h-7 w-8 place-items-center" aria-label="Traceability">
+          <Fingerprint size={17} className="text-primary-hover" />
         </div>
       </SidebarHeader>
       <SidebarContent className="items-center">
@@ -105,11 +97,11 @@ function SidebarNavLink({
         isActive={active}
         onClick={() => navigate(to)}
         className={cn(
-          "size-9 border border-hairline bg-white/[0.025] text-muted hover:border-hairline-strong hover:bg-white/[0.07] hover:text-ink",
+          "size-8 border border-hairline bg-white/[0.025] text-muted hover:border-hairline-strong hover:bg-white/[0.07] hover:text-ink",
           active && "border-hairline-strong bg-white/[0.07] text-ink",
         )}
       >
-        <Icon size={17} className={cn(active && "text-primary-hover")} />
+        <Icon size={15} className={cn(active && "text-primary-hover")} />
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -125,12 +117,12 @@ function MonitorNavigation() {
       icon={Activity}
       items={[
         {
-          icon: AlertTriangle,
+          icon: Bug,
           label: "Issues",
           to: "/monitor/issues",
           badge: data?.items.length ?? 0,
         },
-        { icon: BarChart3, label: "Performance", to: "/monitor/performance" },
+        { icon: Gauge, label: "Performance", to: "/monitor/performance" },
       ]}
     />
   );
@@ -160,13 +152,13 @@ function SidebarNavigationMenu({
               aria-label={label}
               isActive={isActive}
               className={cn(
-                "size-9 border border-hairline bg-white/[0.025] text-muted hover:border-hairline-strong hover:bg-white/[0.07] hover:text-ink",
+                "size-8 border border-hairline bg-white/[0.025] text-muted hover:border-hairline-strong hover:bg-white/[0.07] hover:text-ink",
                 isActive && "border-hairline-strong bg-white/[0.07] text-ink",
               )}
             />
           }
         >
-          <Icon size={17} className={cn(isActive && "text-primary-hover")} />
+          <Icon size={15} className={cn(isActive && "text-primary-hover")} />
         </DropdownMenuTrigger>
       </SidebarMenuItem>
       <DropdownMenuContent side="right" sideOffset={8} align="start" className="w-[218px]">

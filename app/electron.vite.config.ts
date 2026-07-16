@@ -25,6 +25,7 @@ export default defineConfig({
   renderer: {
     root: resolve(import.meta.dirname, "src/renderer"),
     base: "./",
+    assetsInclude: ["**/*.lottie"],
     plugins: [react(), tailwindcss()],
     build: {
       rollupOptions: {

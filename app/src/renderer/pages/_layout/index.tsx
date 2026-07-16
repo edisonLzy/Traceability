@@ -1,11 +1,23 @@
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import loadingAnimation from "@renderer/assets/loading-animation.lottie";
 import { useCommandPalette, useRegisterCommands } from "@renderer/commands";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@renderer/components/ui/breadcrumb";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@renderer/components/ui/resizable";
 import { useCurrentApp } from "@renderer/context/current-app";
-import { AlertTriangle, BarChart3, Command, Compass, Inbox, Radio } from "lucide-react";
+import { useMinimumLoading } from "@renderer/hooks/use-minimum-loading";
+import { Bug, Command, Compass, Gauge, Inbox, Radio } from "lucide-react";
+import { Fragment, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { AgentPanel } from "./_agent";
@@ -17,19 +29,19 @@ import { Sidebar } from "./_components/Sidebar";
 import { Titlebar } from "./_components/Titlebar";
 
 export function Layout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { open: openCommands } = useCommandPalette();
   const { apps, loading } = useCurrentApp();
+  const showLoading = useMinimumLoading(loading);
 
-  const crumb = (() => {
-    if (location.pathname === "/inbox") return "Inbox";
-    if (location.pathname === "/explorer") return "Explorer";
-    if (location.pathname === "/monitor/performance") return "Monitor / Performance";
-    const issueMatch = location.pathname.match(/^\/monitor\/issues\/(.+)$/);
-    if (issueMatch) return `Monitor / Issues / ${issueMatch[1]}`;
-    return "Monitor / Issues";
-  })();
+  if (showLoading) return <LoadingState />;
+
+  if (apps.length === 0) return <AppOnboardingGuide />;
+
+  return <AppLayout />;
+}
+
+/** Hooks below only apply once an application has been selected. */
+function AppLayout() {
+  const navigate = useNavigate();
 
   useRegisterCommands(
     () => [
@@ -48,7 +60,7 @@ export function Layout() {
         group: { id: "navigation", label: "Navigation", order: 10 },
         title: "Go to Issues",
         description: "Open issue monitoring",
-        icon: AlertTriangle,
+        icon: Bug,
         keywords: ["monitor", "errors"],
         shortcut: "G I",
         action: () => navigate("/monitor/issues"),
@@ -58,7 +70,7 @@ export function Layout() {
         group: { id: "navigation", label: "Navigation", order: 10 },
         title: "Go to Performance",
         description: "Open performance monitoring",
-        icon: BarChart3,
+        icon: Gauge,
         keywords: ["monitor"],
         shortcut: "G P",
         action: () => navigate("/monitor/performance"),
@@ -77,18 +89,6 @@ export function Layout() {
     [navigate],
   );
 
-  if (loading) {
-    return (
-      <div className="app-drag-region flex h-screen items-center justify-center bg-canvas text-[12px] text-tertiary">
-        Loading…
-      </div>
-    );
-  }
-
-  if (apps.length === 0) {
-    return <AppOnboardingGuide />;
-  }
-
   return (
     <div className="h-screen overflow-hidden">
       <Titlebar />
@@ -98,20 +98,9 @@ export function Layout() {
           <ResizablePanel defaultSize="60%" minSize="45%">
             <main className="flex h-full min-w-0 flex-col">
               <header className="flex h-12 shrink-0 items-center gap-2 border-b border-hairline bg-[rgba(12,13,16,0.55)] px-[22px] backdrop-blur-xl">
-                <nav className="flex min-w-0 items-center gap-2 text-[12px] text-tertiary">
-                  <HeaderAppSwitcher />
-                  <span className="text-[#55565d]">/</span>
-                  <b className="truncate font-[570] text-muted">{crumb}</b>
-                </nav>
+                <HeaderBreadcrumb />
                 <div className="ml-auto flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={openCommands}
-                    title="Open command palette"
-                    className="inline-flex h-7 items-center gap-1.5 rounded-[7px] border border-hairline bg-white/[0.035] px-2 text-[10px] text-tertiary transition-colors hover:border-hairline-strong hover:bg-white/[0.07] hover:text-muted"
-                  >
-                    <Command size={13} /> Command <kbd className="font-mono">⌘K</kbd>
-                  </button>
+                  <CommandKButton />
                   <span className="inline-flex items-center gap-1.5 text-[11px] text-tertiary">
                     <Radio size={11} className="text-success" /> Live updates
                   </span>
@@ -131,5 +120,95 @@ export function Layout() {
       </div>
       <CommandPalette />
     </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="app-drag-region relative flex h-screen items-center justify-center overflow-hidden bg-canvas">
+      <DotLottieReact
+        src={loadingAnimation}
+        autoplay
+        loop
+        aria-label="Loading Traceability"
+        className="h-52 w-52"
+      />
+    </div>
+  );
+}
+
+/** Header breadcrumb: app switcher followed by the resolved route segments. */
+function HeaderBreadcrumb() {
+  const location = useLocation();
+
+  const navigate = useNavigate();
+
+  const pathname = location.pathname;
+  const segments = useMemo(() => {
+    const { pathname } = location;
+    if (pathname === "/inbox") return [{ label: "Inbox" }];
+    if (pathname === "/explorer") return [{ label: "Explorer" }];
+    if (pathname === "/monitor/performance")
+      return [{ label: "Monitor" }, { label: "Performance" }];
+    const issueMatch = pathname.match(/^\/monitor\/issues\/(.+)$/);
+    if (issueMatch)
+      return [
+        { label: "Monitor" },
+        { label: "Issues", to: "/monitor/issues" },
+        { label: issueMatch[1] ?? "", mono: true },
+      ];
+    return [{ label: "Monitor" }, { label: "Issues" }];
+  }, [pathname]);
+
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <HeaderAppSwitcher />
+        </BreadcrumbItem>
+        {segments.map((segment, index) => {
+          const isLast = index === segments.length - 1;
+          const to = segment.to;
+          return (
+            <Fragment key={index}>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                {isLast ? (
+                  <BreadcrumbPage className={segment.mono ? "font-mono" : undefined}>
+                    {segment.label}
+                  </BreadcrumbPage>
+                ) : to ? (
+                  <BreadcrumbLink
+                    href={to}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigate(to);
+                    }}
+                  >
+                    {segment.label}
+                  </BreadcrumbLink>
+                ) : (
+                  <span className="truncate text-tertiary">{segment.label}</span>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
+          );
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
+function CommandKButton() {
+  const { open: openCommands } = useCommandPalette();
+  return (
+    <button
+      type="button"
+      onClick={openCommands}
+      title="Open command palette"
+      className="inline-flex h-7 items-center gap-1.5 rounded-[7px] border border-hairline bg-white/[0.035] px-2 text-[10px] text-tertiary transition-colors hover:border-hairline-strong hover:bg-white/[0.07] hover:text-muted"
+    >
+      <Command size={13} /> Command <kbd className="font-mono">⌘K</kbd>
+    </button>
   );
 }
