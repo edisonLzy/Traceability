@@ -1,3 +1,4 @@
+import { useCommandPalette, useRegisterCommands } from "@renderer/commands";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -5,8 +6,9 @@ import {
 } from "@renderer/components/ui/resizable";
 import { useCurrentApp } from "@renderer/context/current-app";
 import { useQueryClient } from "@tanstack/react-query";
-import { Command, Radio, RefreshCw } from "lucide-react";
-import { Outlet, useLocation } from "react-router-dom";
+import { AlertTriangle, AppWindow, BarChart3, Command, Radio, RefreshCw } from "lucide-react";
+import { useCallback } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { AgentPanel } from "./_agent";
@@ -16,8 +18,10 @@ import { Titlebar } from "./_components/Titlebar";
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentApp } = useCurrentApp();
   const queryClient = useQueryClient();
+  const { open: openCommands } = useCommandPalette();
 
   const crumb = (() => {
     if (location.pathname.startsWith("/performance")) return "Monitor / Performance";
@@ -26,15 +30,57 @@ export function Layout() {
     return "Monitor / Issues";
   })();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     await queryClient.invalidateQueries();
     toast("Monitoring data refreshed");
-  };
+  }, [queryClient]);
 
-  const openCommands = () =>
-    window.dispatchEvent(
-      new CustomEvent("traceability:command-palette", { detail: { mode: "global" } }),
-    );
+  useRegisterCommands(
+    () => [
+      {
+        id: "navigation.issues",
+        group: { id: "navigation", label: "Navigation", order: 10 },
+        title: "Go to Issues",
+        description: "Open issue monitoring",
+        icon: AlertTriangle,
+        keywords: ["monitor", "errors"],
+        shortcut: "G I",
+        action: () => navigate("/issues"),
+      },
+      {
+        id: "navigation.performance",
+        group: { id: "navigation", label: "Navigation", order: 10 },
+        title: "Go to Performance",
+        description: "Open performance monitoring",
+        icon: BarChart3,
+        keywords: ["monitor"],
+        shortcut: "G P",
+        action: () => navigate("/performance"),
+      },
+      {
+        id: "monitor.refresh",
+        group: { id: "monitor", label: "Monitor", order: 20 },
+        title: "Refresh monitoring data",
+        description: "Reload issues and performance data",
+        icon: RefreshCw,
+        keywords: ["reload"],
+        shortcut: "R",
+        action: refresh,
+      },
+      {
+        id: "application.switch",
+        group: { id: "application", label: "Application", order: 30 },
+        title: "Switch application",
+        description: "Change monitor and agent scope",
+        icon: AppWindow,
+        shortcut: "⌘ A",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("traceability:open-app-switcher"));
+        },
+      },
+    ],
+    [navigate, refresh],
+  );
 
   return (
     <div className="h-screen overflow-hidden">
