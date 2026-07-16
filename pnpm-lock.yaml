@@ -62,6 +62,9 @@ importers:
       '@earendil-works/pi-ai':
         specifier: 0.74.0
         version: 0.74.0(@opentelemetry/api@1.9.1)(ws@8.21.0)(zod@4.4.3)
+      '@lottiefiles/dotlottie-react':
+        specifier: ^0.19.9
+        version: 0.19.9(react@19.2.7)
       '@rrweb/replay':
         specifier: ^2.1.0
         version: 2.1.0
@@ -1458,6 +1461,16 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lottiefiles/dotlottie-react@0.19.9':
+    resolution: {integrity: sha512-G07YYM5CLOJrqmNglsMvxlVVV4dsjJvC+S2sdtL101LoWOC9rTPxUb1GCyuTTMF3qhxgIXdylCciVHQnF1nU0A==}
+    engines: {node: '>=18.17.0', npm: '>=9.5.0'}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+
+  '@lottiefiles/dotlottie-web@0.77.1':
+    resolution: {integrity: sha512-WHRQMyACH9VFCk3MI54IuqrTu5pbTnTrvQoJoyH76P6WHhkcNH+lINn3LduhbEciqI+DRKgdM4MwtOPoN2GbDA==}
+    engines: {node: '>=18.17.0', npm: '>=9.5.0'}
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -7795,6 +7808,13 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lottiefiles/dotlottie-react@0.19.9(react@19.2.7)':
+    dependencies:
+      '@lottiefiles/dotlottie-web': 0.77.1
+      react: 19.2.7
+
+  '@lottiefiles/dotlottie-web@0.77.1': {}
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:

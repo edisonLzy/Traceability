@@ -1,3 +1,5 @@
+import { Card } from "@renderer/components/ui/card";
+
 import { defineRendererExtension } from "../../../core/renderer";
 import { APPS_EXTENSION } from "../common/extension";
 import { APPS_LIST_BLOCK_TYPE, type AppsListBlockProps } from "../common/types";
@@ -10,12 +12,12 @@ function AppsListBlock({ props }: { props: Record<string, unknown> }) {
   }
 
   return (
-    <div className="not-prose my-2 border-y border-hairline text-card-foreground">
-      <div className="flex min-h-8 items-center justify-between gap-2 px-1 text-[10px] text-muted">
+    <Card className="not-prose my-2 bg-white/[0.03] text-card-foreground">
+      <div className="flex min-h-8 items-center justify-between gap-2 px-2.5 py-2 text-[10px] text-muted">
         <span className="font-[620]">Apps</span>
         <span className="text-tertiary">{block.apps.length}</span>
       </div>
-      <div className="border-t border-hairline py-1">
+      <div className="border-t border-hairline p-1">
         {block.apps.map((app) => (
           <div
             key={app.id}
@@ -32,7 +34,7 @@ function AppsListBlock({ props }: { props: Record<string, unknown> }) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
