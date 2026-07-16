@@ -8,5 +8,6 @@ export function initTraceability() {
     environment: import.meta.env.MODE,
     // release: import.meta.env.VITE_APP_VERSION, // set if you version your builds
     replay: { enabled: true, maxDurationMs: 60_000 },
+    whiteScreen: { rootSelector: "[data-monitor-root]" },
   });
 }

@@ -204,6 +204,41 @@ button.secondary:hover {
   background: #f3f4f6;
 }
 
+button.danger {
+  background: #dc2626;
+  color: #fff;
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+button.danger:hover {
+  background: #b91c1c;
+}
+
+.simulate-section {
+  max-width: 56rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  border: 1px dashed #fecaca;
+  border-radius: 10px;
+  background: #fffbfb;
+}
+
+.simulate-section h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #991b1b;
+}
+
+.simulate-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: #9ca3af;
+}
+
 .form-message {
   padding: 0.6rem 0.75rem;
   border-radius: 6px;

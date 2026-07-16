@@ -1,3 +1,11 @@
+import {
+  report,
+  addBreadcrumb,
+  captureException,
+  setTag,
+  reportPerformance,
+} from "@traceability/core";
+
 /**
  * 用户注册表单控制器 -- 纯前端逻辑，不接入 Traceability SDK。
  *
@@ -308,6 +316,14 @@ export function setupRegisterForm(): void {
     event.preventDefault();
     if (submitting) return;
 
+    setTag("flow", "register");
+    addBreadcrumb({
+      category: "register",
+      message: "form submit start",
+      data: { username: usernameInput.value, email: emailInput.value },
+    });
+    const t0 = performance.now();
+
     // 全量校验，收集首个出错字段用于聚焦
     const checks: Array<{ err: string | null; focus: HTMLElement }> = [
       { err: checkUsername(), focus: usernameInput },
@@ -318,9 +334,20 @@ export function setupRegisterForm(): void {
     ];
     const firstBad = checks.find((c) => c.err !== null);
     if (firstBad) {
+      report({
+        type: "register-validate-failed",
+        payload: { field: firstBad.focus.id, error: firstBad.err },
+        tags: { flow: "register" },
+      });
       firstBad.focus.focus();
       return;
     }
+
+    addBreadcrumb({
+      category: "register",
+      message: "validation passed",
+      data: { username: usernameInput.value },
+    });
 
     // mock 异步提交
     submitting = true;
@@ -338,6 +365,12 @@ export function setupRegisterForm(): void {
       localStorage.setItem("demo.simulateError", simulateErrorInput.checked ? "1" : "0");
 
       if (simulateErrorInput.checked) {
+        report({
+          type: "register-server-error",
+          payload: { username: usernameInput.value, email: emailInput.value },
+          tags: { flow: "register" },
+        });
+        captureException(new Error(`simulated server error for ${usernameInput.value}`));
         formMessage.textContent = "服务端错误，请稍后重试。";
         formMessage.className = "form-message error";
         formMessage.hidden = false;
@@ -352,7 +385,23 @@ export function setupRegisterForm(): void {
         subscribed: subscribeInput.checked,
         createdAt: new Date().toISOString(),
       };
+      addBreadcrumb({
+        category: "register",
+        message: "user created, prepending to list",
+        data: { username: user.username, email: user.email, subscribed: user.subscribed },
+      });
       prependUser(user);
+
+      report({
+        type: "register-done",
+        payload: { username: user.username, email: user.email },
+        tags: { flow: "register" },
+      });
+      reportPerformance({
+        name: "register-total",
+        value: performance.now() - t0,
+        unit: "millisecond",
+      });
 
       formMessage.textContent = `注册成功：${user.username} 已加入右侧列表。`;
       formMessage.className = "form-message success";
@@ -361,5 +410,19 @@ export function setupRegisterForm(): void {
       resetForm();
       usernameInput.focus();
     }, 600);
+  });
+
+  // ---- 白屏模拟 ----
+  const wsBtn = document.getElementById("btn-simulate-whitescreen");
+  wsBtn?.addEventListener("click", () => {
+    const root = document.querySelector<HTMLElement>("[data-monitor-root]");
+    if (!root) return;
+    root.innerHTML = "";
+    addBreadcrumb({ category: "simulate", message: "white screen triggered" });
+    report({
+      type: "simulate-whitescreen",
+      payload: { reason: "button-clicked" },
+      tags: { flow: "simulate" },
+    });
   });
 }

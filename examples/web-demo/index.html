@@ -5,138 +5,148 @@
     <title>表单校验演示</title>
   </head>
   <body>
-    <h1>用户注册表单校验演示</h1>
+    <main data-monitor-root>
+      <h1>用户注册表单校验演示</h1>
 
-    <hr />
+      <hr />
 
-    <section id="register" class="register-section" aria-labelledby="register-title">
-      <h2 id="register-title">用户注册</h2>
-      <p class="register-hint">纯前端校验演示，覆盖尽量多的 case。提交不会发送到服务器。</p>
+      <section id="register" class="register-section" aria-labelledby="register-title">
+        <h2 id="register-title">用户注册</h2>
+        <p class="register-hint">纯前端校验演示，覆盖尽量多的 case。提交不会发送到服务器。</p>
 
-      <div class="register-layout">
-        <div class="register-left">
-          <form id="register-form" class="register-form" novalidate>
-            <div class="field">
-              <label for="reg-username">用户名</label>
-              <div class="control">
-                <input
-                  id="reg-username"
-                  name="username"
-                  type="text"
-                  autocomplete="username"
-                  maxlength="20"
-                  aria-describedby="reg-username-counter reg-username-err"
-                />
-                <span class="counter" id="reg-username-counter" aria-hidden="true">0/20</span>
+        <div class="register-layout">
+          <div class="register-left">
+            <form id="register-form" class="register-form" novalidate>
+              <div class="field">
+                <label for="reg-username">用户名</label>
+                <div class="control">
+                  <input
+                    id="reg-username"
+                    name="username"
+                    type="text"
+                    autocomplete="username"
+                    maxlength="20"
+                    aria-describedby="reg-username-counter reg-username-err"
+                  />
+                  <span class="counter" id="reg-username-counter" aria-hidden="true">0/20</span>
+                </div>
+                <span class="field-error" id="reg-username-err" role="alert"></span>
               </div>
-              <span class="field-error" id="reg-username-err" role="alert"></span>
-            </div>
 
-            <div class="field">
-              <label for="reg-email">邮箱</label>
-              <div class="control">
-                <input
-                  id="reg-email"
-                  name="email"
-                  type="email"
-                  autocomplete="email"
-                  aria-describedby="reg-email-err"
-                />
+              <div class="field">
+                <label for="reg-email">邮箱</label>
+                <div class="control">
+                  <input
+                    id="reg-email"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    aria-describedby="reg-email-err"
+                  />
+                </div>
+                <span class="field-error" id="reg-email-err" role="alert"></span>
               </div>
-              <span class="field-error" id="reg-email-err" role="alert"></span>
-            </div>
 
-            <div class="field">
-              <label for="reg-password">密码</label>
-              <div class="control">
-                <input
-                  id="reg-password"
-                  name="password"
-                  type="password"
-                  autocomplete="new-password"
-                  maxlength="64"
-                  aria-describedby="reg-password-counter reg-password-strength reg-password-err"
-                />
-                <button type="button" class="toggle" id="reg-password-toggle" aria-pressed="false">
-                  显示
-                </button>
+              <div class="field">
+                <label for="reg-password">密码</label>
+                <div class="control">
+                  <input
+                    id="reg-password"
+                    name="password"
+                    type="password"
+                    autocomplete="new-password"
+                    maxlength="64"
+                    aria-describedby="reg-password-counter reg-password-strength reg-password-err"
+                  />
+                  <button type="button" class="toggle" id="reg-password-toggle" aria-pressed="false">
+                    显示
+                  </button>
+                </div>
+                <div class="strength" id="reg-password-strength" aria-live="polite">
+                  <span class="seg" data-level="weak"></span>
+                  <span class="seg" data-level="fair"></span>
+                  <span class="seg" data-level="good"></span>
+                  <span class="seg" data-level="strong"></span>
+                  <span class="strength-label">弱</span>
+                </div>
+                <div class="meta-row">
+                  <span class="counter" id="reg-password-counter" aria-hidden="true">0/64</span>
+                  <span class="field-error" id="reg-password-err" role="alert"></span>
+                </div>
               </div>
-              <div class="strength" id="reg-password-strength" aria-live="polite">
-                <span class="seg" data-level="weak"></span>
-                <span class="seg" data-level="fair"></span>
-                <span class="seg" data-level="good"></span>
-                <span class="seg" data-level="strong"></span>
-                <span class="strength-label">弱</span>
+
+              <div class="field">
+                <label for="reg-confirm">确认密码</label>
+                <div class="control">
+                  <input
+                    id="reg-confirm"
+                    name="confirmPassword"
+                    type="password"
+                    autocomplete="new-password"
+                    aria-describedby="reg-confirm-err"
+                  />
+                  <button type="button" class="toggle" id="reg-confirm-toggle" aria-pressed="false">
+                    显示
+                  </button>
+                </div>
+                <span class="field-error" id="reg-confirm-err" role="alert"></span>
               </div>
-              <div class="meta-row">
-                <span class="counter" id="reg-password-counter" aria-hidden="true">0/64</span>
-                <span class="field-error" id="reg-password-err" role="alert"></span>
+
+              <div class="field checkbox-field">
+                <label class="checkbox">
+                  <input id="reg-agree" name="agreeTerms" type="checkbox" />
+                  <span>我已阅读并同意<a href="#" onclick="return false">服务条款</a>与<a href="#" onclick="return false">隐私政策</a></span>
+                </label>
+                <span class="field-error" id="reg-agree-err" role="alert"></span>
               </div>
-            </div>
 
-            <div class="field">
-              <label for="reg-confirm">确认密码</label>
-              <div class="control">
-                <input
-                  id="reg-confirm"
-                  name="confirmPassword"
-                  type="password"
-                  autocomplete="new-password"
-                  aria-describedby="reg-confirm-err"
-                />
-                <button type="button" class="toggle" id="reg-confirm-toggle" aria-pressed="false">
-                  显示
-                </button>
+              <div class="field checkbox-field">
+                <label class="checkbox">
+                  <input id="reg-subscribe" name="subscribe" type="checkbox" />
+                  <span>订阅产品更新通讯（可选）</span>
+                </label>
               </div>
-              <span class="field-error" id="reg-confirm-err" role="alert"></span>
-            </div>
 
-            <div class="field checkbox-field">
-              <label class="checkbox">
-                <input id="reg-agree" name="agreeTerms" type="checkbox" />
-                <span>我已阅读并同意<a href="#" onclick="return false">服务条款</a>与<a href="#" onclick="return false">隐私政策</a></span>
-              </label>
-              <span class="field-error" id="reg-agree-err" role="alert"></span>
-            </div>
+              <div class="field checkbox-field">
+                <label class="checkbox">
+                  <input id="reg-simulate-error" name="simulateError" type="checkbox" />
+                  <span>模拟服务端错误（演示提交失败路径）</span>
+                </label>
+              </div>
 
-            <div class="field checkbox-field">
-              <label class="checkbox">
-                <input id="reg-subscribe" name="subscribe" type="checkbox" />
-                <span>订阅产品更新通讯（可选）</span>
-              </label>
-            </div>
+              <div class="actions">
+                <button type="submit" id="reg-submit" class="primary">注册</button>
+              </div>
 
-            <div class="field checkbox-field">
-              <label class="checkbox">
-                <input id="reg-simulate-error" name="simulateError" type="checkbox" />
-                <span>模拟服务端错误（演示提交失败路径）</span>
-              </label>
-            </div>
-
-            <div class="actions">
-              <button type="submit" id="reg-submit" class="primary">注册</button>
-            </div>
-
-            <div class="form-message" id="reg-form-message" role="alert" hidden></div>
-          </form>
-        </div>
-
-        <aside class="register-right" aria-labelledby="reg-users-title">
-          <div class="register-right-header">
-            <h3 id="reg-users-title">
-              已注册用户 <span class="count" id="reg-users-count">0</span>
-            </h3>
-            <button type="button" id="reg-users-clear" class="secondary small" disabled>
-              清空
-            </button>
+              <div class="form-message" id="reg-form-message" role="alert" hidden></div>
+            </form>
           </div>
-          <ul id="reg-users-list" class="users-list"></ul>
-          <p class="users-empty" id="reg-users-empty">
-            暂无注册用户，完成左侧表单后这里会显示。
-          </p>
-        </aside>
-      </div>
-    </section>
+
+          <aside class="register-right" aria-labelledby="reg-users-title">
+            <div class="register-right-header">
+              <h3 id="reg-users-title">
+                已注册用户 <span class="count" id="reg-users-count">0</span>
+              </h3>
+              <button type="button" id="reg-users-clear" class="secondary small" disabled>
+                清空
+              </button>
+            </div>
+            <ul id="reg-users-list" class="users-list"></ul>
+            <p class="users-empty" id="reg-users-empty">
+              暂无注册用户，完成左侧表单后这里会显示。
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <hr />
+
+      <section class="simulate-section" aria-labelledby="simulate-title">
+        <h2 id="simulate-title">异常场景模拟</h2>
+        <button type="button" id="btn-simulate-whitescreen" class="danger">模拟白屏</button>
+        <p class="simulate-hint" id="simulate-status"></p>
+      </section>
+    </main>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
