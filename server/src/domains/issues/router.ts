@@ -1,7 +1,7 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
 
 import { asyncHandler } from "../../middlewares/error.js";
+import { requirePathParam } from "../../shared/index.js";
 import * as issueService from "./service.js";
 
 export const router = Router();
@@ -104,7 +104,7 @@ router.get(
 router.get(
   "/api/issues/:id",
   asyncHandler(async (req, res) => {
-    res.success(issueService.getIssue(req.params.id));
+    res.success(issueService.getIssue(requirePathParam(req, "id")));
   }),
 );
 
@@ -149,7 +149,7 @@ router.get(
   asyncHandler(async (req, res) => {
     res.success(
       issueService.listIssueEvents(
-        req.params.id,
+        requirePathParam(req, "id"),
         req.query.limit ? Number(req.query.limit) : undefined,
       ),
     );
@@ -190,7 +190,7 @@ router.get(
 router.post(
   "/api/issues/:id/fix-request",
   asyncHandler(async (req, res) => {
-    res.success(issueService.requestFix(req.params.id));
+    res.success(issueService.requestFix(requirePathParam(req, "id")));
   }),
 );
 
@@ -239,7 +239,7 @@ router.post(
 router.post(
   "/api/issues/:id/attach-patch",
   asyncHandler(async (req, res) => {
-    res.success(issueService.attachPatch(req.params.id, req.body), 201);
+    res.success(issueService.attachPatch(requirePathParam(req, "id"), req.body), 201);
   }),
 );
 
@@ -276,6 +276,6 @@ router.post(
 router.post(
   "/api/issues/:id/mark-fixed",
   asyncHandler(async (req, res) => {
-    res.success(issueService.markFixed(req.params.id));
+    res.success(issueService.markFixed(requirePathParam(req, "id")));
   }),
 );

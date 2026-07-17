@@ -1,7 +1,7 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
 
 import { asyncHandler } from "../../middlewares/error.js";
+import { requirePathParam } from "../../shared/index.js";
 import * as perfService from "./service.js";
 
 export const router = Router();
@@ -57,7 +57,7 @@ export const router = Router();
 router.post(
   "/api/ingest/performance/:appId",
   asyncHandler(async (req, res) => {
-    res.success(perfService.recordMetrics(req.params.appId, req.body), 202);
+    res.success(perfService.recordMetrics(requirePathParam(req, "appId"), req.body), 202);
   }),
 );
 

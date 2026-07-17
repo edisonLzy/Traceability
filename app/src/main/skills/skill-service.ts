@@ -311,11 +311,19 @@ function parseFrontmatter(content: string): SkillFrontmatter {
     return {};
   }
 
+  const frontmatterContent = match[1];
+  if (!frontmatterContent) {
+    return {};
+  }
+
   const frontmatter: SkillFrontmatter = {};
-  const lines = match[1].split(/\r?\n/);
+  const lines = frontmatterContent.split(/\r?\n/);
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    if (line === undefined) {
+      continue;
+    }
     const separatorIndex = line.indexOf(":");
     if (separatorIndex === -1) {
       continue;
@@ -330,6 +338,9 @@ function parseFrontmatter(content: string): SkillFrontmatter {
 
       while (index + 1 < lines.length) {
         const nextLine = lines[index + 1];
+        if (nextLine === undefined) {
+          break;
+        }
         if (nextLine.trim().length === 0) {
           blockLines.push("");
           index += 1;
@@ -499,7 +510,10 @@ function extractSkillReferenceNames(content: string): string[] {
   const skillTagPattern = /<skill\s+name=(["'])(.*?)\1\s*>\s*<\/skill>/g;
 
   for (const match of content.matchAll(skillTagPattern)) {
-    names.push(unescapeXmlAttribute(match[2]));
+    const name = match[2];
+    if (name !== undefined) {
+      names.push(unescapeXmlAttribute(name));
+    }
   }
 
   return names;

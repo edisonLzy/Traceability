@@ -1,13 +1,12 @@
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { SourceMapConsumer } from "source-map-js";
 import { z } from "zod";
 
-import { AppError } from "../../errors/app-error.js";
 import { db, sourceMaps } from "./db.js";
 
 export const UpsertSourceMapSchema = z.object({
   file: z.string().min(1),
-  sourceMap: z.record(z.unknown()),
+  sourceMap: z.record(z.string(), z.unknown()),
   release: z.string().optional(),
 });
 export type UpsertSourceMapInput = z.infer<typeof UpsertSourceMapSchema>;

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
 
 import { asyncHandler } from "../../middlewares/error.js";
+import { requirePathParam } from "../../shared/index.js";
 import * as appService from "./service.js";
 
 export const router = Router();
@@ -117,7 +117,7 @@ router.post(
 router.get(
   "/api/apps/:id",
   asyncHandler(async (req, res) => {
-    res.success(appService.getApp(req.params.id));
+    res.success(appService.getApp(requirePathParam(req, "id")));
   }),
 );
 
@@ -165,7 +165,7 @@ router.get(
 router.patch(
   "/api/apps/:id",
   asyncHandler(async (req, res) => {
-    res.success(appService.updateApp(req.params.id, req.body));
+    res.success(appService.updateApp(requirePathParam(req, "id"), req.body));
   }),
 );
 
@@ -189,7 +189,7 @@ router.patch(
 router.delete(
   "/api/apps/:id",
   asyncHandler(async (req, res) => {
-    appService.removeApp(req.params.id);
+    appService.removeApp(requirePathParam(req, "id"));
     res.status(204).end();
   }),
 );
@@ -231,7 +231,7 @@ router.delete(
 router.post(
   "/api/apps/:id/sourcemaps",
   asyncHandler(async (req, res) => {
-    appService.uploadSourceMap(req.params.id, req.body);
+    appService.uploadSourceMap(requirePathParam(req, "id"), req.body);
     res.success({ ok: true }, 201);
   }),
 );
