@@ -1,8 +1,8 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
 import express from "express";
 
 import { asyncHandler } from "../../middlewares/error.js";
+import { requirePathParam } from "../../shared/index.js";
 import { ingestEnvelope } from "./service.js";
 
 export const router = Router();
@@ -51,6 +51,6 @@ router.use(express.text({ type: ["application/octet-stream", "text/plain"], limi
 router.post(
   "/api/ingest/envelope/:appId",
   asyncHandler(async (req, res) => {
-    res.success(ingestEnvelope(req.params.appId, req.body), 202);
+    res.success(ingestEnvelope(requirePathParam(req, "appId"), req.body), 202);
   }),
 );

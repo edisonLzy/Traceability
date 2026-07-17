@@ -1,7 +1,7 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
 
 import { asyncHandler } from "../../middlewares/error.js";
+import { requirePathParam } from "../../shared/index.js";
 import * as replayService from "./service.js";
 
 export const router = Router();
@@ -67,7 +67,7 @@ export const router = Router();
 router.post(
   "/api/ingest/rrweb/:appId",
   asyncHandler(async (req, res) => {
-    res.success(replayService.saveReplay(req.params.appId, req.body), 201);
+    res.success(replayService.saveReplay(requirePathParam(req, "appId"), req.body), 201);
   }),
 );
 
@@ -119,7 +119,7 @@ router.get(
   asyncHandler(async (req, res) => {
     res.success(
       replayService.listReplaysByIssue(
-        req.params.id,
+        requirePathParam(req, "id"),
         req.query.limit ? Number(req.query.limit) : undefined,
       ),
     );
@@ -167,6 +167,11 @@ router.get(
 router.get(
   "/api/issues/:id/replays/:replayId",
   asyncHandler(async (req, res) => {
-    res.success(replayService.getReplayForIssue(req.params.id, req.params.replayId));
+    res.success(
+      replayService.getReplayForIssue(
+        requirePathParam(req, "id"),
+        requirePathParam(req, "replayId"),
+      ),
+    );
   }),
 );

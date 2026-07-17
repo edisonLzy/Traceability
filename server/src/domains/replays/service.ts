@@ -12,7 +12,7 @@ export const SaveReplaySchema = z.object({
   startAt: z.number().optional(),
   endAt: z.number().optional(),
   events: z.array(z.unknown()).min(1),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export function saveReplay(appId: string, raw: unknown) {

@@ -12,7 +12,7 @@ export const RecordMetricsSchema = z.object({
         value: z.number(),
         unit: z.string().optional(),
         timestamp: z.string().optional(),
-        context: z.record(z.unknown()).optional(),
+        context: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .optional(),
