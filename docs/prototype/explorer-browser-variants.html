@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traceability · Explorer Browser Variants</title>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --canvas: #090a0c;
+        --surface-1: #101115;
+        --surface-2: #14151a;
+        --surface-3: #1a1b21;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --ink: #f5f5f7;
+        --muted: #b6b7bc;
+        --subtle: #9a9ba3;
+        --tertiary: #808189;
+        --primary: #8f9cff;
+        --primary-hover: #aeb7ff;
+        --primary-soft: rgba(143, 156, 255, 0.13);
+        --success: #58c77b;
+        --warning: #e4b55a;
+        --danger: #f17c7c;
+        --info: #6db9ff;
+        --font-ui: Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+        --agent-width: clamp(360px, 31vw, 470px);
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        width: 100%;
+        min-width: 1160px;
+        min-height: 100%;
+        margin: 0;
+        overflow: hidden;
+        color: var(--ink);
+        background: radial-gradient(ellipse at 55% -30%, rgba(90, 101, 195, 0.12), transparent 40rem), var(--canvas);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        line-height: 1.45;
+        letter-spacing: -0.01em;
+      }
+
+      button,
+      input,
+      textarea { font: inherit; }
+
+      button { border: 0; color: inherit; cursor: pointer; }
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+      [hidden] { display: none !important; }
+      .icon { width: 15px; height: 15px; stroke-width: 1.75; }
+
+      .prototype-bar {
+        position: relative;
+        z-index: 40;
+        display: grid;
+        grid-template-columns: minmax(250px, 0.8fr) minmax(570px, 1.7fr) auto;
+        align-items: center;
+        gap: 18px;
+        min-height: 72px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(16, 17, 21, 0.95);
+        backdrop-filter: blur(22px);
+      }
+
+      .eyebrow { color: var(--tertiary); font-size: 9px; font-weight: 740; letter-spacing: 0.1em; text-transform: uppercase; }
+      .prototype-title strong { display: block; margin-top: 3px; font-size: 14px; font-weight: 660; }
+
+      .variant-switcher { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+      .variant-button {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        padding: 7px 8px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        color: var(--tertiary);
+        background: transparent;
+        text-align: left;
+        transition: 150ms ease;
+      }
+      .variant-button:hover { color: var(--muted); background: rgba(255, 255, 255, 0.045); }
+      .variant-button.active { border-color: rgba(143, 156, 255, 0.32); color: var(--ink); background: var(--primary-soft); }
+      .variant-key { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid var(--line); border-radius: 6px; color: var(--primary-hover); font-size: 10px; font-weight: 780; }
+      .variant-copy { min-width: 0; }
+      .variant-copy strong,
+      .variant-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .variant-copy strong { font-size: 11px; font-weight: 650; }
+      .variant-copy small { margin-top: 1px; color: var(--tertiary); font-size: 9px; }
+
+      .flow-shortcuts { display: flex; gap: 3px; }
+      .flow-button { padding: 6px 7px; border-radius: 6px; color: var(--tertiary); background: transparent; font-size: 10px; }
+      .flow-button:hover,
+      .flow-button.active { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
+
+      .app-shell { display: grid; grid-template-columns: 52px minmax(0, 1fr) 1px var(--agent-width); height: calc(100vh - 72px); }
+      .product-rail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px; border-right: 1px solid var(--line); background: rgba(18, 19, 23, 0.84); }
+      .brand,
+      .rail-button,
+      .icon-button { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 8px; color: var(--tertiary); background: transparent; transition: 140ms ease; }
+      .brand { margin-bottom: 6px; border: 1px solid rgba(143, 156, 255, 0.28); color: var(--primary-hover); background: var(--primary-soft); }
+      .rail-button:hover,
+      .rail-button.active,
+      .icon-button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.07); }
+      .rail-button.active { color: var(--primary-hover); }
+      .rail-spacer { flex: 1; }
+      .connection { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(88, 199, 123, 0.08); }
+
+      .workspace { display: flex; min-width: 0; flex-direction: column; overflow: hidden; }
+      .app-header { display: flex; min-height: 48px; align-items: center; gap: 8px; padding: 0 20px; border-bottom: 1px solid var(--line); color: var(--tertiary); background: rgba(12, 13, 16, 0.55); font-size: 11px; backdrop-filter: blur(18px); }
+      .app-header strong { color: var(--muted); font-weight: 600; }
+      .app-header-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+      .live { display: inline-flex; align-items: center; gap: 6px; color: var(--tertiary); font-size: 10px; }
+      .live::before { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(88, 199, 123, 0.08); content: ""; }
+
+      .workspace-stage { position: relative; display: flex; min-width: 0; min-height: 0; flex: 1; overflow: hidden; }
+      .browser-stack { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; background: #0b0c0f; }
+
+      .tab-strip { display: flex; min-height: 37px; align-items: flex-end; gap: 4px; padding: 7px 10px 0; border-bottom: 1px solid var(--line); background: #101116; }
+      .browser-tab { display: flex; width: min(240px, 38%); height: 29px; align-items: center; gap: 8px; padding: 0 9px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; color: var(--muted); background: #0b0c0f; font-size: 11px; }
+      .browser-tab > .icon { color: var(--primary-hover); }
+      .browser-tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .browser-tab button { display: grid; width: 16px; height: 16px; place-items: center; margin-left: auto; border-radius: 4px; color: var(--tertiary); background: transparent; }
+      .browser-tab button:hover { color: var(--muted); background: rgba(255, 255, 255, 0.07); }
+      .new-tab-button { display: grid; width: 28px; height: 28px; place-items: center; margin-bottom: 1px; border-radius: 7px; color: var(--tertiary); background: transparent; }
+      .new-tab-button:hover { color: var(--muted); background: rgba(255, 255, 255, 0.07); }
+
+      .browser-toolbar { display: flex; min-height: 46px; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line); background: #0e0f13; }
+      .browser-actions { display: flex; gap: 2px; }
+      .browser-actions .icon-button { width: 27px; height: 27px; border-radius: 7px; }
+      .browser-actions .icon-button:disabled { cursor: default; opacity: 0.35; }
+      .address-wrap { position: relative; display: flex; min-width: 0; height: 30px; flex: 1; align-items: center; }
+      .address-wrap > .icon { position: absolute; z-index: 1; left: 10px; color: var(--success); }
+      .address-input { width: 100%; height: 30px; padding: 0 31px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--muted); background: var(--surface-2); font-family: var(--font-mono); font-size: 11px; transition: 140ms ease; }
+      .address-input:focus { border-color: rgba(143, 156, 255, 0.65); color: var(--ink); background: #171821; }
+      .address-go { position: absolute; right: 4px; display: grid; width: 23px; height: 23px; place-items: center; border-radius: 6px; color: var(--tertiary); background: transparent; }
+      .address-go:hover { color: var(--primary-hover); background: var(--primary-soft); }
+      .toolbar-divider { width: 1px; height: 18px; margin: 0 4px; background: var(--line); }
+      .capture-actions { display: flex; align-items: center; gap: 5px; }
+      .button { display: inline-flex; height: 29px; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: var(--surface-1); font-size: 11px; font-weight: 580; transition: 140ms ease; }
+      .button:hover { border-color: var(--line-strong); color: var(--ink); background: var(--surface-2); }
+      .button.primary { border-color: var(--primary); color: #111329; background: var(--primary); }
+      .button.primary:hover { border-color: var(--primary-hover); background: var(--primary-hover); }
+      .button.danger { border-color: rgba(241, 124, 124, 0.32); color: #ffb2b2; background: rgba(241, 124, 124, 0.11); }
+      .button.active-tool { border-color: rgba(143, 156, 255, 0.42); color: var(--primary-hover); background: var(--primary-soft); }
+      .button .icon { width: 14px; height: 14px; }
+      .recording-pill { display: none; height: 29px; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid rgba(241, 124, 124, 0.32); border-radius: 7px; color: #ffb2b2; background: rgba(241, 124, 124, 0.11); font-family: var(--font-mono); font-size: 10px; }
+      .recording-pill::before { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 3px rgba(241, 124, 124, 0.12); content: ""; }
+      .stop-recording { display: none; }
+      .recording .recording-pill,
+      .recording .stop-recording { display: inline-flex; }
+      .recording .start-recording,
+      .recording .analyze-page { display: none; }
+
+      .browser-content { position: relative; min-width: 0; min-height: 0; flex: 1; overflow: hidden; background: #f7f8fb; color: #1a1b23; }
+      .new-tab-screen,
+      .web-page { position: absolute; inset: 0; }
+      .new-tab-screen { display: flex; align-items: center; justify-content: center; overflow: auto; color: var(--ink); background: radial-gradient(circle at 50% 12%, rgba(143, 156, 255, 0.15), transparent 24rem), #0c0d11; }
+      .new-tab-inner { width: min(560px, calc(100% - 80px)); padding: 26px 0 88px; text-align: center; }
+      .explorer-mark { display: grid; width: 42px; height: 42px; place-items: center; margin: 0 auto 16px; border: 1px solid rgba(143, 156, 255, 0.35); border-radius: 13px; color: var(--primary-hover); background: var(--primary-soft); }
+      .explorer-mark .icon { width: 21px; height: 21px; }
+      .new-tab-inner h1 { margin: 0; font-size: 22px; font-weight: 660; letter-spacing: -0.04em; }
+      .new-tab-inner > p { max-width: 395px; margin: 8px auto 22px; color: var(--tertiary); font-size: 12px; line-height: 1.65; }
+      .new-tab-form { position: relative; display: flex; align-items: center; }
+      .new-tab-form > .icon { position: absolute; left: 13px; color: var(--tertiary); }
+      .new-tab-form input { width: 100%; height: 42px; padding: 0 108px 0 40px; border: 1px solid var(--line-strong); border-radius: 11px; outline: 0; color: var(--ink); background: rgba(20, 21, 26, 0.9); box-shadow: 0 16px 42px rgba(0, 0, 0, 0.2); font-family: var(--font-mono); font-size: 12px; }
+      .new-tab-form input:focus { border-color: rgba(143, 156, 255, 0.72); }
+      .new-tab-form .button { position: absolute; right: 5px; height: 32px; }
+      .new-tab-note { margin-top: 9px; color: var(--tertiary); font-size: 10px; }
+      .entry-mode { margin-top: 9px; padding: 3px 5px; border-radius: 5px; color: var(--primary-hover); background: transparent; font-size: 9px; }
+      .entry-mode:hover { background: var(--primary-soft); }
+      .suggested-entry { margin-top: 26px; text-align: left; }
+      .new-tab-inner.unconfigured .suggested-entry { display: none; }
+      .suggested-entry > span { display: block; margin: 0 0 8px 2px; color: var(--tertiary); font-size: 10px; }
+      .entry-card { display: flex; width: 100%; align-items: center; gap: 11px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: rgba(16, 17, 21, 0.7); text-align: left; transition: 140ms ease; }
+      .entry-card:hover { border-color: rgba(143, 156, 255, 0.33); color: var(--ink); background: rgba(143, 156, 255, 0.08); }
+      .entry-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: var(--primary-hover); background: var(--primary-soft); }
+      .entry-card > span { min-width: 0; }
+      .entry-card strong,
+      .entry-card small { display: block; }
+      .entry-card strong { font-size: 11px; font-weight: 620; }
+      .entry-card small { overflow: hidden; margin-top: 2px; color: var(--tertiary); font-family: var(--font-mono); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+      .entry-card > .icon { margin-left: auto; color: var(--tertiary); }
+
+      .web-page { display: none; overflow: auto; background: #f7f8fb; }
+      .web-page.visible { display: block; }
+      .store-topbar { position: sticky; top: 0; z-index: 2; display: flex; height: 55px; align-items: center; padding: 0 6.5%; border-bottom: 1px solid #e8e9ee; background: rgba(255, 255, 255, 0.93); backdrop-filter: blur(12px); }
+      .store-logo { display: flex; align-items: center; gap: 7px; color: #1d2030; font-size: 15px; font-weight: 760; letter-spacing: -0.04em; }
+      .store-logo i { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 7px; color: #fff; background: #5c67d7; }
+      .store-logo .icon { width: 13px; height: 13px; }
+      .store-nav { display: flex; gap: 18px; margin-left: 42px; color: #74778a; font-size: 11px; }
+      .store-cart { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: #4b4e60; font-size: 11px; }
+      .store-main { display: grid; grid-template-columns: minmax(250px, 1fr) minmax(220px, 0.8fr); gap: clamp(24px, 6vw, 80px); max-width: 900px; margin: 0 auto; padding: 46px 8% 70px; }
+      .product-image { display: grid; min-height: 310px; place-items: center; border: 1px solid #e7e8ef; border-radius: 16px; background: radial-gradient(circle at 50% 35%, #fff, transparent 56%), #ecedf5; }
+      .product-shape { width: 190px; height: 218px; border: 13px solid #232635; border-radius: 28px 28px 45px 45px; background: linear-gradient(135deg, #5a67d8 0 50%, #31364a 50% 100%); box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.12), 0 30px 36px rgba(43, 47, 76, 0.22); transform: rotate(6deg); }
+      .store-kicker { color: #6269bc; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+      .product-copy h2 { margin: 9px 0; font-size: 28px; line-height: 1.12; letter-spacing: -0.055em; }
+      .product-copy > p { margin: 0; color: #727589; font-size: 12px; line-height: 1.65; }
+      .price-row { display: flex; align-items: baseline; gap: 8px; margin: 19px 0; }
+      .price-row strong { font-size: 20px; letter-spacing: -0.04em; }
+      .price-row span { color: #8990a1; font-size: 10px; }
+      .purchase-card { position: relative; padding: 15px; border: 1px solid #dedfe8; border-radius: 12px; background: #fff; box-shadow: 0 12px 20px rgba(46, 51, 78, 0.06); }
+      .purchase-card::after,
+      .cart-summary::after { position: absolute; inset: -3px; display: none; border: 2px solid #6d78e8; border-radius: 14px; box-shadow: 0 0 0 4px rgba(109, 120, 232, 0.16); content: ""; pointer-events: none; }
+      .inspect-mode .selectable:hover::after,
+      .selection-made .purchase-card::after { display: block; }
+      .purchase-card label { display: block; margin-bottom: 8px; color: #5b5e70; font-size: 10px; font-weight: 680; }
+      .quantity-row { display: flex; align-items: center; gap: 8px; }
+      .quantity-row button { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid #dfe1eb; border-radius: 7px; color: #555a70; background: #f8f9fc; }
+      .quantity-row span { min-width: 23px; color: #333647; text-align: center; font-family: var(--font-mono); font-size: 12px; }
+      .purchase-button { width: 100%; height: 36px; margin-top: 15px; border-radius: 8px; color: #fff; background: #5c67d7; font-size: 11px; font-weight: 690; }
+      .purchase-button:hover { background: #4853c8; }
+      .cart-summary { position: relative; display: flex; align-items: center; gap: 12px; max-width: 900px; margin: -18px auto 70px; padding: 15px 8%; border: 1px solid #e2e3ec; border-radius: 13px; background: #fff; box-shadow: 0 12px 28px rgba(51, 56, 92, 0.06); }
+      .cart-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 8px; color: #5e68cf; background: #eef0ff; }
+      .cart-summary strong,
+      .cart-summary small { display: block; }
+      .cart-summary strong { font-size: 11px; }
+      .cart-summary small { margin-top: 1px; color: #7a7e91; font-size: 10px; }
+      .checkout-button { height: 31px; margin-left: auto; padding: 0 12px; border-radius: 7px; color: #fff; background: #252838; font-size: 10px; font-weight: 670; }
+
+      .inspect-banner { position: absolute; z-index: 8; top: 12px; left: 50%; display: none; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid rgba(143, 156, 255, 0.48); border-radius: 8px; color: var(--muted); background: rgba(16, 17, 21, 0.94); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22); font-size: 10px; transform: translateX(-50%); }
+      .inspect-banner .icon { color: var(--primary-hover); }
+      .inspect-mode .inspect-banner { display: flex; }
+      .selection-popover { position: absolute; z-index: 9; right: 17px; bottom: 15px; display: none; width: 260px; padding: 11px; border: 1px solid rgba(143, 156, 255, 0.34); border-radius: 10px; color: var(--muted); background: rgba(16, 17, 21, 0.97); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28); }
+      .selection-made .selection-popover { display: block; }
+      .selection-title { display: flex; align-items: center; gap: 7px; color: var(--ink); font-size: 11px; font-weight: 650; }
+      .selection-title i { display: grid; width: 21px; height: 21px; place-items: center; border-radius: 6px; color: var(--primary-hover); background: var(--primary-soft); }
+      .selection-popover p { margin: 6px 0 9px 28px; color: var(--tertiary); font-size: 10px; line-height: 1.5; }
+      .selection-actions { display: flex; justify-content: flex-end; gap: 5px; }
+      .selection-actions .button { height: 26px; padding: 0 8px; font-size: 10px; }
+      .resize-handle { background: var(--line); }
+      .agent-panel { display: flex; min-width: 0; flex-direction: column; overflow: hidden; background: rgba(18, 19, 23, 0.92); backdrop-filter: blur(22px); }
+      .agent-header { display: flex; min-height: 48px; align-items: center; gap: 9px; padding: 0 14px; border-bottom: 1px solid var(--line); }
+      .agent-orb { display: grid; width: 25px; height: 25px; place-items: center; border: 1px solid rgba(143, 156, 255, 0.28); border-radius: 8px; color: var(--primary-hover); background: var(--primary-soft); }
+      .agent-orb .icon { width: 14px; height: 14px; }
+      .agent-header strong { color: var(--muted); font-size: 12px; font-weight: 630; }
+      .agent-header small { display: block; margin-top: 1px; color: var(--tertiary); font-size: 9px; }
+      .agent-header .icon-button { margin-left: auto; }
+      .agent-context { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--tertiary); background: rgba(255, 255, 255, 0.018); font-size: 10px; }
+      .agent-context .icon { color: var(--primary-hover); }
+      .agent-context span { overflow: hidden; color: var(--subtle); text-overflow: ellipsis; white-space: nowrap; }
+      .agent-messages { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 13px; overflow: auto; padding: 16px 14px 12px; }
+      .message { padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, 0.025); }
+      .message.discover { border-color: rgba(143, 156, 255, 0.22); background: rgba(143, 156, 255, 0.06); }
+      .message-label { display: flex; align-items: center; gap: 6px; color: var(--tertiary); font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+      .message-label .icon { width: 13px; height: 13px; color: var(--primary-hover); }
+      .message p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+      .message p strong { color: var(--ink); font-weight: 630; }
+      .chat-user-message { align-self: flex-end; max-width: 88%; padding: 10px 11px; border: 1px solid rgba(143, 156, 255, 0.28); border-radius: 11px 11px 4px 11px; color: #e4e7ff; background: rgba(143, 156, 255, 0.13); }
+      .chat-user-message > span { display: block; font-size: 11px; line-height: 1.55; }
+      .context-attachment { display: flex; align-items: center; gap: 7px; margin-top: 8px; padding: 7px; border: 1px solid rgba(143, 156, 255, 0.22); border-radius: 7px; color: var(--muted); background: rgba(7, 8, 13, 0.22); }
+      .context-attachment > i { color: var(--primary-hover); }
+      .context-attachment strong,
+      .context-attachment small { display: block; }
+      .context-attachment strong { color: var(--muted); font-size: 9px; font-weight: 630; }
+      .context-attachment small { margin-top: 1px; color: var(--tertiary); font-family: var(--font-mono); font-size: 8px; }
+      .chat-assistant-message { padding-right: 4px; }
+      .assistant-author { display: flex; align-items: center; gap: 6px; color: var(--tertiary); font-size: 9px; font-weight: 640; }
+      .assistant-author .icon { color: var(--primary-hover); }
+      .assistant-response { margin-top: 7px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255, 255, 255, 0.025); }
+      .assistant-response p { margin: 0; }
+      .assistant-pending { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid rgba(143, 156, 255, 0.2); border-radius: 8px; color: var(--tertiary); background: rgba(143, 156, 255, 0.05); font-size: 10px; }
+      .assistant-pending::before { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); box-shadow: 10px 0 0 rgba(143, 156, 255, 0.55), 20px 0 0 rgba(143, 156, 255, 0.2); content: ""; animation: pending-pulse 1.25s ease-in-out infinite; }
+      @keyframes pending-pulse { 50% { opacity: 0.38; transform: translateX(2px); } }
+      .message.finding { display: none; border-color: rgba(241, 124, 124, 0.26); background: rgba(241, 124, 124, 0.055); }
+      .has-finding .message.finding { display: block; }
+      .finding-head { display: flex; align-items: center; gap: 6px; color: #ffb2b2; font-size: 10px; font-weight: 670; }
+      .confidence { margin-left: auto; padding: 2px 5px; border: 1px solid rgba(241, 124, 124, 0.24); border-radius: 4px; color: #ecabab; font-size: 8px; }
+      .evidence-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+      .evidence-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 5px; border: 1px solid var(--line); border-radius: 5px; color: var(--tertiary); background: rgba(255, 255, 255, 0.03); font-family: var(--font-mono); font-size: 8px; }
+      .finding-actions { display: flex; gap: 6px; margin-top: 10px; }
+      .finding-actions .button { height: 27px; padding: 0 8px; font-size: 10px; }
+
+      .session-journey { position: relative; padding: 11px; border: 1px solid rgba(143, 156, 255, 0.22); border-radius: 10px; background: rgba(143, 156, 255, 0.045); }
+      .journey-head { display: flex; align-items: center; gap: 7px; }
+      .journey-head > i { color: var(--primary-hover); }
+      .journey-head span { display: grid; min-width: 0; }
+      .journey-head strong { color: var(--muted); font-size: 11px; font-weight: 630; }
+      .journey-head small { margin-top: 1px; overflow: hidden; color: var(--tertiary); font-family: var(--font-mono); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+      .journey-live { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 3px 5px; border: 1px solid rgba(88, 199, 123, 0.2); border-radius: 5px; color: #9ddcb0; background: rgba(88, 199, 123, 0.08); font-family: var(--font-mono); font-size: 8px; }
+      .journey-live::before { width: 5px; height: 5px; border-radius: 50%; background: var(--success); content: ""; }
+      .context-kind { display: inline-flex; align-items: center; gap: 4px; margin: 8px 0 0 21px; color: var(--tertiary); font-size: 8px; }
+      .context-kind .icon { width: 10px; height: 10px; color: var(--primary-hover); }
+      .context-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 11px; }
+      .context-actions .button { height: 26px; padding: 0 8px; font-size: 9px; }
+      .journey-list { display: grid; gap: 8px; margin-top: 12px; }
+      .journey-node { position: relative; padding: 0 0 0 21px; }
+      .journey-node:not(:last-child)::after { position: absolute; top: 17px; bottom: -11px; left: 5px; width: 1px; background: rgba(255, 255, 255, 0.12); content: ""; }
+      .journey-node::before { position: absolute; z-index: 1; top: 5px; left: 0; width: 10px; height: 10px; border: 2px solid var(--surface-2); border-radius: 50%; background: var(--tertiary); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.025); content: ""; }
+      .journey-node.success::before { background: var(--success); }
+      .journey-node.alert::before { background: var(--danger); }
+      .journey-node.active::before { background: var(--primary); box-shadow: 0 0 0 4px rgba(143, 156, 255, 0.13); }
+      .journey-node strong { display: block; color: var(--muted); font-size: 10px; font-weight: 620; }
+      .journey-node p { margin: 3px 0 0; color: var(--tertiary); font-size: 9px; line-height: 1.5; }
+      .journey-node.alert strong { color: #ffb2b2; }
+      .journey-evidence { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+      .journey-evidence span { padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px; color: var(--tertiary); background: rgba(255, 255, 255, 0.025); font-family: var(--font-mono); font-size: 8px; }
+      .journey-node.is-focused { margin: -5px -5px -5px -2px; padding: 5px 5px 5px 23px; border: 1px solid rgba(241, 124, 124, 0.32); border-radius: 7px; background: rgba(241, 124, 124, 0.06); }
+
+      body[data-variant="rail"] .session-journey { border-color: var(--line); background: rgba(255, 255, 255, 0.018); }
+      body[data-variant="rail"] .journey-list { gap: 6px; }
+      body[data-variant="rail"] .journey-node { padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255, 255, 255, 0.02); }
+      body[data-variant="rail"] .journey-node::before,
+      body[data-variant="rail"] .journey-node::after { display: none; }
+      body[data-variant="rail"] .journey-node p { margin-top: 4px; }
+
+      body[data-variant="console"] .session-journey { border-color: #25262d; border-radius: 7px; background: #0c0d10; }
+      body[data-variant="console"] .journey-list { gap: 0; margin: 9px -11px -11px; border-top: 1px solid #25262d; }
+      body[data-variant="console"] .journey-node { padding: 7px 10px 7px 25px; border-bottom: 1px solid #1b1c22; font-family: var(--font-mono); }
+      body[data-variant="console"] .journey-node::after { display: none; }
+      body[data-variant="console"] .journey-node::before { top: 11px; left: 10px; width: 6px; height: 6px; border: 0; }
+      body[data-variant="console"] .journey-node strong { font-size: 9px; font-weight: 520; }
+      body[data-variant="console"] .journey-node p { display: inline; margin-left: 6px; font-size: 8px; }
+      body[data-variant="console"] .journey-evidence { display: inline-flex; margin: 0 0 0 6px; }
+      body[data-variant="console"] .journey-evidence span { border: 0; padding: 0; background: transparent; font-size: 8px; }
+      .agent-composer { padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+      .composer-shell { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 4px 5px 4px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-1); }
+      .composer-shell input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--muted); background: transparent; font-size: 11px; }
+      .composer-send { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 7px; color: #111329; background: var(--primary); }
+
+      .modal-backdrop { position: fixed; z-index: 100; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(4, 5, 7, 0.62); backdrop-filter: blur(5px); }
+      .modal-backdrop.visible { display: flex; }
+      .modal { width: min(500px, calc(100% - 48px)); padding: 17px; border: 1px solid var(--line-strong); border-radius: 13px; background: #15161b; box-shadow: 0 28px 85px rgba(0, 0, 0, 0.48); }
+      .modal-head { display: flex; align-items: flex-start; gap: 10px; }
+      .modal-head > i { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 8px; color: var(--primary-hover); background: var(--primary-soft); }
+      .modal-head h2 { margin: 1px 0 0; font-size: 14px; font-weight: 650; letter-spacing: -0.02em; }
+      .modal-head p { margin: 3px 0 0; color: var(--tertiary); font-size: 10px; line-height: 1.55; }
+      .modal-head .icon-button { margin-left: auto; }
+      .modal-section { margin-top: 16px; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255, 255, 255, 0.018); }
+      .scope-title { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 610; }
+      .scope-list { display: grid; gap: 6px; margin-top: 10px; }
+      .scope-list span { display: flex; align-items: center; gap: 7px; color: var(--subtle); font-size: 10px; }
+      .scope-list .icon { width: 13px; height: 13px; color: var(--success); }
+      .modal-foot { display: flex; justify-content: flex-end; gap: 7px; margin-top: 16px; }
+
+      .issue-drawer { position: fixed; z-index: 101; top: 0; right: 0; display: flex; width: min(480px, 42vw); height: 100vh; flex-direction: column; border-left: 1px solid var(--line-strong); background: #14151a; box-shadow: -28px 0 70px rgba(0, 0, 0, 0.35); transform: translateX(104%); transition: transform 220ms ease; }
+      .issue-drawer.visible { transform: translateX(0); }
+      .drawer-head { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+      .drawer-head > .icon { color: var(--primary-hover); }
+      .drawer-head strong { font-size: 13px; font-weight: 640; }
+      .drawer-head small { display: block; margin-top: 1px; color: var(--tertiary); font-size: 9px; }
+      .drawer-head .icon-button { margin-left: auto; }
+      .drawer-body { min-height: 0; flex: 1; overflow: auto; padding: 16px; }
+      .field { display: grid; gap: 6px; margin-bottom: 15px; }
+      .field label,
+      .draft-evidence > span { color: var(--tertiary); font-size: 9px; font-weight: 720; letter-spacing: 0.08em; text-transform: uppercase; }
+      .field input,
+      .field textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--muted); background: var(--surface-1); font-size: 11px; }
+      .field input { height: 34px; padding: 0 10px; }
+      .field textarea { min-height: 116px; padding: 9px 10px; line-height: 1.55; resize: vertical; }
+      .field input:focus,
+      .field textarea:focus { border-color: rgba(143, 156, 255, 0.6); }
+      .draft-evidence { padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255, 255, 255, 0.018); }
+      .drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line); }
+      .draft-status { color: var(--tertiary); font-size: 10px; }
+      .toast { position: fixed; z-index: 120; right: 18px; bottom: 18px; display: flex; align-items: center; gap: 8px; max-width: 340px; padding: 9px 11px; border: 1px solid rgba(88, 199, 123, 0.25); border-radius: 8px; color: var(--muted); background: rgba(19, 29, 23, 0.96); box-shadow: 0 18px 45px rgba(0, 0, 0, 0.32); font-size: 10px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: 180ms ease; }
+      .toast.visible { opacity: 1; transform: translateY(0); }
+      .toast .icon { color: var(--success); }
+
+      @media (max-width: 1350px) {
+        :root { --agent-width: 390px; }
+        .capture-actions .button span { display: none; }
+        .store-main { gap: 30px; }
+      }
+    </style>
+  </head>
+  <body data-variant="browser">
+    <header class="prototype-bar">
+      <div class="prototype-title"><div class="eyebrow">Explorer · interactive prototype</div><strong>Agent 会话路径交互变体</strong></div>
+      <nav class="variant-switcher" aria-label="选择 Agent 会话路径设计变体">
+        <button class="variant-button active" type="button" data-variant="browser"><span class="variant-key">01</span><span class="variant-copy"><strong>Narrative path</strong><small>推荐 · 一条连贯的会话故事</small></span></button>
+        <button class="variant-button" type="button" data-variant="rail"><span class="variant-key">02</span><span class="variant-copy"><strong>Evidence stack</strong><small>研究导向 · 每步归并证据</small></span></button>
+        <button class="variant-button" type="button" data-variant="console"><span class="variant-key">03</span><span class="variant-copy"><strong>Diagnostic ledger</strong><small>验证导向 · 紧凑的技术记录</small></span></button>
+      </nav>
+      <div class="flow-shortcuts" aria-label="跳转交互流程状态">
+        <button class="flow-button active" type="button" data-flow="new">新建 Tab</button><button class="flow-button" type="button" data-flow="explore">浏览</button><button class="flow-button" type="button" data-flow="inspect">圈选</button><button class="flow-button" type="button" data-flow="record">录制</button><button class="flow-button" type="button" data-flow="draft">草稿</button><button class="flow-button" type="button" data-flow="review">回看</button>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <aside class="product-rail" aria-label="Traceability navigation">
+        <div class="brand" title="Traceability"><i data-lucide="fingerprint" class="icon"></i></div>
+        <button class="rail-button" type="button" title="Inbox"><i data-lucide="inbox" class="icon"></i></button>
+        <button class="rail-button" type="button" title="Monitor"><i data-lucide="activity" class="icon"></i></button>
+        <button class="rail-button active" type="button" title="Explorer"><i data-lucide="compass" class="icon"></i></button>
+        <div class="rail-spacer"></div><button class="rail-button" type="button" title="Settings"><i data-lucide="settings-2" class="icon"></i></button><span class="connection" title="Connected"></span>
+      </aside>
+
+      <main class="workspace">
+        <header class="app-header"><strong>Acme Commerce</strong><span>/</span><span>Explorer</span><div class="app-header-right"><span class="live">Live updates</span><button class="icon-button" type="button" title="Command"><i data-lucide="command" class="icon"></i></button></div></header>
+        <section class="workspace-stage" id="workspaceStage" aria-label="Explorer workspace">
+          <section class="browser-stack" id="browserStack" aria-label="Browser Artifact">
+            <div class="tab-strip"><div class="browser-tab"><i data-lucide="compass" class="icon"></i><span id="tabTitle">新建 Tab</span><button type="button" id="closeTab" title="关闭此 Tab"><i data-lucide="x" class="icon"></i></button></div><button class="new-tab-button" type="button" id="newTab" title="新建 Tab（MVP 暂支持单 Tab）"><i data-lucide="plus" class="icon"></i></button></div>
+            <div class="browser-toolbar">
+              <div class="browser-actions"><button class="icon-button" type="button" disabled title="后退"><i data-lucide="chevron-left" class="icon"></i></button><button class="icon-button" type="button" disabled title="前进"><i data-lucide="chevron-right" class="icon"></i></button><button class="icon-button" type="button" id="reload" title="刷新"><i data-lucide="rotate-cw" class="icon"></i></button></div>
+              <form class="address-wrap" id="addressForm"><i data-lucide="lock-keyhole" class="icon"></i><input class="address-input" id="addressInput" aria-label="输入网页地址" placeholder="输入网址并按 Enter 打开" /><button class="address-go" type="submit" title="打开"><i data-lucide="arrow-right" class="icon"></i></button></form>
+              <span class="toolbar-divider"></span>
+              <div class="capture-actions"><button class="button" type="button" id="inspectButton"><i data-lucide="mouse-pointer-2"></i><span>选择元素</span></button><button class="button analyze-page" type="button" id="analyzePage"><i data-lucide="sparkles"></i><span>分析页面</span></button><button class="button primary start-recording" type="button" id="startRecording"><i data-lucide="circle-dot"></i><span>开始录制</span></button><span class="recording-pill">00:42</span><button class="button danger stop-recording" type="button" id="stopRecording"><i data-lucide="square"></i><span>结束</span></button></div>
+            </div>
+
+            <div class="browser-content">
+              <section class="new-tab-screen" id="newTabScreen">
+                <div class="new-tab-inner" id="newTabInner"><div class="explorer-mark"><i data-lucide="compass" class="icon"></i></div><h1>从一个页面开始探索</h1><p>直接输入网址。浏览不会自动录制；当你需要理解功能、保留操作证据或创建问题草稿时，再显式开启对应能力。</p><form class="new-tab-form" id="newTabForm"><i data-lucide="search" class="icon"></i><input id="newTabInput" autocomplete="off" placeholder="https://staging.acme.test/checkout" /><button class="button primary" type="submit">打开 <i data-lucide="arrow-up-right" class="icon"></i></button></form><div class="new-tab-note">仅支持 HTTPS；本地开发环境可按应用策略允许 localhost。</div><button class="entry-mode" type="button" id="toggleEntry">模拟：当前 Application 未配置入口</button><div class="suggested-entry"><span>当前 Application 的推荐入口</span><button class="entry-card" type="button" id="openSuggested"><i class="entry-icon"><i data-lucide="shopping-bag" class="icon"></i></i><span><strong>Acme Checkout · staging</strong><small>https://staging.acme.test/checkout</small></span><i data-lucide="arrow-up-right" class="icon"></i></button></div></div>
+              </section>
+
+              <section class="web-page" id="webPage" aria-label="模拟的被测网页">
+                <div class="store-topbar"><div class="store-logo"><i><i data-lucide="shopping-bag" class="icon"></i></i>acme</div><nav class="store-nav"><span>新品</span><span>耳机</span><span>穿戴</span><span>支持</span></nav><span class="store-cart"><i data-lucide="shopping-cart" class="icon"></i> 1 item</span></div>
+                <div class="store-main"><div class="product-image"><div class="product-shape" aria-label="Aero One headphones"></div></div><div class="product-copy"><span class="store-kicker">Aero collection</span><h2>Aero One<br />wireless sound.</h2><p>自适应降噪、全天候佩戴。这个模拟页面用于演示 Explorer 如何在不干扰网页本身的情况下提供理解与测试辅助。</p><div class="price-row"><strong>¥ 1,299</strong><span>含税 · 预计 2–4 天送达</span></div><article class="purchase-card selectable" id="purchaseCard"><label>选择数量</label><div class="quantity-row"><button type="button" aria-label="减少"><i data-lucide="minus" class="icon"></i></button><span>1</span><button type="button" aria-label="增加"><i data-lucide="plus" class="icon"></i></button></div><button class="purchase-button" id="addToBag" type="button">加入购物袋</button></article></div></div>
+                <article class="cart-summary selectable" id="cartSummary"><i class="cart-icon"><i data-lucide="shopping-cart" class="icon"></i></i><span><strong>购物袋 · Aero One</strong><small>1 件 · 标准配送 · 合计 ¥1,299</small></span><button class="checkout-button" id="checkout" type="button">前往结算</button></article>
+              </section>
+
+              <div class="inspect-banner"><i data-lucide="mouse-pointer-2" class="icon"></i>选择一个页面元素进行解释 · Esc 退出</div>
+              <aside class="selection-popover" id="selectionPopover"><div class="selection-title"><i><i data-lucide="scan-search" class="icon"></i></i><span id="selectionLabel">已选中：购买卡片</span></div><p>已保存元素语义、当前 URL 与页面截图。浏览模式下不会记录连续操作或网络响应。</p><div class="selection-actions"><button class="button" type="button" id="clearSelection">取消</button><button class="button primary" type="button" id="analyzeSelection">分析此处</button></div></aside>
+            </div>
+          </section>
+
+        </section>
+      </main>
+
+      <div class="resize-handle"></div>
+      <aside class="agent-panel" id="agentPanel" aria-label="Traceability Agent">
+        <header class="agent-header"><span class="agent-orb"><i data-lucide="sparkles" class="icon"></i></span><span><strong>Traceability Agent</strong><small id="agentSubtitle">等待 Explorer 上下文</small></span><button class="icon-button" type="button" title="更多"><i data-lucide="ellipsis" class="icon"></i></button></header>
+        <div class="agent-context"><i data-lucide="compass" class="icon"></i><span id="agentContext">浏览模式 · 尚未打开网页</span></div>
+        <div class="agent-messages" id="agentMessages">
+          <article class="message discover"><div class="message-label"><i data-lucide="sparkles" class="icon"></i>Explorer</div><p>打开一个页面后，我可以基于<strong>你选择的区域</strong>解释功能。开始录制后，我会把操作、接口与页面状态归并成可理解的会话步骤。</p></article>
+          <article class="message" id="pageMessage" hidden><div class="message-label"><i data-lucide="file-search" class="icon"></i>页面理解</div><p id="pageMessageText">我已建立页面快照。你可以选择购买卡片或购物袋摘要来问我它们的业务职责。</p></article>
+          <article class="message" id="selectionMessage" hidden><div class="message-label"><i data-lucide="scan-search" class="icon"></i>标注分析</div><p><strong>购买卡片</strong>负责数量选择与加入购物袋。它是商品详情页的交易意图入口；当前仅基于 DOM 语义、截图和 URL 判断，尚未读取网络数据。</p><div class="evidence-chips"><span class="evidence-chip">annotation_021</span><span class="evidence-chip">snapshot</span></div></article>
+          <section class="session-journey" id="sessionJourney" hidden aria-label="Agent 会话路径">
+            <header class="journey-head"><i data-lucide="paperclip" class="icon"></i><span><strong>Explorer Context</strong><small id="journeySubtitle">session_01H7 · 只展示可解释的关键步骤</small></span><b class="journey-live" id="journeyLive">LIVE</b></header>
+            <div class="context-kind"><i data-lucide="database" class="icon"></i>录制活动，不是 User 或 Assistant Message</div>
+            <div class="journey-list" id="journeyList"></div>
+            <div class="context-actions"><button class="button" type="button" id="attachContext"><i data-lucide="paperclip" class="icon"></i>附加到提问</button><button class="button primary" type="button" id="analyzeRecording"><i data-lucide="sparkles" class="icon"></i>分析当前录制</button></div>
+          </section>
+          <article class="chat-user-message" id="recordingUserMessage" hidden><span id="recordingUserText">分析刚刚结束的录制，重点检查结算状态。</span><div class="context-attachment"><i data-lucide="paperclip" class="icon"></i><span><strong>Explorer Context · session_01H7</strong><small id="attachmentSummary">00:00–00:19 · 2 个业务步骤 · 已脱敏</small></span></div></article>
+          <article class="chat-assistant-message" id="analysisPending" hidden><div class="assistant-author"><i data-lucide="sparkles" class="icon"></i>Traceability Agent</div><div class="assistant-pending">正在读取录制附件与关联证据</div></article>
+          <article class="chat-assistant-message" id="recordingAnalysis" hidden><div class="assistant-author"><i data-lucide="sparkles" class="icon"></i>Traceability Agent <span class="confidence">基于录制附件</span></div><div class="assistant-response"><div class="finding-head"><i data-lucide="triangle-alert" class="icon" id="analysisIcon"></i><span id="analysisTitle">需要验证的发现</span> <span class="confidence" id="analysisConfidence">中等置信度</span></div><p id="analysisText">结算请求返回 <strong>422</strong> 后，购物袋仍显示“准备支付”。这可能让用户误以为订单已创建；请比较成功与失败路径对同一状态的处理。</p><div class="evidence-chips" id="analysisEvidence"><span class="evidence-chip">action_016</span><span class="evidence-chip">network_044</span><span class="evidence-chip">snapshot_048</span></div><div class="finding-actions"><button class="button" type="button" id="focusEvidence">聚焦异常步骤</button><button class="button primary" type="button" id="openIssue">生成 Issue 草稿</button></div></div></article>
+        </div>
+        <footer class="agent-composer"><form class="composer-shell" id="agentForm"><input id="agentInput" placeholder="询问当前页面或会话…" /><button class="composer-send" type="submit" title="发送"><i data-lucide="arrow-up" class="icon"></i></button></form></footer>
+      </aside>
+    </div>
+
+    <div class="modal-backdrop" id="recordModal" role="dialog" aria-modal="true"><section class="modal"><header class="modal-head"><i><i data-lucide="circle-dot" class="icon"></i></i><span><h2>开始测试录制</h2><p>当前 Tab 将绑定到 Acme Commerce。浏览期间未采集的数据不会被补录。</p></span><button class="icon-button" type="button" data-close="recordModal" title="关闭"><i data-lucide="x" class="icon"></i></button></header><div class="modal-section"><div class="scope-title"><i data-lucide="shield-check" class="icon"></i>本次采集范围</div><div class="scope-list"><span><i data-lucide="check" class="icon"></i>脱敏的操作、导航与 rrweb 回放</span><span><i data-lucide="check" class="icon"></i>允许接口的状态、耗时与 JSON 摘要</span><span><i data-lucide="check" class="icon"></i>密码、Cookie、Authorization 与文件内容不会采集</span></div></div><footer class="modal-foot"><button class="button" type="button" data-close="recordModal">取消</button><button class="button primary" type="button" id="confirmRecording"><i data-lucide="circle-dot" class="icon"></i>确认并开始</button></footer></section></div>
+
+    <aside class="issue-drawer" id="issueDrawer" aria-label="Issue 草稿"><header class="drawer-head"><i data-lucide="file-pen-line" class="icon"></i><span><strong>Issue 草稿</strong><small>由当前会话证据生成 · 可编辑后保存</small></span><button class="icon-button" type="button" id="closeIssue" title="关闭"><i data-lucide="x" class="icon"></i></button></header><div class="drawer-body"><div class="field"><label for="issueTitle">标题</label><input id="issueTitle" value="结算失败后购物袋仍提示准备支付" /></div><div class="field"><label for="issueBody">描述</label><textarea id="issueBody">复现步骤&#10;1. 在商品详情页加入购物袋。&#10;2. 前往结算并提交支付。&#10;3. 当 POST /api/orders 返回 422 时，购物袋仍显示“准备支付”。&#10;&#10;预期：失败状态应明确提示并保留可重试入口。&#10;&#10;Agent 假设：失败响应没有驱动 payment 状态回退。</textarea></div><div class="draft-evidence"><span>已关联证据</span><div class="evidence-chips"><span class="evidence-chip">action_016</span><span class="evidence-chip">network_044 · 422</span><span class="evidence-chip">snapshot_048</span><span class="evidence-chip">replay · 00:42</span></div></div></div><footer class="drawer-foot"><span class="draft-status">仅保存到 Traceability，不会发送到外部系统。</span><button class="button primary" type="button" id="saveDraft"><i data-lucide="save" class="icon"></i>保存草稿</button></footer></aside>
+    <div class="toast" id="toast"><i data-lucide="circle-check" class="icon"></i><span id="toastText">已更新</span></div>
+
+    <script>
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+      const state = { loaded: false, inspecting: false, recording: false, finding: false, analysisRequested: false };
+
+      function icons() { lucide.createIcons({ attrs: { "stroke-width": 1.75 } }); }
+      function toast(message) { $("#toastText").textContent = message; $("#toast").classList.add("visible"); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => $("#toast").classList.remove("visible"), 2800); }
+      function flow(name, apply = false) { $$(".flow-button").forEach((b) => b.classList.toggle("active", b.dataset.flow === name)); if (!apply) return; if (name === "new") newTab(); if (name === "explore") openPage(); if (name === "inspect") { openPage(); inspect(true); } if (name === "record") { openPage(); startNow(); } if (name === "draft") { openPage(); startNow(); checkout(); requestRecordingAnalysis("分析当前录制中的异常步骤，生成可复现的问题草稿。"); window.setTimeout(openIssue, 900); } if (name === "review") { openPage(); startNow(); checkout(); stop(); } }
+      function variant(name) { document.body.dataset.variant = name; $$(".variant-button").forEach((b) => b.classList.toggle("active", b.dataset.variant === name)); }
+      function url(value) { const v = value.trim() || "https://staging.acme.test/checkout"; return /^https?:\/\//i.test(v) ? v : `https://${v}`; }
+      function openPage(value = "https://staging.acme.test/checkout") { state.loaded = true; $("#newTabScreen").hidden = true; $("#webPage").classList.add("visible"); $("#addressInput").value = url(value); $("#tabTitle").textContent = "Acme Checkout"; $("#agentContext").textContent = "浏览模式 · staging.acme.test / checkout"; $("#agentSubtitle").textContent = "页面上下文已就绪"; $("#pageMessage").hidden = false; flow("explore"); toast("页面已打开 · 浏览中，未录制"); }
+      function newTab() { state.loaded = false; state.inspecting = false; state.recording = false; state.finding = false; state.analysisRequested = false; $("#newTabScreen").hidden = false; $("#webPage").className = "web-page"; $("#browserStack").className = "browser-stack"; $("#addressInput").value = ""; $("#tabTitle").textContent = "新建 Tab"; $("#agentContext").textContent = "浏览模式 · 尚未打开网页"; $("#agentSubtitle").textContent = "等待 Explorer 上下文"; $("#pageMessage").hidden = true; $("#selectionMessage").hidden = true; resetJourney(); flow("new"); setTimeout(() => $("#newTabInput").focus(), 0); }
+      function inspect(on) { if (!state.loaded) return toast("先打开一个页面，再选择元素"); state.inspecting = on; $("#webPage").classList.toggle("inspect-mode", on); $("#inspectButton").classList.toggle("active-tool", on); $("#inspectButton").innerHTML = on ? '<i data-lucide="x" class="icon"></i><span>退出选择</span>' : '<i data-lucide="mouse-pointer-2" class="icon"></i><span>选择元素</span>'; icons(); }
+      function select(label) { if (!state.inspecting) return; state.inspecting = false; $("#webPage").classList.remove("inspect-mode"); $("#webPage").classList.add("selection-made"); $("#selectionLabel").textContent = `已选中：${label}`; $("#inspectButton").classList.remove("active-tool"); $("#inspectButton").innerHTML = '<i data-lucide="mouse-pointer-2" class="icon"></i><span>选择元素</span>'; flow("inspect"); icons(); }
+      function analyzeSelection() { $("#selectionMessage").hidden = false; $("#agentSubtitle").textContent = "正在解释已选区域"; $("#agentContext").textContent = "浏览模式 · 已附加 annotation_021"; $("#webPage").classList.remove("selection-made"); toast("Agent 已基于标注生成页面解释"); }
+      function analyzePage() { if (!state.loaded) return toast("先打开一个页面"); $("#pageMessage").hidden = false; $("#pageMessageText").textContent = "该页面是商品详情与转化入口：购买卡片承载加入购物袋，底部摘要承载结算。圈选一个区域可获得更具体的解释。"; toast("已将页面快照与语义摘要附加给 Agent"); }
+      function resetJourney() { $("#sessionJourney").hidden = true; $("#journeyList").replaceChildren(); $("#journeySubtitle").textContent = "session_01H7 · 只展示可解释的关键步骤"; $("#journeyLive").textContent = "LIVE"; $("#journeyLive").hidden = false; $("#recordingUserMessage").hidden = true; $("#analysisPending").hidden = true; $("#recordingAnalysis").hidden = true; clearTimeout(window.recordingAnalysisTimer); }
+      function addJourney(kind, title, detail, evidence = []) { const node = document.createElement("article"); node.className = `journey-node ${kind}`; node.innerHTML = `<strong>${title}</strong><p>${detail}</p>${evidence.length ? `<div class="journey-evidence">${evidence.map((item) => `<span>${item}</span>`).join("")}</div>` : ""}`; $("#journeyList").append(node); $("#agentMessages").scrollTo({ top: $("#agentMessages").scrollHeight, behavior: "smooth" }); return node; }
+      function startNow() { state.recording = true; state.finding = false; state.analysisRequested = false; $("#recordModal").classList.remove("visible"); $("#browserStack").classList.add("recording"); $("#sessionJourney").hidden = false; $("#journeyList").replaceChildren(); $("#recordingUserMessage").hidden = true; $("#analysisPending").hidden = true; $("#recordingAnalysis").hidden = true; addJourney("active", "开始录制", "上下文正在积累；尚未向 Agent 发起分析请求。", ["session_01H7", "privacy filtered"]); $("#agentContext").textContent = "录制中 · session_01H7 · checkout"; $("#agentSubtitle").textContent = "Explorer Context 正在积累"; $("#journeySubtitle").textContent = "session_01H7 · 00:00 · 正在采集"; $("#journeyLive").textContent = "LIVE"; $("#journeyLive").hidden = false; $("#analyzeRecording").innerHTML = '<i data-lucide="sparkles" class="icon"></i>分析当前录制'; flow("record"); icons(); toast("录制已开始 · 已创建中性 Explorer Context，不产生聊天消息"); }
+      function recordAddToBag() { if (!state.recording) return toast("已加入购物袋模拟 · 当前未录制"); addJourney("success", "加入购物袋", "用户点击后，购物袋状态已与成功响应一致。", ["action_014", "POST /api/cart · 201", "184 ms"]); $("#journeySubtitle").textContent = "session_01H7 · 00:06 · 1 个业务步骤"; toast("Explorer Context 已归并“加入购物袋”与成功响应"); }
+      function checkout() { if (!state.loaded) return; if (!state.recording) return toast("已进入结算模拟 · 若需要保留路径，请先开始录制"); if (state.finding) return toast("该异常步骤已在当前录制上下文中记录"); addJourney("alert", "提交结算", "POST /api/orders 返回 422，但页面仍显示“准备支付”。", ["action_016", "network_044 · 422", "snapshot_048"]); state.finding = true; $("#agentSubtitle").textContent = "录制上下文中出现候选异常"; $("#journeySubtitle").textContent = "session_01H7 · 00:19 · 1 个候选异常，尚未分析"; $("#analyzeRecording").innerHTML = '<i data-lucide="sparkles" class="icon"></i>分析异常步骤'; icons(); toast("候选异常已进入 Explorer Context；等待用户请求或实时分析策略"); }
+      function prepareAnalysisResponse() { if (state.finding) { $("#analysisIcon").setAttribute("data-lucide", "triangle-alert"); $("#analysisTitle").textContent = "需要验证的发现"; $("#analysisConfidence").textContent = "中等置信度"; $("#analysisText").innerHTML = "结算请求返回 <strong>422</strong> 后，购物袋仍显示“准备支付”。这可能让用户误以为订单已创建；请比较成功与失败路径对同一状态的处理。"; $("#analysisEvidence").innerHTML = '<span class="evidence-chip">action_016</span><span class="evidence-chip">network_044</span><span class="evidence-chip">snapshot_048</span>'; $("#focusEvidence").textContent = "聚焦异常步骤"; $("#openIssue").hidden = false; } else { $("#analysisIcon").setAttribute("data-lucide", "route"); $("#analysisTitle").textContent = "录制路径摘要"; $("#analysisConfidence").textContent = "已读取 1 步"; $("#analysisText").innerHTML = "当前录制形成了一条完整的<strong>加入购物袋</strong>路径：用户操作后，POST /api/cart 返回 201，页面状态与接口响应一致。尚未出现需要创建 Issue 的异常。"; $("#analysisEvidence").innerHTML = '<span class="evidence-chip">action_014</span><span class="evidence-chip">POST /api/cart · 201</span><span class="evidence-chip">184 ms</span>'; $("#focusEvidence").textContent = "查看路径"; $("#openIssue").hidden = true; } icons(); }
+      function requestRecordingAnalysis(question = "分析刚刚结束的录制，重点检查结算状态。") { if ($("#sessionJourney").hidden) return toast("先开始一段录制，再把它附加到提问"); state.analysisRequested = true; prepareAnalysisResponse(); $("#recordingUserText").textContent = question; $("#attachmentSummary").textContent = state.finding ? "00:00–00:19 · 2 个业务步骤 · 1 个候选异常 · 已脱敏" : "00:00–00:06 · 1 个业务步骤 · 已脱敏"; $("#recordingUserMessage").hidden = false; $("#analysisPending").hidden = false; $("#recordingAnalysis").hidden = true; $("#agentSubtitle").textContent = "正在读取录制附件"; $("#agentMessages").scrollTo({ top: $("#agentMessages").scrollHeight, behavior: "smooth" }); clearTimeout(window.recordingAnalysisTimer); window.recordingAnalysisTimer = setTimeout(() => { $("#analysisPending").hidden = true; $("#recordingAnalysis").hidden = false; $("#agentSubtitle").textContent = "已基于录制附件完成判断"; $("#agentMessages").scrollTo({ top: $("#agentMessages").scrollHeight, behavior: "smooth" }); toast("Agent 回答已关联 recording context 与证据引用"); }, 850); }
+      function stop() { if (!state.recording) return; state.recording = false; $("#browserStack").classList.remove("recording"); addJourney("success", "结束录制", "会话证据已固定；可附加到下一条提问，也可直接发起分析。", ["01:18", "16 actions", "5 requests"]); $("#agentContext").textContent = "会话已结束 · session_01H7 · 可回看"; $("#agentSubtitle").textContent = "Explorer Context 已固定，等待提问"; $("#journeySubtitle").textContent = "session_01H7 · 01:18 · 已完成"; $("#journeyLive").hidden = true; $("#analyzeRecording").innerHTML = '<i data-lucide="sparkles" class="icon"></i>分析这段录制'; flow("review"); icons(); toast("录制已结束 · Context 已固定，但尚未生成 Assistant Message"); }
+      function openIssue() { if (!state.analysisRequested) return toast("先让 Agent 基于录制附件完成判断"); $("#issueDrawer").classList.add("visible"); flow("draft"); }
+
+      $$(".variant-button").forEach((b) => b.addEventListener("click", () => variant(b.dataset.variant)));
+      $$(".flow-button").forEach((b) => b.addEventListener("click", () => flow(b.dataset.flow, true)));
+      $("#newTabForm").addEventListener("submit", (e) => { e.preventDefault(); openPage($("#newTabInput").value); });
+      $("#addressForm").addEventListener("submit", (e) => { e.preventDefault(); openPage($("#addressInput").value); });
+      $("#openSuggested").addEventListener("click", () => openPage());
+      $("#toggleEntry").addEventListener("click", () => { const isOff = $("#newTabInner").classList.toggle("unconfigured"); $("#toggleEntry").textContent = isOff ? "模拟：当前 Application 已配置入口" : "模拟：当前 Application 未配置入口"; if (isOff) { $("#newTabInput").focus(); toast("无配置入口：地址栏成为唯一首要动作"); } });
+      $("#newTab").addEventListener("click", newTab);
+      $("#closeTab").addEventListener("click", newTab);
+      $("#reload").addEventListener("click", () => toast(state.loaded ? "页面已刷新 · 浏览录制状态保持不变" : "没有可刷新的页面"));
+      $("#inspectButton").addEventListener("click", () => inspect(!state.inspecting));
+      $("#purchaseCard").addEventListener("click", () => select("购买卡片"));
+      $("#cartSummary").addEventListener("click", () => select("购物袋摘要"));
+      $("#clearSelection").addEventListener("click", () => $("#webPage").classList.remove("selection-made"));
+      $("#analyzeSelection").addEventListener("click", analyzeSelection);
+      $("#analyzePage").addEventListener("click", analyzePage);
+      $("#startRecording").addEventListener("click", () => state.loaded ? $("#recordModal").classList.add("visible") : toast("先打开一个页面，再开始录制"));
+      $("#confirmRecording").addEventListener("click", startNow);
+      $("#stopRecording").addEventListener("click", stop);
+      $("#checkout").addEventListener("click", checkout);
+      $("#addToBag").addEventListener("click", recordAddToBag);
+      $("#attachContext").addEventListener("click", () => { if ($("#sessionJourney").hidden) return; $("#agentInput").value = "分析当前录制的结算路径"; $("#agentInput").focus(); toast("Explorer Context 将作为附件附加到这条提问"); });
+      $("#analyzeRecording").addEventListener("click", () => requestRecordingAnalysis(state.finding ? "分析当前录制中的异常步骤，解释结算状态为何没有回退。" : "分析当前录制，概括已完成的用户路径。"));
+      $("#openIssue").addEventListener("click", openIssue);
+      $("#closeIssue").addEventListener("click", () => $("#issueDrawer").classList.remove("visible"));
+      $("#saveDraft").addEventListener("click", () => { $("#issueDrawer").classList.remove("visible"); toast("Issue 草稿已保存到 Traceability"); });
+      $("#focusEvidence").addEventListener("click", () => { const target = $(".journey-node.alert") ?? $$(".journey-node").at(-1); if (!target) return; $$(".journey-node").forEach((node) => node.classList.remove("is-focused")); target.classList.add("is-focused"); target.scrollIntoView({ behavior: "smooth", block: "center" }); toast(state.finding ? "已聚焦异常步骤：动作、422 响应与页面状态" : "已聚焦录制中的最近业务步骤"); });
+      $$("[data-close]").forEach((b) => b.addEventListener("click", () => $(`#${b.dataset.close}`).classList.remove("visible")));
+      $("#agentForm").addEventListener("submit", (e) => { e.preventDefault(); const q = $("#agentInput").value.trim(); if (!q) return; $("#agentInput").value = ""; if (!$("#sessionJourney").hidden) return requestRecordingAnalysis(q); toast("已将问题附加到当前页面上下文"); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") { inspect(false); $("#recordModal").classList.remove("visible"); $("#issueDrawer").classList.remove("visible"); } });
+
+      icons();
+      setTimeout(() => $("#newTabInput").focus(), 0);
+    </script>
+  </body>
+</html>
