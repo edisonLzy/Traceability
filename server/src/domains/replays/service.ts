@@ -1,136 +1,119 @@
 import { eq, desc, and, sql } from "drizzle-orm";
-import { z } from "zod";
 
 import { AppError } from "../../errors/app-error.js";
+import type { ReplayEventPayload } from "../ingest/types.js";
 import { getIssue } from "../issues/service.js";
-import { db, rrwebReplays } from "./db.js";
+import { db, replays, replaySegments } from "./db.js";
 
-export const SaveReplaySchema = z.object({
-  replayId: z.string().optional(),
-  sentryEventId: z.string().optional(),
-  capturedAt: z.string().optional(),
-  startAt: z.number().optional(),
-  endAt: z.number().optional(),
-  events: z.array(z.unknown()).min(1),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-export function saveReplay(appId: string, raw: unknown) {
-  const body = SaveReplaySchema.parse(raw);
-  const replayId = body.replayId ?? crypto.randomUUID();
-  const payload = JSON.stringify(body.events);
+export function appendSegment(input: {
+  appId: string;
+  replayEvent: ReplayEventPayload;
+  recording: Buffer;
+}): void {
+  const evt = input.replayEvent;
   const now = new Date().toISOString();
-  const metadata = JSON.stringify(body.metadata ?? {});
+  const sizeBytes = input.recording.length;
 
-  db.insert(rrwebReplays)
+  db.insert(replays)
     .values({
-      id: replayId,
-      appId,
-      sentryEventId: body.sentryEventId ?? null,
+      replayId: evt.replay_id,
+      appId: input.appId,
+      firstSeenAt: now,
+      lastSeenAt: now,
+      startAt: evt.timestamp,
+      endAt: evt.timestamp,
+      segmentCount: 1,
+      sizeBytes,
+    })
+    .onConflictDoUpdate({
+      target: replays.replayId,
+      set: {
+        lastSeenAt: now,
+        segmentCount: sql`${replays.segmentCount} + 1`,
+        sizeBytes: sql`${replays.sizeBytes} + ${sizeBytes}`,
+        endAt: evt.timestamp,
+      },
+    })
+    .run();
+
+  db.insert(replaySegments)
+    .values({
+      replayId: evt.replay_id,
+      segmentId: evt.segment_id,
+      payload: input.recording,
+      sizeBytes,
       receivedAt: now,
-      capturedAt: body.capturedAt ?? null,
-      startAt: body.startAt ?? null,
-      endAt: body.endAt ?? null,
-      eventCount: body.events.length,
-      sizeBytes: Buffer.byteLength(payload, "utf8"),
-      payload,
-      metadata,
-    })
-    .onConflictDoUpdate({
-      target: rrwebReplays.id,
-      set: {
-        appId,
-        eventCount: body.events.length,
-        sizeBytes: Buffer.byteLength(payload, "utf8"),
-        payload,
-        metadata,
-        sentryEventId: sql`COALESCE(excluded.sentry_event_id, rrweb_replays.sentry_event_id)`,
-        receivedAt: now,
-        capturedAt: body.capturedAt ?? null,
-        startAt: body.startAt ?? null,
-        endAt: body.endAt ?? null,
-      },
     })
     .run();
-
-  return getReplay(replayId)!;
 }
 
-export function attachReplayToIssue(
-  replayId: string,
+export function attachReplayToIssue(replayId: string, issueId: string): void {
+  db.update(replays).set({ issueId }).where(eq(replays.replayId, replayId)).run();
+}
+
+export function getReplayForIssue(
   issueId: string,
-  appId: string,
-  sentryEventId?: string,
-) {
-  const now = new Date().toISOString();
-  db.insert(rrwebReplays)
-    .values({ id: replayId, appId, issueId, sentryEventId: sentryEventId ?? null, receivedAt: now })
-    .onConflictDoUpdate({
-      target: rrwebReplays.id,
-      set: {
-        appId,
-        issueId,
-        sentryEventId: sql`COALESCE(rrweb_replays.sentry_event_id, excluded.sentry_event_id)`,
-      },
-    })
-    .run();
-  return getReplaySummary(replayId)!;
-}
-
-export function getReplaySummary(id: string) {
-  const rows = db.select().from(rrwebReplays).where(eq(rrwebReplays.id, id)).limit(1).all();
-  if (!rows.length) return undefined;
-  return rowToSummary(rows[0]!);
-}
-
-export function getReplay(id: string) {
-  const rows = db.select().from(rrwebReplays).where(eq(rrwebReplays.id, id)).limit(1).all();
-  if (!rows.length) return undefined;
-  return rowToReplay(rows[0]!);
-}
-
-export function getReplayForIssue(issueId: string, replayId: string) {
-  const rows = db
+  replayId: string,
+): { replayId: string; segments: Array<{ segmentId: number; events: unknown[] }> } {
+  const replay = db
     .select()
-    .from(rrwebReplays)
-    .where(and(eq(rrwebReplays.issueId, issueId), eq(rrwebReplays.id, replayId)))
-    .limit(1)
+    .from(replays)
+    .where(and(eq(replays.replayId, replayId), eq(replays.issueId, issueId)))
+    .get();
+  if (!replay) throw new AppError("not found", 404, 404);
+
+  const segmentRows = db
+    .select()
+    .from(replaySegments)
+    .where(eq(replaySegments.replayId, replayId))
+    .orderBy(replaySegments.segmentId)
     .all();
-  if (!rows.length) throw new AppError("not found", 404, 404);
-  return rowToReplay(rows[0]!);
+
+  const segments = segmentRows.map((row) => {
+    const buf = row.payload;
+    const events = JSON.parse(
+      typeof buf === "string" ? buf : new TextDecoder().decode(buf),
+    ) as unknown[];
+    return { segmentId: row.segmentId, events };
+  });
+
+  return { replayId, segments };
 }
 
-export function listReplaysByIssue(issueId: string, limit = 20) {
+export function listReplaysByIssue(
+  issueId: string,
+  limit = 20,
+): Array<{
+  replayId: string;
+  appId: string;
+  issueId?: string;
+  segmentCount: number;
+  startAt?: number;
+  endAt?: number;
+  sizeBytes: number;
+}> {
   getIssue(issueId);
   return db
-    .select()
-    .from(rrwebReplays)
-    .where(eq(rrwebReplays.issueId, issueId))
-    .orderBy(desc(rrwebReplays.receivedAt))
+    .select({
+      replayId: replays.replayId,
+      appId: replays.appId,
+      issueId: replays.issueId,
+      segmentCount: replays.segmentCount,
+      startAt: replays.startAt,
+      endAt: replays.endAt,
+      sizeBytes: replays.sizeBytes,
+    })
+    .from(replays)
+    .where(eq(replays.issueId, issueId))
+    .orderBy(desc(replays.lastSeenAt))
     .limit(Math.min(limit, 100))
-    .all()
-    .map(rowToSummary);
-}
-
-function rowToSummary(row: typeof rrwebReplays.$inferSelect) {
-  return {
-    id: row.id,
-    appId: row.appId,
-    issueId: row.issueId ?? undefined,
-    sentryEventId: row.sentryEventId ?? undefined,
-    receivedAt: row.receivedAt,
-    capturedAt: row.capturedAt ?? undefined,
-    startAt: row.startAt ?? undefined,
-    endAt: row.endAt ?? undefined,
-    eventCount: row.eventCount,
-    sizeBytes: row.sizeBytes,
-    metadata: JSON.parse(row.metadata) as Record<string, unknown>,
-  };
-}
-
-function rowToReplay(row: typeof rrwebReplays.$inferSelect) {
-  return {
-    ...rowToSummary(row),
-    events: JSON.parse(row.payload) as unknown[],
-  };
+    .all() as Array<{
+    replayId: string;
+    appId: string;
+    issueId?: string;
+    segmentCount: number;
+    startAt?: number;
+    endAt?: number;
+    sizeBytes: number;
+  }>;
 }

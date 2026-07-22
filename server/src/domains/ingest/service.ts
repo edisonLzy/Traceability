@@ -33,7 +33,7 @@ export function ingestEnvelope(appId: string, raw: Buffer) {
 
     const replayId = getRrwebReplayId(payload as unknown as Record<string, unknown>);
     if (replayId) {
-      attachReplayToIssue(replayId, issue.id, appId, (payload as any).event_id);
+      attachReplayToIssue(replayId, issue.id);
     }
 
     broadcast({

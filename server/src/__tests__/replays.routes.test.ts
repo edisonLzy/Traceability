@@ -1,6 +1,6 @@
 import "./test-db.js";
 import express from "express";
-import request from "supertest";
+import supertest from "supertest";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { createApp } from "../domains/apps/service.js";
@@ -12,39 +12,29 @@ import { createResponseMiddleware } from "../middlewares/response.js";
 let app: express.Express;
 let appId: string;
 let issueId: string;
+
 beforeEach(() => {
-  const created = createApp({ name: "A", repoUrl: "git@x:a", defaultBranch: "main" });
+  const created = createApp({ name: "R", repoUrl: "git@x:r", defaultBranch: "main" });
   appId = created.id;
-  const { issue } = ingestEvent(created.id, {
-    type: "error",
-    exception: { values: [{ type: "E", value: "x" }] },
-  } as any);
+  const { issue } = ingestEvent(
+    appId,
+    { event_id: "re", exception: { values: [{ type: "Err", value: "r" }] } },
+    [],
+  );
   issueId = issue.id;
   app = express();
-  app.use(express.json({ limit: "6mb" }));
   app.use(createResponseMiddleware());
   app.use(replaysRouter);
   app.use(createGlobalErrorHandlerMiddleware());
 });
 
 describe("replays routes", () => {
-  it("POST /api/ingest/rrweb/:appId 400 when events missing", async () => {
-    const r = await request(app).post(`/api/ingest/rrweb/${appId}`).send({ events: [] });
-    expect(r.status).toBe(400);
+  it("GET /api/issues/:id/replays returns 200 for valid issue", async () => {
+    const list = await supertest(app).get(`/api/issues/${issueId}/replays`).expect(200);
+    expect(Array.isArray(list.body.data)).toBe(true);
   });
 
-  it("POST /api/ingest/rrweb/:appId 201 and GET list", async () => {
-    const r = await request(app)
-      .post(`/api/ingest/rrweb/${appId}`)
-      .send({ events: [{ type: 2 }] });
-    expect(r.status).toBe(201);
-    const list = await request(app).get(`/api/issues/${issueId}/replays`);
-    expect(list.status).toBe(200);
-    expect(list.body.data).toHaveLength(0);
-  });
-
-  it("GET /api/issues/:id/replays 404 when issue missing", async () => {
-    const r = await request(app).get("/api/issues/nope/replays");
-    expect(r.status).toBe(404);
+  it("GET /api/issues/:id/replays/:replayId returns 404 when missing", async () => {
+    await supertest(app).get(`/api/issues/${issueId}/replays/nonexistent`).expect(404);
   });
 });
