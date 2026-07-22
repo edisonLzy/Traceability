@@ -55,6 +55,16 @@ function createDependencies(order: string[] = []): ExplorerInteractionDependenci
   };
 }
 
+function deferred<T>() {
+  let resolve: (value: T) => void;
+  let reject: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve: resolve!, reject: reject! };
+}
+
 describe("ExplorerInteractionCoordinator", () => {
   it("starts main capture before enabling guest operation capture", async () => {
     const order: string[] = [];
@@ -80,6 +90,83 @@ describe("ExplorerInteractionCoordinator", () => {
       JSON.stringify(recording, null, 2),
     );
     expect(coordinator.isRecording).toBe(false);
+  });
+
+  it("reports the recording transition to the page and ignores repeated starts while pending", async () => {
+    const order: string[] = [];
+    const start = deferred<{ recordingId: string }>();
+    const transitionChanges: boolean[] = [];
+    const dependencies = {
+      ...createDependencies(order),
+      startRecording: vi.fn(() => {
+        order.push("main:start");
+        return start.promise;
+      }),
+      onTransitionChange: (isTransitioning: boolean) => transitionChanges.push(isTransitioning),
+    } satisfies ExplorerInteractionDependencies;
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+
+    const firstStart = coordinator.startRecording();
+    const repeatedStart = coordinator.startRecording();
+
+    expect(order).toEqual(["main:start"]);
+    expect(transitionChanges).toEqual([true]);
+
+    start.resolve({ recordingId: "recording-1" });
+    await Promise.all([firstStart, repeatedStart]);
+
+    expect(order).toEqual(["main:start", "guest:set-recording:true"]);
+    expect(transitionChanges).toEqual([true, false]);
+    expect(coordinator.isRecording).toBe(true);
+  });
+
+  it("ignores repeated stops while pending and logs one recording after completion", async () => {
+    const order: string[] = [];
+    const stop = deferred<BrowserRecording>();
+    const transitionChanges: boolean[] = [];
+    const dependencies = {
+      ...createDependencies(order),
+      stopRecording: vi.fn(() => {
+        order.push("main:stop");
+        return stop.promise;
+      }),
+      onTransitionChange: (isTransitioning: boolean) => transitionChanges.push(isTransitioning),
+    } satisfies ExplorerInteractionDependencies;
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+
+    const firstStop = coordinator.stopRecording();
+    const repeatedStop = coordinator.stopRecording();
+
+    expect(order).toEqual(["guest:set-recording:false", "main:stop"]);
+    expect(transitionChanges).toEqual([true]);
+
+    stop.resolve(recording);
+    await firstStop;
+    await repeatedStop;
+
+    expect(transitionChanges).toEqual([true, false]);
+    expect(dependencies.info).toHaveBeenCalledTimes(1);
+    expect(dependencies.info).toHaveBeenCalledWith(
+      "[traceability:explorer-recording]",
+      JSON.stringify(recording, null, 2),
+    );
+    expect(coordinator.isRecording).toBe(false);
+  });
+
+  it("releases the transition guard after a failed start so the user can retry", async () => {
+    const dependencies = createDependencies();
+    const startRecording = vi
+      .fn<ExplorerInteractionDependencies["startRecording"]>()
+      .mockRejectedValueOnce(new Error("start failed"))
+      .mockResolvedValueOnce({ recordingId: "recording-1" });
+    dependencies.startRecording = startRecording;
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+
+    await expect(coordinator.startRecording()).rejects.toThrow("start failed");
+    await coordinator.startRecording();
+
+    expect(startRecording).toHaveBeenCalledTimes(2);
+    expect(dependencies.send).toHaveBeenCalledTimes(1);
   });
 
   it("opens an in-memory comment for a selected element", () => {

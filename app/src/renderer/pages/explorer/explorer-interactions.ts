@@ -12,6 +12,7 @@ export interface ExplorerInteractionDependencies {
   createId(): string;
   now(): Date;
   info(...data: unknown[]): void;
+  onTransitionChange?(isTransitioning: boolean): void;
 }
 
 /**
@@ -21,20 +22,29 @@ export interface ExplorerInteractionDependencies {
  */
 export class ExplorerInteractionCoordinator {
   public isRecording = false;
+  public isTransitioning = false;
   public selectedElement: SelectedElement | null = null;
   private unmounted = false;
 
   public constructor(private readonly dependencies: ExplorerInteractionDependencies) {}
 
   public async startRecording() {
-    await this.dependencies.startRecording();
-    this.dependencies.send({ type: "set-recording", enabled: true });
-    this.isRecording = true;
+    if (this.isTransitioning) return;
+    this.setTransitioning(true);
+    try {
+      await this.dependencies.startRecording();
+      this.dependencies.send({ type: "set-recording", enabled: true });
+      this.isRecording = true;
+    } finally {
+      this.setTransitioning(false);
+    }
   }
 
   public async stopRecording() {
-    this.dependencies.send({ type: "set-recording", enabled: false });
+    if (this.isTransitioning) return;
+    this.setTransitioning(true);
     try {
+      this.dependencies.send({ type: "set-recording", enabled: false });
       const recording = await this.dependencies.stopRecording();
       this.dependencies.info(
         "[traceability:explorer-recording]",
@@ -43,6 +53,7 @@ export class ExplorerInteractionCoordinator {
       return recording;
     } finally {
       this.isRecording = false;
+      this.setTransitioning(false);
     }
   }
 
@@ -79,5 +90,10 @@ export class ExplorerInteractionCoordinator {
     if (this.unmounted) return;
     this.unmounted = true;
     await this.dependencies.unregisterGuest();
+  }
+
+  private setTransitioning(isTransitioning: boolean) {
+    this.isTransitioning = isTransitioning;
+    this.dependencies.onTransitionChange?.(isTransitioning);
   }
 }

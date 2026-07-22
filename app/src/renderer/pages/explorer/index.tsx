@@ -31,6 +31,7 @@ export function ExplorerPage() {
   const [canGoForward, setCanGoForward] = useState(false);
   const [isGuestRegistered, setIsGuestRegistered] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingTransitioning, setIsRecordingTransitioning] = useState(false);
   const [selected, setSelected] = useState<Extract<
     BrowserGuestMessage,
     { type: "element-selected" }
@@ -56,6 +57,9 @@ export function ExplorerPage() {
       createId: () => crypto.randomUUID(),
       now: () => new Date(),
       info: console.info.bind(console),
+      onTransitionChange: (isTransitioning) => {
+        if (active) setIsRecordingTransitioning(isTransitioning);
+      },
     });
     interactionRef.current = interaction;
 
@@ -75,6 +79,11 @@ export function ExplorerPage() {
       onLoadingChange: (loading) => {
         if (active) setIsLoading(loading);
         updateNavigation(controller);
+      },
+      onLoadFailure: (failure) => {
+        if (active) {
+          setError(errorMessage(new Error(`Browser failed to load: ${failure.errorDescription}`)));
+        }
       },
       onTitleChange: (nextTitle) => {
         if (active) setTitle(nextTitle || DEFAULT_TITLE);
@@ -211,7 +220,7 @@ export function ExplorerPage() {
         <Button
           size="sm"
           variant={isRecording ? "danger" : "primary"}
-          disabled={!isGuestRegistered}
+          disabled={!isGuestRegistered || isRecordingTransitioning}
           onClick={isRecording ? stopRecording : startRecording}
         >
           {isRecording ? "Stop recording" : "Start recording"}

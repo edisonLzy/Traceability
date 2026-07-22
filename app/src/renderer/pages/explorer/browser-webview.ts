@@ -11,6 +11,8 @@ const BROWSER_WEB_PREFERENCES =
   "contextIsolation=yes,nodeIntegration=no,sandbox=yes,webSecurity=yes";
 const BROWSER_COMMAND_CHANNEL = "traceability:browser-command";
 const BROWSER_GUEST_CHANNEL = "traceability:browser-guest";
+const ERR_ABORTED = -3;
+const MAX_LOAD_FAILURE_DESCRIPTION_LENGTH = 240;
 
 export type BrowserGuestCommand =
   | { type: "set-recording"; enabled: boolean }
@@ -37,9 +39,15 @@ export interface BrowserWebviewDocument {
   createElement(name: "webview"): BrowserWebviewElement;
 }
 
+export interface BrowserLoadFailure {
+  errorCode: number;
+  errorDescription: string;
+}
+
 export interface BrowserWebviewCallbacks {
   onDomReady?(webContentsId: number): void;
   onLoadingChange?(isLoading: boolean): void;
+  onLoadFailure?(failure: BrowserLoadFailure): void;
   onTitleChange?(title: string): void;
   onNavigate?(url: string): void;
   onGuestMessage?(message: BrowserGuestMessage): void;
@@ -48,6 +56,9 @@ export interface BrowserWebviewCallbacks {
 interface WebviewEvent extends Event {
   args?: unknown[];
   channel?: string;
+  errorCode?: unknown;
+  errorDescription?: unknown;
+  isMainFrame?: unknown;
   title?: string;
   url?: string;
 }
@@ -70,6 +81,7 @@ export class BrowserWebviewController {
       ["dom-ready", this.onDomReady],
       ["did-start-loading", this.onStartLoading],
       ["did-stop-loading", this.onStopLoading],
+      ["did-fail-load", this.onLoadFailure],
       ["page-title-updated", this.onTitleUpdated],
       ["did-navigate", this.onNavigate],
       ["did-navigate-in-page", this.onNavigate],
@@ -125,6 +137,16 @@ export class BrowserWebviewController {
   private readonly onStartLoading = () => this.callbacks.onLoadingChange?.(true);
 
   private readonly onStopLoading = () => this.callbacks.onLoadingChange?.(false);
+
+  private readonly onLoadFailure = (event: Event) => {
+    const { errorCode, errorDescription, isMainFrame } = event as WebviewEvent;
+    if (isMainFrame !== true || errorCode === ERR_ABORTED || typeof errorCode !== "number") return;
+
+    this.callbacks.onLoadFailure?.({
+      errorCode,
+      errorDescription: boundedErrorDescription(errorDescription),
+    });
+  };
 
   private readonly onTitleUpdated = (event: Event) => {
     const title = (event as WebviewEvent).title;
@@ -219,6 +241,12 @@ function record(value: unknown): Record<string, unknown> | null {
 
 function boundedString(value: unknown, maxLength: number): string | null {
   return typeof value === "string" && value.length > 0 && value.length <= maxLength ? value : null;
+}
+
+function boundedErrorDescription(value: unknown): string {
+  return typeof value === "string" && value.length > 0
+    ? value.slice(0, MAX_LOAD_FAILURE_DESCRIPTION_LENGTH)
+    : "The page could not be loaded.";
 }
 
 function nullableBoundedString(value: unknown, maxLength: number): string | null | undefined {

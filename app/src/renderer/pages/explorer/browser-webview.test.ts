@@ -164,6 +164,43 @@ describe("BrowserWebviewController", () => {
     controller.dispose();
   });
 
+  it("forwards bounded main-frame load failures without surfacing aborted or subframe loads", () => {
+    const document = new FakeDocument();
+    const onLoadFailure = vi.fn();
+    const callbacks = { onLoadFailure } satisfies BrowserWebviewCallbacks;
+    const controller = new BrowserWebviewController(new FakeHost(), callbacks, document);
+
+    document.webview.dispatchEvent(
+      event("did-fail-load", {
+        errorCode: -3,
+        errorDescription: "ERR_ABORTED",
+        isMainFrame: true,
+      }),
+    );
+    document.webview.dispatchEvent(
+      event("did-fail-load", {
+        errorCode: -105,
+        errorDescription: "ERR_NAME_NOT_RESOLVED",
+        isMainFrame: false,
+      }),
+    );
+    document.webview.dispatchEvent(
+      event("did-fail-load", {
+        errorCode: -105,
+        errorDescription: "x".repeat(300),
+        isMainFrame: true,
+      }),
+    );
+
+    expect(onLoadFailure).toHaveBeenCalledTimes(1);
+    expect(onLoadFailure).toHaveBeenCalledWith({
+      errorCode: -105,
+      errorDescription: "x".repeat(240),
+    });
+
+    controller.dispose();
+  });
+
   it("controls navigation, forwards guest commands, and removes every listener and node on disposal", () => {
     const document = new FakeDocument();
     const host = new FakeHost();
