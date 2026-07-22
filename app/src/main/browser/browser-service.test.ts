@@ -258,9 +258,16 @@ describe("BrowserService", () => {
       setBrowserWindow(browserWindow: unknown): void;
     };
     const calls: string[] = [];
-    captureService.clearGuest.mockImplementation(async () => {
-      calls.push("clearGuest");
-    });
+    let resolveClearGuest: () => void;
+    captureService.clearGuest.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveClearGuest = () => {
+            calls.push("clearGuest");
+            resolve();
+          };
+        }),
+    );
     const updateGuestSession = vi
       .spyOn(internals.guestSession, "updateBrowserWindow")
       .mockImplementation((_window) => {
@@ -274,7 +281,13 @@ describe("BrowserService", () => {
         return undefined;
       });
 
-    await service.updateBrowserWindow(createFakeBrowserWindow() as never);
+    const update = service.updateBrowserWindow(createFakeBrowserWindow() as never);
+
+    expect(captureService.clearGuest).toHaveBeenCalledOnce();
+    expect(calls).toEqual([]);
+
+    resolveClearGuest!();
+    await update;
 
     expect(calls).toEqual(["clearGuest", "updateGuestSession", "setBrowserWindow"]);
     updateGuestSession.mockRestore();
