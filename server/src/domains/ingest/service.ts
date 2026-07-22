@@ -14,12 +14,12 @@ function getRrwebReplayId(payload: Record<string, unknown>): string | undefined 
   return typeof replayId === "string" && replayId.length > 0 ? replayId : undefined;
 }
 
-export function ingestEnvelope(appId: string, raw: unknown) {
-  if (typeof raw !== "string" || !raw) throw new AppError("empty body", 400, 400);
+export function ingestEnvelope(appId: string, raw: Buffer) {
+  if (!Buffer.isBuffer(raw) || raw.length === 0) throw new AppError("empty body", 400, 400);
 
   let envelope;
   try {
-    envelope = parseEnvelope(Buffer.from(raw as string));
+    envelope = parseEnvelope(raw);
   } catch {
     throw new AppError("invalid envelope", 400, 400);
   }
@@ -29,7 +29,7 @@ export function ingestEnvelope(appId: string, raw: unknown) {
     const frames = (payload as any).exception?.values?.[0]?.stacktrace?.frames ?? [];
     const resolvedFrames = resolveFrames(appId, (payload as any).release, frames);
     const { issue, created } = ingestEvent(appId, payload, resolvedFrames);
-    appendEvent(issue.id, raw);
+    appendEvent(issue.id, raw.toString("utf8"));
 
     const replayId = getRrwebReplayId(payload as unknown as Record<string, unknown>);
     if (replayId) {
