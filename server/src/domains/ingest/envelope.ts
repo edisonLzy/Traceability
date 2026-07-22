@@ -58,7 +58,7 @@ export function filterSupportedItems(envelope: ParsedEnvelope): Array<{
   header: EnvelopeItem[0];
   payload: object | Buffer;
 }> {
-  const allowed = new Set(["event", "transaction"]);
+  const allowed = new Set(["event", "transaction", "replay_event", "replay_recording"]);
   return envelope.items
     .filter(([h]) => allowed.has(h.type))
     .map(([h, p]) => ({ header: h, payload: p }));

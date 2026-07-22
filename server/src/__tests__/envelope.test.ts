@@ -56,11 +56,11 @@ describe("parseEnvelope", () => {
 });
 
 describe("filterSupportedItems", () => {
-  it("includes event and transaction, excludes replay items", () => {
+  it("includes event, transaction, replay_event, replay_recording", () => {
     // Replay items are not yet included — B3 will expand the filter
     const envelope = parseEnvelope(makeReplayEnvelope());
     const supported = filterSupportedItems(envelope);
-    expect(supported.length).toBe(0);
+    expect(supported.some((s) => s.header.type === "replay_event")).toBe(true);
   });
 
   it("includes event item from text envelope", () => {
