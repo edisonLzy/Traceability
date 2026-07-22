@@ -174,6 +174,8 @@ app/
     │   ├── browser-url.test.ts
     │   ├── browser-webview.ts
     │   ├── browser-webview.test.ts
+    │   ├── explorer-interactions.ts           # testable async recording/comment coordinator
+    │   ├── explorer-interactions.test.ts
     │   └── browser-comment-composer.tsx
     └── shared/
         ├── browser-ipc.ts

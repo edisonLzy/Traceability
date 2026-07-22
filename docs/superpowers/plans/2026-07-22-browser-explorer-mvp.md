@@ -153,6 +153,10 @@
 **Files:**
 
 - Create: `app/src/renderer/pages/explorer/browser-comment-composer.tsx`
+- Create: `app/src/renderer/pages/explorer/explorer-interactions.ts`
+- Create: `app/src/renderer/pages/explorer/explorer-interactions.test.ts`
+- Modify: `app/src/renderer/pages/explorer/browser-webview.ts`
+- Modify: `app/src/renderer/pages/explorer/browser-webview.test.ts`
 - Modify: `app/src/renderer/pages/explorer/index.tsx`
 - Create: `app/scripts/explorer-fixture-server.mjs`
 
@@ -161,9 +165,9 @@
 - Consumes `BrowserWebviewController`, `normalizeBrowserUrl`, browser IPC through `useElectronIPC`, and guest event payloads from Task 3.
 - Produces the complete single-tab Explorer page and a manual fixture command: `node app/scripts/explorer-fixture-server.mjs`.
 
-- [ ] **Step 1: Write failing page-state tests**
+- [ ] **Step 1: Write failing page-state and load-error tests**
 
-  Extract pure page state transitions if needed and cover: start invokes main before enabling guest recording; stop disables guest before invoking main and logs one BrowserRecording; selected element opens comment state; comment submit logs one BrowserComment and does not persist it; unmount unregisters the guest. Keep DOM rendering outside the node test boundary.
+  Extract the pure `explorer-interactions.ts` coordinator and cover: start invokes main before enabling guest recording; stop disables guest before invoking main and logs one BrowserRecording; repeated deferred starts/stops are suppressed and a rejected transition releases the guard; selected element opens comment state; comment submit logs one BrowserComment and does not persist it; unmount unregisters the guest. Extend the controller tests for bounded main-frame `did-fail-load` forwarding while ignoring subframes and `ERR_ABORTED`. Keep DOM rendering outside the node test boundary.
 
 - [ ] **Step 2: Run the focused test to verify RED**
 
