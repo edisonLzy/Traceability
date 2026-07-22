@@ -29,6 +29,11 @@ class FakeElement extends EventTarget {
   public getAttribute(name: string): string | null {
     return this.attributes.get(name) ?? null;
   }
+
+  public appendChild(child: FakeElement): void {
+    child.parentElement = this;
+    this.children.push(child);
+  }
 }
 
 class FakeInput extends FakeElement {
@@ -118,6 +123,74 @@ describe("browser guest preload", () => {
     expect(ipc.sendToHost).toHaveBeenCalledTimes(1);
     const [, payload] = ipc.sendToHost.mock.calls[0] ?? [];
     expect(JSON.stringify(payload)).not.toContain("raw input value");
+  });
+
+  it("omits form text that contains a textarea default value", async () => {
+    const document = await installGuestProtocol();
+    const form = new FakeElement("FORM");
+    const textarea = new FakeTextarea();
+    textarea.textContent = "textarea default value";
+    form.appendChild(textarea);
+    form.textContent = "Search textarea default value";
+
+    ipc.listeners.get("traceability:browser-command")?.(
+      {},
+      { type: "set-recording", enabled: true },
+    );
+    document.dispatchEvent(guestEvent("submit", form));
+
+    const [, payload] = ipc.sendToHost.mock.calls[0] ?? [];
+    expect(payload).toMatchObject({
+      type: "operation",
+      operation: { type: "submit", target: { name: null, text: null } },
+    });
+    expect(JSON.stringify(payload)).not.toContain("textarea default value");
+  });
+
+  it("omits selected contenteditable text, including when selecting a descendant", async () => {
+    const document = await installGuestProtocol();
+    const editor = new FakeElement("DIV");
+    editor.attributes.set("contenteditable", "true");
+    editor.textContent = "editable secret text";
+    const child = new FakeElement("SPAN");
+    child.textContent = "editable secret text";
+    editor.appendChild(child);
+
+    ipc.listeners.get("traceability:browser-command")?.({}, { type: "select-element" });
+    document.dispatchEvent(guestEvent("click", child));
+
+    const [, payload] = ipc.sendToHost.mock.calls[0] ?? [];
+    expect(payload).toMatchObject({
+      type: "element-selected",
+      element: { name: null, text: null },
+    });
+    expect(JSON.stringify(payload)).not.toContain("editable secret text");
+  });
+
+  it("retains a safe input operation summary without its value", async () => {
+    const document = await installGuestProtocol();
+    const input = new FakeInput();
+    input.id = "search";
+    input.value = "user search query";
+    input.textContent = "user search query";
+
+    ipc.listeners.get("traceability:browser-command")?.(
+      {},
+      { type: "set-recording", enabled: true },
+    );
+    document.dispatchEvent(guestEvent("input", input));
+
+    expect(ipc.sendToHost).toHaveBeenCalledWith(
+      "traceability:browser-guest",
+      expect.objectContaining({
+        type: "operation",
+        operation: expect.objectContaining({
+          type: "input",
+          target: expect.objectContaining({ name: "search", text: null }),
+        }),
+      }),
+    );
+    expect(JSON.stringify(ipc.sendToHost.mock.calls[0]?.[1])).not.toContain("user search query");
   });
 
   it("consumes one selected click without recording it as an operation", async () => {

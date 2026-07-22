@@ -10,6 +10,16 @@ describe("normalizeBrowserUrl", () => {
     });
   });
 
+  it.each([
+    ["localhost:4173", "https://localhost:4173/"],
+    ["example.com:8443/path", "https://example.com:8443/path"],
+  ])("prefixes a missing scheme for host-with-port input %j", (value, url) => {
+    expect(normalizeBrowserUrl(value)).toEqual({
+      ok: true,
+      url,
+    });
+  });
+
   it("accepts HTTP only for loopback hosts", () => {
     expect(normalizeBrowserUrl("http://localhost:4173/fixture")).toEqual({
       ok: true,
@@ -25,10 +35,14 @@ describe("normalizeBrowserUrl", () => {
     });
   });
 
-  it.each(["", "https://", "file:///tmp/page.html", "javascript:alert(1)", "http://example.com"])(
-    "rejects unsupported browser input %j with a stable error",
-    (value) => {
-      expect(normalizeBrowserUrl(value)).toEqual({ ok: false, error: INVALID_BROWSER_URL });
-    },
-  );
+  it.each([
+    "",
+    "https://",
+    "file:///tmp/page.html",
+    "ftp://example.com",
+    "javascript:alert(1)",
+    "http://example.com",
+  ])("rejects unsupported browser input %j with a stable error", (value) => {
+    expect(normalizeBrowserUrl(value)).toEqual({ ok: false, error: INVALID_BROWSER_URL });
+  });
 });

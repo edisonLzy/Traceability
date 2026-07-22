@@ -125,15 +125,11 @@ function getInputElement(
 }
 
 function summarizeElement(element: Element): BrowserElementSummary {
-  const isFormControl = isValueBearingElement(element);
   const testId = bounded(element.getAttribute("data-testid"), MAX_NAME_LENGTH);
   const id = bounded(element.id, MAX_NAME_LENGTH);
   const ariaLabel = bounded(element.getAttribute("aria-label"), MAX_NAME_LENGTH);
-  const name =
-    testId ??
-    id ??
-    ariaLabel ??
-    (isFormControl ? null : bounded(element.textContent, MAX_NAME_LENGTH));
+  const text = safeElementText(element, MAX_TEXT_LENGTH);
+  const name = testId ?? id ?? ariaLabel ?? safeElementText(element, MAX_NAME_LENGTH);
   const selector = testId
     ? `[data-testid=${quoteAttribute(testId)}]`
     : id
@@ -147,8 +143,30 @@ function summarizeElement(element: Element): BrowserElementSummary {
     role: bounded(element.getAttribute("role"), MAX_NAME_LENGTH),
     name,
     selector: bounded(selector, MAX_SELECTOR_LENGTH),
-    text: isFormControl ? null : bounded(element.textContent, MAX_TEXT_LENGTH),
+    text,
   };
+}
+
+function safeElementText(element: Element, maxLength: number): string | null {
+  if (containsValueBearingOrEditableContent(element)) return null;
+  return bounded(element.textContent, maxLength);
+}
+
+function containsValueBearingOrEditableContent(element: Element): boolean {
+  if (isValueBearingElement(element) || isWithinEditableContent(element)) return true;
+  return Array.from(element.children).some(containsValueBearingOrEditableContent);
+}
+
+function isWithinEditableContent(element: Element): boolean {
+  let current: Element | null = element;
+
+  while (current) {
+    const contentEditable = current.getAttribute("contenteditable");
+    if (contentEditable !== null) return contentEditable.toLowerCase() !== "false";
+    current = current.parentElement;
+  }
+
+  return false;
 }
 
 function isValueBearingElement(element: Element): boolean {

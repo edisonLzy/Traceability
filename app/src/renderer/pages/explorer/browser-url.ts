@@ -23,7 +23,13 @@ export function normalizeBrowserUrl(value: string): BrowserUrlResult {
 }
 
 function hasScheme(value: string): boolean {
-  return /^[a-z][a-z\d+.-]*:/i.test(value);
+  return !isHostWithPort(value) && /^[a-z][a-z\d+.-]*:/i.test(value);
+}
+
+function isHostWithPort(value: string): boolean {
+  return /^(?:localhost|(?:[a-z\d](?:[a-z\d-]*[a-z\d])?)(?:\.[a-z\d](?:[a-z\d-]*[a-z\d])?)*):\d{1,5}(?:[/?#].*)?$/i.test(
+    value,
+  );
 }
 
 function isLoopbackHost(hostname: string): boolean {
