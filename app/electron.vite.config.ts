@@ -16,6 +16,10 @@ export default defineConfig({
       // Keep preload compatible with Electron's renderer sandbox. The app
       // package is ESM, so Electron Vite emits this CJS preload as index.cjs.
       rollupOptions: {
+        input: {
+          index: resolve(import.meta.dirname, "src/preload/index.ts"),
+          "browser-guest": resolve(import.meta.dirname, "src/preload/browser-guest.ts"),
+        },
         output: {
           format: "cjs",
         },

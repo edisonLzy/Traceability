@@ -3,6 +3,7 @@ import { join } from "path";
 import { app, BrowserWindow } from "electron";
 
 import { AgentPool } from "./agent-pool.js";
+import { BrowserService } from "./browser/browser-service.js";
 import { SessionPersistence } from "./sessions/index.js";
 
 void app
@@ -11,18 +12,21 @@ void app
     let browserWindow: BrowserWindow | null = createWindow();
 
     const agentPool = new AgentPool(browserWindow);
+    const browserService = new BrowserService(browserWindow);
     const sessionPersistence = new SessionPersistence(browserWindow);
 
     app.on("activate", () => {
       if (!browserWindow || browserWindow.isDestroyed()) {
         browserWindow = createWindow();
         agentPool.updateBrowserWindow(browserWindow);
+        browserService.updateBrowserWindow(browserWindow);
         sessionPersistence.updateBrowserWindow(browserWindow);
       }
     });
 
     app.on("quit", () => {
       void agentPool.destroyAll();
+      void browserService.destroyAll();
       void sessionPersistence.destroyAll();
     });
   })
@@ -63,6 +67,7 @@ function createWindow() {
       preload: join(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
     },
   });
 
