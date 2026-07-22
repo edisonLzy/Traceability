@@ -178,51 +178,13 @@ export interface Patch {
   attachedAt: string;
 }
 
-// ===== Sentry envelope v7 (subset) =====
-
-export type EnvelopeItemType = "event" | "transaction" | "client_report" | "session" | "attachment";
-
-export interface EnvelopeHeader {
-  sdk?: { name: string; version: string };
-  sent_at?: string;
-  dsn?: string;
-  [k: string]: unknown;
-}
-
-export interface EnvelopeItemHeader {
-  type: EnvelopeItemType;
-  // item payload type discriminator; narrows via `type` above
-  [k: string]: unknown;
-}
-
-export type EnvelopeItem = [EnvelopeItemHeader, unknown];
-
-export interface ParsedEnvelope {
-  header: EnvelopeHeader;
-  items: EnvelopeItem[];
-}
-
-// Item payload shapes we actually read (v1: event/transaction/message only)
-export interface SentryEventPayload {
-  event_id?: string;
-  type?: "error" | "transaction" | "message" | "default" | "custom";
-  message?: string;
-  level?: string;
-  timestamp?: number | string;
-  platform?: string;
-  tags?: Array<[string, string]> | Record<string, string>;
-  exception?: {
-    values?: Array<{
-      type?: string;
-      value?: string;
-      stacktrace?: {
-        frames?: Array<{ filename?: string; function?: string; lineno?: number; colno?: number }>;
-      };
-    }>;
-  };
-  transaction?: string;
-  release?: string;
-  environment?: string;
-  contexts?: Record<string, unknown>;
-  extra?: Record<string, unknown>;
+/** Summary returned by GET /api/issues/:issueId/replays */
+export interface ReplaySegmentSummary {
+  replayId: string;
+  appId: string;
+  issueId?: string;
+  segmentCount: number;
+  startAt?: number;
+  endAt?: number;
+  sizeBytes: number;
 }

@@ -9,10 +9,7 @@ import type {
   ListIssuesParams,
   ListIssuesResponse,
   PerformanceSummary,
-  RecordPerformanceInput,
-  RrwebReplay,
-  RrwebReplayIngestBody,
-  RrwebReplaySummary,
+  ReplaySegmentSummary,
   SourceMapUpload,
   UpdateAppInput,
 } from "@traceability/protocol";
@@ -30,10 +27,7 @@ export type {
   ListIssuesParams,
   ListIssuesResponse,
   PerformanceSummary,
-  RecordPerformanceInput,
-  RrwebReplay,
-  RrwebReplayIngestBody,
-  RrwebReplaySummary,
+  ReplaySegmentSummary,
   SourceMapUpload,
   UpdateAppInput,
 } from "@traceability/protocol";
@@ -97,12 +91,10 @@ export interface TraceabilityClient {
     markFixed(issueId: string): Promise<Issue>;
   };
   replays: {
-    save(appId: string, input: RrwebReplayIngestBody): Promise<RrwebReplay>;
-    listForIssue(issueId: string, input?: { limit?: number }): Promise<RrwebReplaySummary[]>;
-    getForIssue(issueId: string, replayId: string): Promise<RrwebReplay>;
+    listForIssue(issueId: string, input?: { limit?: number }): Promise<ReplaySegmentSummary[]>;
+    getForIssue(issueId: string, replayId: string): Promise<ReplaySegmentSummary>;
   };
   performance: {
-    record(appId: string, input: RecordPerformanceInput): Promise<{ accepted: number }>;
     getSummary(input?: GetPerformanceSummaryParams): Promise<PerformanceSummary>;
   };
   ingest: {
@@ -191,32 +183,20 @@ class TraceabilityClientImpl implements TraceabilityClient {
   };
 
   readonly replays = {
-    save: (appId: string, input: RrwebReplayIngestBody) =>
-      this.request<RrwebReplay>({
-        method: "POST",
-        url: `/api/ingest/rrweb/${pathParam(appId)}`,
-        data: input,
-      }),
     listForIssue: (issueId: string, input: { limit?: number } = {}) =>
-      this.request<RrwebReplaySummary[]>({
+      this.request<ReplaySegmentSummary[]>({
         method: "GET",
         url: `/api/issues/${pathParam(issueId)}/replays`,
         params: definedParams(input),
       }),
     getForIssue: (issueId: string, replayId: string) =>
-      this.request<RrwebReplay>({
+      this.request<ReplaySegmentSummary>({
         method: "GET",
         url: `/api/issues/${pathParam(issueId)}/replays/${pathParam(replayId)}`,
       }),
   };
 
   readonly performance = {
-    record: (appId: string, input: RecordPerformanceInput) =>
-      this.request<{ accepted: number }>({
-        method: "POST",
-        url: `/api/ingest/performance/${pathParam(appId)}`,
-        data: input,
-      }),
     getSummary: (input: GetPerformanceSummaryParams = {}) =>
       this.request<PerformanceSummary>({
         method: "GET",

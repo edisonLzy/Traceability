@@ -1,8 +1,8 @@
 import "./test-db.js";
-import { type SentryEventPayload } from "@traceability/protocol";
 import { describe, it, expect } from "vitest";
 
 import { createApp, listApps } from "../domains/apps/service.js";
+import { type SentryEventPayload } from "../domains/ingest/types.js";
 import { ingestEvent, getIssue, requestFix, attachPatch } from "../domains/issues/service.js";
 
 describe("issues service ingestEvent", () => {

@@ -100,10 +100,8 @@ describe("Traceability client", () => {
     await client.issues.requestFix("issue/id");
     await client.issues.attachPatch("issue/id", { branch: "fix/issue", patch: "diff" });
     await client.issues.markFixed("issue/id");
-    await client.replays.save("app/id", { events: [{ type: 1 }] });
     await client.replays.listForIssue("issue/id", { limit: 10 });
     await client.replays.getForIssue("issue/id", "replay/id");
-    await client.performance.record("app/id", { name: "LCP", value: 1200 });
     await client.performance.getSummary({ appId: "app/id", hours: 24 });
     await client.ingest.envelope("app/id", "header\nitem\npayload");
 
@@ -129,12 +127,8 @@ describe("Traceability client", () => {
         data: { branch: "fix/issue", patch: "diff" },
       }),
       authorized("POST", "/api/issues/issue%2Fid/mark-fixed"),
-      authorized("POST", "/api/ingest/rrweb/app%2Fid", { data: { events: [{ type: 1 }] } }),
       authorized("GET", "/api/issues/issue%2Fid/replays", { params: { limit: 10 } }),
       authorized("GET", "/api/issues/issue%2Fid/replays/replay%2Fid"),
-      authorized("POST", "/api/ingest/performance/app%2Fid", {
-        data: { name: "LCP", value: 1200 },
-      }),
       authorized("GET", "/api/performance", { params: { appId: "app/id", hours: 24 } }),
       authorized("POST", "/api/ingest/envelope/app%2Fid", {
         data: "header\nitem\npayload",
