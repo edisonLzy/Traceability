@@ -68,7 +68,11 @@ async function login(email: string, password: string) {
     // …store token, redirect…
     report({ type: "login-done", payload: { userId: res.id }, tags: { flow: "login" } });
   } catch (err) {
-    report({ type: "login-failed", payload: { email, error: String(err) }, tags: { flow: "login" } });
+    report({
+      type: "login-failed",
+      payload: { email, error: String(err) },
+      tags: { flow: "login" },
+    });
     captureException(err);
     throw err;
   }

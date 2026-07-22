@@ -62,15 +62,17 @@ import { MonitorErrorBoundary } from "@traceability/react";
 
 <MonitorErrorBoundary appName="message-module" fallback={<ErrorUI />}>
   <MessageApp />
-</MonitorErrorBoundary>
+</MonitorErrorBoundary>;
 ```
 
 Props:
+
 - `appName?` - tags captured errors with the owning module (useful in micro-frontends).
 - `fallback` - a `ReactNode`, or a render prop `({ error, componentStack, resetError }) => ReactNode`.
 - `onError?` - `(error: Error, componentStack: string | null) => void`.
 
 Recommended placement:
+
 - One boundary around each route-level component.
 - One boundary around each micro-app root.
 - Optionally one around flaky subtrees (third-party widgets).

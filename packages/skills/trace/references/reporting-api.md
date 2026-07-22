@@ -6,21 +6,28 @@ How to use `@traceability/core`'s reporting methods when instrumenting a **user 
 
 ## Method quick reference
 
-| Method | Signature | Use at which trace position |
-|---|---|---|
-| `setTag` | `setTag(key: string, value: string)` | Flow entry - `setTag("flow", "<name>")` groups every event in this flow. |
-| `addBreadcrumb` | `addBreadcrumb({ category, message, level?, data? })` | Entry + each step - leaves a trail the next error event carries. |
-| `report` | `report({ type, payload?, tags? })` | Each step's success (`<flow>-<step>`) and failure (`<flow>-<step>-failed`). |
-| `captureException` | `captureException(err)` | Every error path - reports the error with stacktrace. |
-| `captureMessage` | `captureMessage(msg, opts?)` | Rarely - only for a free-form message with no error object. Prefer `report`. |
-| `setContext` | `setContext(key, obj)` | Attach structured state (e.g. the current request) to subsequent events. |
-| `setApp` | `setApp(appName)` | Micro-frontend only - tag subsequent events with the current micro-app. |
-| `reportPerformance` | `reportPerformance({ name, value, unit? })` | Flow exit - end-to-end timing. |
+| Method              | Signature                                             | Use at which trace position                                                  |
+| ------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `setTag`            | `setTag(key: string, value: string)`                  | Flow entry - `setTag("flow", "<name>")` groups every event in this flow.     |
+| `addBreadcrumb`     | `addBreadcrumb({ category, message, level?, data? })` | Entry + each step - leaves a trail the next error event carries.             |
+| `report`            | `report({ type, payload?, tags? })`                   | Each step's success (`<flow>-<step>`) and failure (`<flow>-<step>-failed`).  |
+| `captureException`  | `captureException(err)`                               | Every error path - reports the error with stacktrace.                        |
+| `captureMessage`    | `captureMessage(msg, opts?)`                          | Rarely - only for a free-form message with no error object. Prefer `report`. |
+| `setContext`        | `setContext(key, obj)`                                | Attach structured state (e.g. the current request) to subsequent events.     |
+| `setApp`            | `setApp(appName)`                                     | Micro-frontend only - tag subsequent events with the current micro-app.      |
+| `reportPerformance` | `reportPerformance({ name, value, unit? })`           | Flow exit - end-to-end timing.                                               |
 
 Import:
 
 ```ts
-import { report, addBreadcrumb, captureException, setTag, setContext, reportPerformance } from "@traceability/core";
+import {
+  report,
+  addBreadcrumb,
+  captureException,
+  setTag,
+  setContext,
+  reportPerformance,
+} from "@traceability/core";
 ```
 
 ## The flow-instrumentation pattern
@@ -49,7 +56,13 @@ Avoid generic types like `log` or `event` - they won't aggregate cleanly. For a 
 Flow: 表单提交 -> 校验 -> POST /login -> 存 token -> 跳转首页.
 
 ```ts
-import { report, addBreadcrumb, captureException, setTag, reportPerformance } from "@traceability/core";
+import {
+  report,
+  addBreadcrumb,
+  captureException,
+  setTag,
+  reportPerformance,
+} from "@traceability/core";
 
 async function login(email: string, password: string) {
   setTag("flow", "login");
@@ -76,7 +89,11 @@ async function login(email: string, password: string) {
     reportPerformance({ name: "login-total", value: performance.now() - t0, unit: "millisecond" });
     router.push("/home");
   } catch (err) {
-    report({ type: "login-api-failed", payload: { email, error: String(err) }, tags: { flow: "login" } });
+    report({
+      type: "login-api-failed",
+      payload: { email, error: String(err) },
+      tags: { flow: "login" },
+    });
     captureException(err);
     throw err;
   }
@@ -108,11 +125,11 @@ function LoginForm() {
 // Wrap a flow's root component to capture render errors as part of the trace:
 <MonitorErrorBoundary appName="login" fallback={<ErrorUI />}>
   <LoginForm />
-</MonitorErrorBoundary>
+</MonitorErrorBoundary>;
 ```
 
 ## Choosing `report` vs `captureException` vs `addBreadcrumb`
 
-- **`addBreadcrumb`** - "what just happened" context that rides along on the *next* error. Cheap; use liberally at every step. Does not create an issue by itself.
+- **`addBreadcrumb`** - "what just happened" context that rides along on the _next_ error. Cheap; use liberally at every step. Does not create an issue by itself.
 - **`report`** - a discrete event you want to see/count in the Inbox (step reached, step failed). Creates an issue keyed by `type`.
 - **`captureException`** - an actual error with a stacktrace. Always pair it with a `report(...-failed)` so the failure is also visible as a typed event, not only as an error issue.

@@ -48,14 +48,14 @@ All subsequent calls attach `Authorization: Bearer <token>`. When using `login()
 
 ## API
 
-| Group | Methods |
-| --- | --- |
-| `health` | `check()` |
-| `apps` | `list()`, `get()`, `create()`, `update()`, `remove()`, `uploadSourceMap()` |
-| `issues` | `list()`, `get()`, `getEvents()`, `requestFix()`, `attachPatch()`, `markFixed()` |
-| `replays` | `save()`, `listForIssue()`, `getForIssue()` |
-| `performance` | `record()`, `getSummary()` |
-| `ingest` | `envelope()` |
+| Group         | Methods                                                                          |
+| ------------- | -------------------------------------------------------------------------------- |
+| `health`      | `check()`                                                                        |
+| `apps`        | `list()`, `get()`, `create()`, `update()`, `remove()`, `uploadSourceMap()`       |
+| `issues`      | `list()`, `get()`, `getEvents()`, `requestFix()`, `attachPatch()`, `markFixed()` |
+| `replays`     | `save()`, `listForIssue()`, `getForIssue()`                                      |
+| `performance` | `record()`, `getSummary()`                                                       |
+| `ingest`      | `envelope()`                                                                     |
 
 All methods return the inner `data` value from the server's `{ code, data, timestamp }` envelope. Path parameters are URL encoded and the raw envelope ingest method sends `text/plain`.
 

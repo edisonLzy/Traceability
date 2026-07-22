@@ -70,13 +70,13 @@ pnpm --filter @traceability/app dev
 
 ## Architecture
 
-| Layer              | Tech                                                             |
-| ------------------ | ---------------------------------------------------------------- |
-| **Electron App**   | Electron 39, React 19, Vite 7 (electron-vite), Tailwind CSS 4    |
-| **Server**         | Express + WebSocket, Pino logging, better-sqlite3, Swagger       |
-| **Core Library**   | @rrweb/record + @rrweb/replay, @sentry/browser                   |
-| **React Bindings** | React 19, @sentry/react, @tanstack/react-query, @base-ui/react   |
-| **Package Mgr**    | pnpm 10 (workspace + catalog), node-linker=hoisted               |
+| Layer              | Tech                                                           |
+| ------------------ | -------------------------------------------------------------- |
+| **Electron App**   | Electron 39, React 19, Vite 7 (electron-vite), Tailwind CSS 4  |
+| **Server**         | Express + WebSocket, Pino logging, better-sqlite3, Swagger     |
+| **Core Library**   | @rrweb/record + @rrweb/replay, @sentry/browser                 |
+| **React Bindings** | React 19, @sentry/react, @tanstack/react-query, @base-ui/react |
+| **Package Mgr**    | pnpm 10 (workspace + catalog), node-linker=hoisted             |
 
 ### Key Dependencies
 
