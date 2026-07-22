@@ -7,32 +7,27 @@ import {
   setContext,
   addBreadcrumb,
   withScope,
+  browserTracingIntegration,
+  replayIntegration,
 } from "@sentry/electron/renderer";
 
-import {
-  corsDiagnosticIntegration,
-  whiteScreenIntegration,
-  replayIntegration,
-  browserTracingIntegration,
-} from "../browser/index.js";
-import type { WhiteScreenOptions } from "../browser/index.js";
+import { corsDiagnosticIntegration } from "../integrations/corsDiagnostic.js";
+import { whiteScreenIntegration } from "../integrations/whiteScreen.js";
 
 export function init(options: any): void {
-  initFromSentry(options);
+  initFromSentry({
+    ...options,
+    integrations: (defaults: any[]) => [
+      corsDiagnosticIntegration(),
+      whiteScreenIntegration(),
+      browserTracingIntegration(),
+      replayIntegration(),
+      ...defaults,
+      ...(typeof options.integrations === "function"
+        ? options.integrations(defaults)
+        : (options.integrations ?? [])),
+    ],
+  });
 }
 
-export type { WhiteScreenOptions };
-
-export {
-  captureException,
-  captureMessage,
-  setUser,
-  setTag,
-  setContext,
-  addBreadcrumb,
-  withScope,
-  corsDiagnosticIntegration,
-  whiteScreenIntegration,
-  replayIntegration,
-  browserTracingIntegration,
-};
+export { captureException, captureMessage, setUser, setTag, setContext, addBreadcrumb, withScope };
