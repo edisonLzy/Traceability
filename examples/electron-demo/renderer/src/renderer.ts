@@ -1,2 +1,2 @@
-import { init } from "@traceability/electron/renderer";
+import { init } from "@traceability/monitor/electron-renderer";
 init({});

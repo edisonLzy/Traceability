@@ -10,7 +10,10 @@ export default defineConfig({
   root: "./renderer",
   resolve: {
     alias: {
-      "@traceability/browser": resolve(import.meta.dirname, "../../packages/core/src/index.ts"),
+      "@traceability/monitor": resolve(
+        import.meta.dirname,
+        "../../packages/monitor/src/browser/index.ts",
+      ),
     },
   },
   build: {

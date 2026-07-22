@@ -206,6 +206,10 @@ importers:
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@25.0.1)(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))
 
   examples/electron-demo:
+    dependencies:
+      '@traceability/monitor':
+        specifier: workspace:*
+        version: link:../../packages/monitor
     devDependencies:
       '@types/node':
         specifier: ^22.20.1
@@ -219,9 +223,9 @@ importers:
 
   examples/web-demo:
     dependencies:
-      '@traceability/browser':
+      '@traceability/monitor':
         specifier: workspace:*
-        version: link:../../packages/browser
+        version: link:../../packages/monitor
     devDependencies:
       vite:
         specifier: ^5.4.0
@@ -229,25 +233,6 @@ importers:
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@26.1.1)(jsdom@25.0.1)(lightningcss@1.32.0)
-
-  packages/browser:
-    dependencies:
-      '@sentry/browser':
-        specifier: ^8.0.0
-        version: 8.55.2
-      '@sentry/core':
-        specifier: ^8.0.0
-        version: 8.55.2
-      '@traceability/shared':
-        specifier: workspace:*
-        version: link:../shared
-    devDependencies:
-      jsdom:
-        specifier: ^25.0.0
-        version: 25.0.1
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@25.0.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))
 
   packages/cli:
     dependencies:
@@ -281,31 +266,20 @@ importers:
         specifier: 'catalog:'
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@25.0.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))
 
-  packages/electron:
+  packages/monitor:
     dependencies:
+      '@sentry/browser':
+        specifier: ^8.0.0
+        version: 8.55.2
+      '@sentry/core':
+        specifier: ^8.0.0
+        version: 8.55.2
       '@sentry/electron':
         specifier: ^5.0.0
         version: 5.12.0
-      '@traceability/browser':
-        specifier: workspace:*
-        version: link:../browser
-      '@traceability/shared':
-        specifier: workspace:*
-        version: link:../shared
-      electron:
-        specifier: '>=30'
-        version: 43.1.0
-
-  packages/protocol: {}
-
-  packages/react:
-    dependencies:
       '@sentry/react':
         specifier: ^8.0.0
         version: 8.55.2(react@19.2.7)
-      '@traceability/browser':
-        specifier: workspace:*
-        version: link:../browser
       react:
         specifier: ^19.0.0
         version: 19.2.7
@@ -313,16 +287,14 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.17
-
-  packages/shared:
-    dependencies:
-      '@sentry/core':
-        specifier: ^8.0.0
-        version: 8.55.2
-    devDependencies:
+      jsdom:
+        specifier: ^25.0.0
+        version: 25.0.1
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@25.0.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))
+
+  packages/protocol: {}
 
   packages/skills: {}
 

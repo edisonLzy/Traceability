@@ -33,6 +33,7 @@
     "@sentry/react": "^8.0.0"
   },
   "devDependencies": {
+    "@types/react": "^19.0.0",
     "jsdom": "^25.0.0",
     "vitest": "catalog:"
   },

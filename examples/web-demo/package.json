@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@traceability/browser": "workspace:*"
+    "@traceability/monitor": "workspace:*"
   },
   "devDependencies": {
     "vite": "^5.4.0",

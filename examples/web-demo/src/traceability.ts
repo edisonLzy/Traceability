@@ -1,1 +1,1 @@
-export { init } from "@traceability/browser";
+export { init } from "@traceability/monitor";
