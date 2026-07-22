@@ -27,7 +27,7 @@ function hasScheme(value: string): boolean {
 }
 
 function isHostWithPort(value: string): boolean {
-  return /^(?:localhost|(?:[a-z\d](?:[a-z\d-]*[a-z\d])?)(?:\.[a-z\d](?:[a-z\d-]*[a-z\d])?)*):\d{1,5}(?:[/?#].*)?$/i.test(
+  return /^(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[a-z\d](?:[a-z\d-]*[a-z\d])?\.)+[a-z\d](?:[a-z\d-]*[a-z\d])?|\[[a-f\d:.]+\]):\d{1,5}(?:[/?#].*)?$/i.test(
     value,
   );
 }

@@ -13,7 +13,9 @@ describe("normalizeBrowserUrl", () => {
   it.each([
     ["localhost:4173", "https://localhost:4173/"],
     ["example.com:8443/path", "https://example.com:8443/path"],
-  ])("prefixes a missing scheme for host-with-port input %j", (value, url) => {
+    ["127.0.0.1:4173", "https://127.0.0.1:4173/"],
+    ["[::1]:4173", "https://[::1]:4173/"],
+  ])("prefixes a missing scheme for recognizable host-with-port input %j", (value, url) => {
     expect(normalizeBrowserUrl(value)).toEqual({
       ok: true,
       url,
@@ -42,6 +44,11 @@ describe("normalizeBrowserUrl", () => {
     "ftp://example.com",
     "javascript:alert(1)",
     "http://example.com",
+    // A numeric suffix must not cause an explicit non-HTTP(S) scheme to be treated as a hostname.
+    "ftp:21",
+    "javascript:80",
+    "file:80",
+    "mailto:25",
   ])("rejects unsupported browser input %j with a stable error", (value) => {
     expect(normalizeBrowserUrl(value)).toEqual({ ok: false, error: INVALID_BROWSER_URL });
   });
