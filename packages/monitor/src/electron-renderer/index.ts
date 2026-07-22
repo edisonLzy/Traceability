@@ -1,19 +1,38 @@
-import * as Sentry from "@sentry/electron/renderer";
-export function init(opts: any): void {
-  Sentry.init(opts);
-}
-export const captureException = Sentry.captureException;
-export const captureMessage = Sentry.captureMessage;
-export const setUser = Sentry.setUser;
-export const setTag = Sentry.setTag;
-export const setContext = Sentry.setContext;
-export const addBreadcrumb = Sentry.addBreadcrumb;
-export const withScope = Sentry.withScope;
+import {
+  init as initFromSentry,
+  captureException,
+  captureMessage,
+  setUser,
+  setTag,
+  setContext,
+  addBreadcrumb,
+  withScope,
+} from "@sentry/electron/renderer";
 
-export {
+import {
   corsDiagnosticIntegration,
   whiteScreenIntegration,
   replayIntegration,
   browserTracingIntegration,
 } from "../browser/index.js";
-export type { WhiteScreenOptions } from "../browser/index.js";
+import type { WhiteScreenOptions } from "../browser/index.js";
+
+export function init(options: any): void {
+  initFromSentry(options);
+}
+
+export type { WhiteScreenOptions };
+
+export {
+  captureException,
+  captureMessage,
+  setUser,
+  setTag,
+  setContext,
+  addBreadcrumb,
+  withScope,
+  corsDiagnosticIntegration,
+  whiteScreenIntegration,
+  replayIntegration,
+  browserTracingIntegration,
+};
