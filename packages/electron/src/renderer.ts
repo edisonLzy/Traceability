@@ -1,4 +1,4 @@
-// The renderer reuses @traceability/core, which uses @sentry/browser under the hood.
+// The renderer reuses @traceability/browser, which uses @sentry/browser under the hood.
 export {
   init as initRenderer,
   captureException,
@@ -8,4 +8,4 @@ export {
   setTag,
   setContext,
   addBreadcrumb,
-} from "@traceability/core";
+} from "@traceability/browser";

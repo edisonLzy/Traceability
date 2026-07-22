@@ -1,5 +1,5 @@
-import * as core from "@traceability/core";
-import type { ReportData } from "@traceability/core";
+import * as core from "@traceability/browser";
+import type { ReportData } from "@traceability/browser";
 import { useCallback } from "react";
 
 export function useMonitorReport() {

@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@sentry/react": "^8.0.0",
-    "@traceability/core": "workspace:*"
+    "@traceability/browser": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0"

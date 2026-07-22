@@ -7,7 +7,7 @@ import {
   type TransportMakeRequestResponse,
 } from "@sentry/core";
 import * as SentryMain from "@sentry/electron/main";
-import type { InitOptions } from "@traceability/core";
+import type { InitOptions } from "@traceability/browser";
 import { app, crashReporter, ipcMain } from "electron";
 import type { IpcMainInvokeEvent } from "electron";
 

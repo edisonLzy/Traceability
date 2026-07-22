@@ -1,4 +1,4 @@
-import { captureException, init, report } from "@traceability/core";
+import { captureException, init, report } from "@traceability/browser";
 
 interface MonitorConfig {
   dsn: string;

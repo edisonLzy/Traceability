@@ -1,4 +1,4 @@
-import { init } from "@traceability/core";
+import { init } from "@traceability/browser";
 
 export function initTraceability() {
   init({

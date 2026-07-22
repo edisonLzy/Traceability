@@ -18,7 +18,7 @@
   "dependencies": {
     "@sentry/core": "^8.55.2",
     "@sentry/electron": "^5.0.0",
-    "@traceability/core": "workspace:*"
+    "@traceability/browser": "workspace:*"
   },
   "devDependencies": {},
   "peerDependencies": {

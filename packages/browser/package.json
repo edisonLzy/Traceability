@@ -1,5 +1,5 @@
 {
-  "name": "@traceability/core",
+  "name": "@traceability/browser",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -17,11 +17,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@rrweb/record": "^2.1.0",
-    "@rrweb/types": "^2.1.0",
     "@sentry/browser": "^8.0.0",
     "@sentry/core": "^8.0.0",
-    "@traceability/protocol": "workspace:*"
+    "@traceability/shared": "workspace:*"
   },
   "devDependencies": {
     "jsdom": "^25.0.0",
