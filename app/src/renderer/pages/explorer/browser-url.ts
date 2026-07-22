@@ -12,7 +12,11 @@ export function normalizeBrowserUrl(value: string): BrowserUrlResult {
 
   try {
     const url = new URL(withScheme);
-    if (url.protocol === "https:" || (url.protocol === "http:" && isLoopbackHost(url.hostname))) {
+    if (
+      !url.username &&
+      !url.password &&
+      (url.protocol === "https:" || (url.protocol === "http:" && isLoopbackHost(url.hostname)))
+    ) {
       return { ok: true, url: url.toString() };
     }
   } catch {

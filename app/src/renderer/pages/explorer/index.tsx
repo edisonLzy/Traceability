@@ -70,7 +70,9 @@ export function ExplorerPage() {
       onDomReady: (webContentsId) => {
         void invoke("registerBrowserGuest", { webContentsId })
           .then(() => {
-            if (active) setIsGuestRegistered(true);
+            if (!active) return;
+            interaction.onGuestRegistered();
+            setIsGuestRegistered(true);
           })
           .catch((registrationError: unknown) => {
             if (active) setError(errorMessage(registrationError));

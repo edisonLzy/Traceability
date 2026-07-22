@@ -1,5 +1,6 @@
 import { ipcRenderer } from "electron";
 
+import { sanitizeBrowserEvidenceUrl } from "../browser-url-safety";
 import type {
   BrowserElementSummary,
   BrowserGuestMessage,
@@ -47,7 +48,7 @@ function installGuestProtocol() {
         emit({
           type: "element-selected",
           element: summarizeElement(target),
-          url: window.location.href,
+          url: sanitizeBrowserEvidenceUrl(window.location.href),
         });
         return;
       }

@@ -167,6 +167,26 @@ describe("browser guest preload", () => {
     expect(JSON.stringify(payload)).not.toContain("editable secret text");
   });
 
+  it("sanitizes a selected URL so GET form query values cannot reach evidence", async () => {
+    const document = await installGuestProtocol();
+    const button = new FakeElement("BUTTON");
+    (window as unknown as { location: { href: string } }).location.href =
+      "https://alice:password@fixture.example/search?q=private&filter=recent#results";
+
+    ipc.listeners.get("traceability:browser-command")?.({}, { type: "select-element" });
+    document.dispatchEvent(guestEvent("click", button));
+
+    const [, payload] = ipc.sendToHost.mock.calls[0] ?? [];
+    expect(payload).toMatchObject({
+      type: "element-selected",
+      url: "https://fixture.example/search?q=%3Credacted%3E&filter=%3Credacted%3E",
+    });
+    expect(JSON.stringify(payload)).not.toContain("alice");
+    expect(JSON.stringify(payload)).not.toContain("password");
+    expect(JSON.stringify(payload)).not.toContain("private");
+    expect(JSON.stringify(payload)).not.toContain("results");
+  });
+
   it("retains a safe input operation summary without its value", async () => {
     const document = await installGuestProtocol();
     const input = new FakeInput();

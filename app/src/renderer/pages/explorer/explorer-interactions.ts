@@ -1,5 +1,11 @@
-import type { BrowserComment, BrowserGuestMessage, BrowserRecording } from "@shared/browser-types";
+import type {
+  BrowserComment,
+  BrowserGuestMessage,
+  BrowserRecording,
+  RecordedOperation,
+} from "@shared/browser-types";
 
+import { sanitizeBrowserEvidenceUrl } from "../../../browser-url-safety";
 import type { BrowserGuestCommand } from "./browser-webview";
 
 type SelectedElement = Extract<BrowserGuestMessage, { type: "element-selected" }>;
@@ -25,16 +31,25 @@ export class ExplorerInteractionCoordinator {
   public isTransitioning = false;
   public selectedElement: SelectedElement | null = null;
   private unmounted = false;
+  private desiredRecording = false;
+  private operations: RecordedOperation[] = [];
 
   public constructor(private readonly dependencies: ExplorerInteractionDependencies) {}
 
   public async startRecording() {
     if (this.isTransitioning) return;
+    this.desiredRecording = false;
+    this.operations = [];
     this.setTransitioning(true);
     try {
       await this.dependencies.startRecording();
+      this.desiredRecording = true;
       this.dependencies.send({ type: "set-recording", enabled: true });
       this.isRecording = true;
+    } catch (error) {
+      this.desiredRecording = false;
+      this.operations = [];
+      throw error;
     } finally {
       this.setTransitioning(false);
     }
@@ -44,15 +59,22 @@ export class ExplorerInteractionCoordinator {
     if (this.isTransitioning) return;
     this.setTransitioning(true);
     try {
+      this.desiredRecording = false;
       this.dependencies.send({ type: "set-recording", enabled: false });
       const recording = await this.dependencies.stopRecording();
+      const stoppedRecording: BrowserRecording = {
+        ...recording,
+        operations: [...recording.operations, ...this.operations],
+      };
+      this.operations = [];
       this.dependencies.info(
         "[traceability:explorer-recording]",
-        JSON.stringify(recording, null, 2),
+        JSON.stringify(stoppedRecording, null, 2),
       );
-      return recording;
+      return stoppedRecording;
     } finally {
       this.isRecording = false;
+      this.operations = [];
       this.setTransitioning(false);
     }
   }
@@ -61,8 +83,13 @@ export class ExplorerInteractionCoordinator {
     this.dependencies.send({ type: "select-element" });
   }
 
+  public onGuestRegistered() {
+    if (this.desiredRecording) this.dependencies.send({ type: "set-recording", enabled: true });
+  }
+
   public receiveGuestMessage(message: BrowserGuestMessage) {
     if (message.type === "element-selected") this.selectedElement = message;
+    if (message.type === "operation" && this.isRecording) this.operations.push(message.operation);
   }
 
   public submitComment(value: string): BrowserComment | null {
@@ -73,7 +100,7 @@ export class ExplorerInteractionCoordinator {
     const submitted: BrowserComment = {
       id: this.dependencies.createId(),
       createdAt: this.dependencies.now().toISOString(),
-      url: selected.url,
+      url: sanitizeBrowserEvidenceUrl(selected.url),
       element: selected.element,
       comment,
     };
@@ -89,6 +116,8 @@ export class ExplorerInteractionCoordinator {
   public async unmount() {
     if (this.unmounted) return;
     this.unmounted = true;
+    this.desiredRecording = false;
+    this.operations = [];
     await this.dependencies.unregisterGuest();
   }
 

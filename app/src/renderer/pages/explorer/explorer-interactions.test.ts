@@ -153,6 +153,54 @@ describe("ExplorerInteractionCoordinator", () => {
     expect(coordinator.isRecording).toBe(false);
   });
 
+  it("merges guest operations received while recording before logging the stopped recording", async () => {
+    const dependencies = createDependencies();
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+    const operation = {
+      id: "operation-1",
+      at: "2026-07-22T10:00:30.000Z",
+      type: "click" as const,
+      target: element,
+    };
+
+    await coordinator.startRecording();
+    coordinator.receiveGuestMessage({ type: "operation", operation });
+    const stopped = await coordinator.stopRecording();
+
+    expect(stopped?.operations).toEqual([operation]);
+    expect(dependencies.info).toHaveBeenCalledWith(
+      "[traceability:explorer-recording]",
+      JSON.stringify(stopped!, null, 2),
+    );
+  });
+
+  it("reapplies recording after a successful guest registration while recording", async () => {
+    const dependencies = createDependencies();
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+
+    await coordinator.startRecording();
+    coordinator.onGuestRegistered();
+
+    expect(dependencies.send).toHaveBeenNthCalledWith(1, { type: "set-recording", enabled: true });
+    expect(dependencies.send).toHaveBeenNthCalledWith(2, { type: "set-recording", enabled: true });
+  });
+
+  it("does not re-enable recording when a guest registration finishes after stop begins", async () => {
+    const dependencies = createDependencies();
+    const stop = deferred<BrowserRecording>();
+    dependencies.stopRecording = vi.fn(() => stop.promise);
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+
+    await coordinator.startRecording();
+    const stopping = coordinator.stopRecording();
+    coordinator.onGuestRegistered();
+    stop.resolve(recording);
+    await stopping;
+
+    expect(dependencies.send).toHaveBeenCalledTimes(2);
+    expect(dependencies.send).toHaveBeenLastCalledWith({ type: "set-recording", enabled: false });
+  });
+
   it("releases the transition guard after a failed start so the user can retry", async () => {
     const dependencies = createDependencies();
     const startRecording = vi
@@ -209,6 +257,26 @@ describe("ExplorerInteractionCoordinator", () => {
       JSON.stringify(comment, null, 2),
     );
     expect(coordinator.selectedElement).toBeNull();
+  });
+
+  it("sanitizes the selected URL before writing a comment to console evidence", () => {
+    const dependencies = createDependencies();
+    const info = vi.fn();
+    dependencies.info = info;
+    const coordinator = new ExplorerInteractionCoordinator(dependencies);
+    coordinator.receiveGuestMessage({
+      type: "element-selected",
+      element,
+      url: "https://alice:password@localhost:4173/search?q=private#results",
+    });
+
+    const comment = coordinator.submitComment("Investigate this result");
+
+    expect(comment?.url).toBe("https://localhost:4173/search?q=%3Credacted%3E");
+    expect(JSON.stringify(info.mock.calls)).not.toContain("alice");
+    expect(JSON.stringify(info.mock.calls)).not.toContain("password");
+    expect(JSON.stringify(info.mock.calls)).not.toContain("private");
+    expect(JSON.stringify(info.mock.calls)).not.toContain("results");
   });
 
   it("unregisters the guest once on unmount", async () => {

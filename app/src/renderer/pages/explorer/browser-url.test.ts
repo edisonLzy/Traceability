@@ -49,6 +49,7 @@ describe("normalizeBrowserUrl", () => {
     "javascript:80",
     "file:80",
     "mailto:25",
+    "https://alice:password@example.com/account",
   ])("rejects unsupported browser input %j with a stable error", (value) => {
     expect(normalizeBrowserUrl(value)).toEqual({ ok: false, error: INVALID_BROWSER_URL });
   });
