@@ -7,19 +7,47 @@ import type { ParsedEnvelope, EnvelopeHeader, EnvelopeItem, SentryEventPayload }
  * First line = envelope header object; subsequent lines alternate
  * [itemHeader, itemPayload, itemHeader, itemPayload, ...].
  */
-export function parseEnvelope(body: Buffer | string): ParsedEnvelope {
-  const text = typeof body === "string" ? body : body.toString("utf8");
-  const lines = text.split("\n").filter((l) => l.length > 0);
-  if (lines.length < 1) {
-    throw new Error("empty envelope");
-  }
-  const header = JSON.parse(lines[0]!) as EnvelopeHeader;
+export function parseEnvelope(body: Buffer): ParsedEnvelope {
+  if (body.length === 0) throw new Error("empty envelope");
+
+  const firstNewline = body.indexOf(0x0a);
+  if (firstNewline < 0) throw new Error("invalid envelope: no header line");
+
+  const header = JSON.parse(body.subarray(0, firstNewline).toString("utf8")) as EnvelopeHeader;
   const items: EnvelopeItem[] = [];
-  for (let i = 1; i + 1 < lines.length; i += 2) {
-    const itemHeader = JSON.parse(lines[i]!) as EnvelopeItem[0];
-    const itemPayload = JSON.parse(lines[i + 1]!);
-    items.push([itemHeader, itemPayload]);
+
+  let offset = firstNewline + 1;
+  while (offset < body.length) {
+    if (body[offset] === 0x0a) {
+      offset++;
+      continue;
+    }
+
+    const itemNewline = body.indexOf(0x0a, offset);
+    if (itemNewline < 0) break;
+    const itemHeader = JSON.parse(
+      body.subarray(offset, itemNewline).toString("utf8"),
+    ) as EnvelopeItem[0];
+    offset = itemNewline + 1;
+
+    if (typeof itemHeader.length === "number" && itemHeader.length > 0) {
+      const payload = body.subarray(offset, offset + itemHeader.length);
+      items.push([itemHeader, payload as unknown as Buffer]);
+      offset += itemHeader.length;
+      if (body[offset] === 0x0a) offset++;
+    } else {
+      // JSON payload: ends at next newline or end of body
+      const payloadNewline = body.indexOf(0x0a, offset);
+      const payloadEnd = payloadNewline >= 0 ? payloadNewline : body.length;
+      const payloadText = body.subarray(offset, payloadEnd).toString("utf8");
+      if (payloadText.length > 0) {
+        const payload = JSON.parse(payloadText);
+        items.push([itemHeader, payload]);
+      }
+      offset = payloadEnd + 1;
+    }
   }
+
   return { header, items };
 }
 
@@ -28,22 +56,12 @@ export function parseEnvelope(body: Buffer | string): ParsedEnvelope {
  */
 export function filterSupportedItems(envelope: ParsedEnvelope): Array<{
   header: EnvelopeItem[0];
-  payload: SentryEventPayload;
+  payload: object | Buffer;
 }> {
-  const supported: Array<{ header: EnvelopeItem[0]; payload: SentryEventPayload }> = [];
-  for (const [header, payload] of envelope.items) {
-    if (header.type === "event" || header.type === "transaction") {
-      supported.push({ header, payload: payload as SentryEventPayload });
-    } else if (header.type === "client_report" && isMessagePayload(payload)) {
-      // client_report is not a message; skip. Kept branch explicit for clarity.
-      continue;
-    }
-  }
-  return supported;
-}
-
-function isMessagePayload(p: unknown): p is SentryEventPayload {
-  return typeof p === "object" && p !== null;
+  const allowed = new Set(["event", "transaction"]);
+  return envelope.items
+    .filter(([h]) => allowed.has(h.type))
+    .map(([h, p]) => ({ header: h, payload: p }));
 }
 
 /**

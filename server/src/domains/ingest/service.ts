@@ -7,8 +7,10 @@ import { attachReplayToIssue } from "../replays/service.js";
 import { resolveFrames } from "../source-maps/service.js";
 import { parseEnvelope, filterSupportedItems } from "./envelope.js";
 
-function getRrwebReplayId(extra: Record<string, unknown> | undefined): string | undefined {
-  const replayId = extra?.rrwebReplayId;
+function getRrwebReplayId(payload: Record<string, unknown>): string | undefined {
+  const contexts = payload.contexts as Record<string, unknown> | undefined;
+  const replay = contexts?.replay as { replay_id?: string } | undefined;
+  const replayId = replay?.replay_id;
   return typeof replayId === "string" && replayId.length > 0 ? replayId : undefined;
 }
 
@@ -17,7 +19,7 @@ export function ingestEnvelope(appId: string, raw: unknown) {
 
   let envelope;
   try {
-    envelope = parseEnvelope(raw);
+    envelope = parseEnvelope(Buffer.from(raw as string));
   } catch {
     throw new AppError("invalid envelope", 400, 400);
   }
@@ -29,7 +31,7 @@ export function ingestEnvelope(appId: string, raw: unknown) {
     const { issue, created } = ingestEvent(appId, payload, resolvedFrames);
     appendEvent(issue.id, raw);
 
-    const replayId = getRrwebReplayId((payload as any).extra);
+    const replayId = getRrwebReplayId(payload as unknown as Record<string, unknown>);
     if (replayId) {
       attachReplayToIssue(replayId, issue.id, appId, (payload as any).event_id);
     }
