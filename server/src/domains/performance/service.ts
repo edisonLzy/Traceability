@@ -2,51 +2,50 @@ import { eq, desc, gte, and } from "drizzle-orm";
 import { z } from "zod";
 
 import { getApp } from "../apps/service.js";
+import type { SentryEventPayload } from "../ingest/types.js";
 import { db, performanceSamples } from "./db.js";
 
-export const RecordMetricsSchema = z.object({
-  metrics: z
-    .array(
-      z.object({
-        name: z.string().min(1).max(80),
-        value: z.number(),
-        unit: z.string().optional(),
-        timestamp: z.string().optional(),
-        context: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
-  name: z.string().optional(),
-  value: z.number().optional(),
-});
+export function recordFromTransaction(
+  appId: string,
+  payload: SentryEventPayload,
+): { accepted: number } {
+  const measurements = payload.measurements;
+  if (!measurements || Object.keys(measurements).length === 0) {
+    return { accepted: 0 };
+  }
+
+  const now = new Date().toISOString();
+  let accepted = 0;
+
+  for (const [name, m] of Object.entries(measurements)) {
+    if (typeof m.value !== "number") continue;
+    db.insert(performanceSamples)
+      .values({
+        id: crypto.randomUUID(),
+        appId,
+        metric: name.slice(0, 80),
+        value: m.value,
+        unit: m.unit ?? "millisecond",
+        measuredAt:
+          typeof payload.timestamp === "number"
+            ? new Date(payload.timestamp * 1000).toISOString()
+            : now,
+        metadata: JSON.stringify({
+          transaction: payload.transaction,
+          eventId: payload.event_id,
+        }),
+      })
+      .run();
+    accepted++;
+  }
+
+  return { accepted };
+}
 
 export const SummarySchema = z.object({
   appId: z.string().optional(),
   hours: z.coerce.number().min(1).max(720).optional().default(24),
 });
-
-export function recordMetrics(appId: string, raw: unknown) {
-  getApp(appId);
-  const body = RecordMetricsSchema.parse(raw);
-  const items =
-    body.metrics ??
-    (body.name && body.value !== undefined ? [{ name: body.name, value: body.value }] : []);
-
-  const rows = items.map((m) => ({
-    id: crypto.randomUUID(),
-    appId,
-    metric: m.name.trim().slice(0, 80),
-    value: m.value,
-    unit: m.unit ?? "millisecond",
-    measuredAt: m.timestamp ?? new Date().toISOString(),
-    metadata: JSON.stringify(m.context ?? {}),
-  }));
-
-  for (const row of rows) {
-    db.insert(performanceSamples).values(row).run();
-  }
-  return { accepted: rows.length };
-}
 
 export function getPerformanceSummary(raw: unknown) {
   const opts = SummarySchema.parse(raw);
