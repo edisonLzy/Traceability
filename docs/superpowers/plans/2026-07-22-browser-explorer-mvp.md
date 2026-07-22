@@ -17,6 +17,8 @@
 - Browser partition is exactly `traceability-explorer`; guest is context isolated, sandboxed, web-secure, and has no Node integration.
 - `BrowserRecording` has top-level stop-time `url`, not duration, start/end URL pairs, a page wrapper or navigation history.
 - Response bodies: Fetch/XHR JSON only, 256 KiB each and 5 MiB per recording, recursive sensitive-key redaction. Never store headers, credentials, raw input values or uploads.
+- Evidence URLs strip userinfo/fragments and redact every query value; navigable address-bar state is renderer-only.
+- Valid guest operations must be merged into the stopped recording, and full navigation must reapply the coordinator's desired recording state without re-enabling after stop begins.
 - Single visible guest only; do not add Agent/LLM, server, persistence, rrweb/replay, Issue, multi-tab, pause/resume, screenshot, cache-clearing or request-rewrite features.
 
 ---
@@ -192,7 +194,93 @@
   git commit -m "feat(app): implement explorer browser"
   ```
 
-### Task 5: End-to-end validation and scope audit
+### Task 6: Evidence privacy, operation aggregation and navigation continuity
+
+**Files:**
+
+- Create: `app/src/browser-url-safety.ts`
+- Create: `app/src/browser-url-safety.test.ts`
+- Modify: `app/src/preload/browser-guest.ts`
+- Modify: `app/src/preload/browser-guest.test.ts`
+- Modify: `app/src/renderer/pages/explorer/browser-url.ts`
+- Modify: `app/src/renderer/pages/explorer/browser-url.test.ts`
+- Modify: `app/src/renderer/pages/explorer/explorer-interactions.ts`
+- Modify: `app/src/renderer/pages/explorer/explorer-interactions.test.ts`
+- Modify: `app/src/renderer/pages/explorer/index.tsx`
+
+**Interfaces:**
+
+- Produces `sanitizeBrowserEvidenceUrl(value: string): string` for main, preload and renderer evidence boundaries.
+- Produces a coordinator path where validated operation messages appear in stopped `BrowserRecording.operations` and the desired recording command is reapplied after every DOM-ready registration.
+
+- [ ] **Step 1: Add failing privacy/aggregation/navigation tests**
+
+  Cover URL userinfo/query/fragment sanitization, rejection of URL userinfo, GET-form-like query values never reaching console output, an operation reaching the stopped recording, navigation DOM-ready reapplying `set-recording:true`, and stop preventing later re-enable.
+
+- [ ] **Step 2: Run focused tests to verify RED**
+
+  Run: `pnpm --filter @traceability/app exec vitest run src/browser-url-safety.test.ts src/preload/browser-guest.test.ts src/renderer/pages/explorer/browser-url.test.ts src/renderer/pages/explorer/explorer-interactions.test.ts`
+
+  Expected: FAIL on the new privacy, operation and navigation cases.
+
+- [ ] **Step 3: Implement the shared sanitizer and aggregation path**
+
+  Strip evidence URL userinfo/fragments and replace all query values with `<redacted>`; reject navigable userinfo; sanitize guest/coordinator comment URLs and main recording/request URLs. Buffer only validated operations while recording, merge them into the stopped recording, and reapply the desired command after successful guest registration.
+
+- [ ] **Step 4: Run focused tests, typecheck, build and App tests to verify GREEN**
+
+  Run: `pnpm --filter @traceability/app exec vitest run src/browser-url-safety.test.ts src/preload/browser-guest.test.ts src/renderer/pages/explorer/browser-url.test.ts src/renderer/pages/explorer/explorer-interactions.test.ts && pnpm --filter @traceability/app typecheck && pnpm --filter @traceability/app build && pnpm --filter @traceability/app test`
+
+  Expected: all new tests pass, `browser-guest.cjs` is emitted, and the App suite remains green.
+
+- [ ] **Step 5: Commit privacy and evidence continuity**
+
+  ```bash
+  git add app/src/browser-url-safety.ts app/src/browser-url-safety.test.ts app/src/preload/browser-guest.ts app/src/preload/browser-guest.test.ts app/src/renderer/pages/explorer/browser-url.ts app/src/renderer/pages/explorer/browser-url.test.ts app/src/renderer/pages/explorer/explorer-interactions.ts app/src/renderer/pages/explorer/explorer-interactions.test.ts app/src/renderer/pages/explorer/index.tsx
+  git commit -m "fix(app): preserve safe explorer evidence"
+  ```
+
+### Task 7: Decoded response budgets and redirect metadata
+
+**Files:**
+
+- Modify: `app/src/main/browser/browser-capture-service.ts`
+- Modify: `app/src/main/browser/browser-capture-service.test.ts`
+- Modify: `app/src/shared/browser-types.ts`
+
+**Interfaces:**
+
+- Consumes `sanitizeBrowserEvidenceUrl` from Task 6.
+- Produces exact post-decode body limits and truthful redirect-hop metadata while preserving `BrowserRecording` shape.
+
+- [ ] **Step 1: Add failing capture tests**
+
+  Cover a compressed/cached response whose encoded bytes are below the limit but decoded body exceeds 256 KiB; aggregate decoded bodies exceeding 5 MiB; redirect response encoded bytes/status/MIME and `skipped/redirect`; and sanitized request/stop URLs.
+
+- [ ] **Step 2: Run the focused capture test to verify RED**
+
+  Run: `pnpm --filter @traceability/app exec vitest run src/main/browser/browser-capture-service.test.ts`
+
+  Expected: FAIL because encoded-byte checks currently allow decoded oversize bodies and redirect metadata is incomplete.
+
+- [ ] **Step 3: Implement post-decode accounting and redirect metadata**
+
+  Measure decoded UTF-8 bytes before parsing, count only stored bodies toward the aggregate, copy redirect encoded bytes and metadata, and mark redirect hops with `skipped/redirect`. Keep no-cache-clear and stop cleanup behavior.
+
+- [ ] **Step 4: Run focused tests, typecheck, build and App tests to verify GREEN**
+
+  Run: `pnpm --filter @traceability/app exec vitest run src/main/browser/browser-capture-service.test.ts && pnpm --filter @traceability/app typecheck && pnpm --filter @traceability/app build && pnpm --filter @traceability/app test`
+
+  Expected: all capture/baseline tests pass and the App build remains green.
+
+- [ ] **Step 5: Commit exact capture budgets**
+
+  ```bash
+  git add app/src/main/browser/browser-capture-service.ts app/src/main/browser/browser-capture-service.test.ts app/src/shared/browser-types.ts
+  git commit -m "fix(app): enforce decoded browser capture limits"
+  ```
+
+### Task 8: End-to-end validation and scope audit
 
 **Files:**
 

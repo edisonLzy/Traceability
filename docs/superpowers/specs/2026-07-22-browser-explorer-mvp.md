@@ -120,6 +120,8 @@ export interface BrowserIPC {
 
 The guest-to-host payload is a portable discriminated union in `browser-types.ts`. It permits only `operation` carrying a `RecordedOperation`, and `element-selected` carrying `BrowserElementSummary` plus URL. It has no path for raw input values.
 
+Evidence URL privacy is mandatory: before a value enters `BrowserRecording.url`, `RecordedRequest.url`, a selected-element URL, or `BrowserComment.url`, a shared pure sanitizer removes URL username/password and the fragment, and replaces every query value with `<redacted>` (query keys may remain). The editable address bar may retain the navigable URL in renderer-only state, but it must never be sent to diagnostic output. `normalizeBrowserUrl` rejects URL userinfo.
+
 ## Browser service design
 
 `BrowserCaptureService` is a focused state machine, injected with the selected Electron guest `WebContents` and independently unit-tested with a debugger fake. It owns one guest and zero or one active recording.
@@ -128,6 +130,8 @@ The guest-to-host payload is a portable discriminated union in `browser-types.ts
 - It attaches debugger protocol `1.3`, subscribes to `message`, enables `Network`, `Runtime`, `Log`, samples `Performance.getMetrics`, and starts a one-second heap timer.
 - `requestWillBeSent`, `responseReceived`, `dataReceived` and `loadingFinished` create and update a request record. Redirects allocate a separate internal sequence; no hop overwrites the preceding record.
 - Metadata is kept for every request. A body is eligible only when its resource type is Fetch/XHR and its MIME type is `application/json` or ends in `+json`. The encoded bytes reserve the 256 KiB/5 MiB budgets before `Network.getResponseBody` runs. A base64 body is decoded, JSON parsed and recursively redacted for case-insensitive keys including `token`, `password`, `secret`, `cookie`, `authorization` and `apiKey`.
+- The decoded UTF-8 response body is measured after `Network.getResponseBody` and before JSON parsing. A decoded body over 256 KiB or a decoded aggregate over 5 MiB is `skipped/resource-limit` and is never stored; the aggregate counter counts only bodies that are actually stored.
+- A redirect hop remains a separate request record; its `redirectResponse.encodedDataLength`, status and MIME are copied, and its body state is `skipped/redirect` because no body fetch is attempted for the hop.
 - Body-reading failures, CDP errors and unsupported bodies become the appropriate response state or a timestamped `captureErrors` entry. They never make browsing fail.
 - `stop()` clears its timer, marks unfinished requests `pending-at-stop`, marks active body work `unavailable/stopped`, takes a final heap sample, disables the CDP domains, removes the listener, detaches safely, snapshots the output, and clears Maps/tasks. It does not clear Chromium HTTP cache.
 
@@ -151,6 +155,8 @@ console.info("[traceability:explorer-comment]", JSON.stringify(comment, null, 2)
 ```
 
 No recording data is sent to Agent, server or local persistence.
+
+Validated guest `operation` messages are buffered by the interaction coordinator while recording is active and merged into the stopped `BrowserRecording.operations` array before the recording log is written. A full navigation resets the guest preload's local command flags; each successful DOM-ready registration therefore reapplies the coordinator's desired recording state. Once stop begins, the desired state is false and no later DOM-ready can re-enable it.
 
 ## Resulting file structure
 
@@ -191,6 +197,7 @@ app/
 - The only renderer-to-main Browser channels are the four exact `BrowserIPC` method names and all four have a main handler.
 - Guest registration rejects a non-webview or a webview not hosted by the current main window.
 - A normal Fetch/XHR JSON response is captured with recursively redacted sensitive keys; non-JSON and non-Fetch/XHR requests expose metadata but no body.
+- At least one valid guest operation reaches `BrowserRecording.operations`; stopping after a GET form or credentialed URL cannot expose raw query values, URL userinfo, fragments or form values.
 - A response over 256 KiB or aggregate response bodies over 5 MiB are `skipped/resource-limit`; a request pending at stop is `pending-at-stop`; response/CDP failures still yield valid recording JSON.
 - Stopping removes timer/listeners and detaches CDP without clearing browser cache.
 - Browser navigation and selection work while no recording exists; selection blocks exactly the selected page action.
