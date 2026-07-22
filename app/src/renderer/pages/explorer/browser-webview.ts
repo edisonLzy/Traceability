@@ -77,6 +77,7 @@ export class BrowserWebviewController {
     this.webview.setAttribute("partition", BROWSER_GUEST_PARTITION);
     this.webview.setAttribute("src", BROWSER_INITIAL_URL);
     this.webview.setAttribute("webpreferences", BROWSER_WEB_PREFERENCES);
+    this.webview.setAttribute("style", "position: absolute; inset: 0; display: flex;");
     this.listeners = [
       ["dom-ready", this.onDomReady],
       ["did-start-loading", this.onStartLoading],

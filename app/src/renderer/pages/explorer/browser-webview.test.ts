@@ -107,6 +107,7 @@ describe("BrowserWebviewController", () => {
     expect(webview.getAttribute("webpreferences")).toBe(
       "contextIsolation=yes,nodeIntegration=no,sandbox=yes,webSecurity=yes",
     );
+    expect(webview.getAttribute("style")).toBe("position: absolute; inset: 0; display: flex;");
 
     webview.dispatchEvent(event("dom-ready"));
     webview.dispatchEvent(event("did-start-loading"));
