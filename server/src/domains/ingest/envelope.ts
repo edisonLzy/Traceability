@@ -1,11 +1,6 @@
-import type {
-  ParsedEnvelope,
-  EnvelopeHeader,
-  EnvelopeItem,
-  SentryEventPayload,
-  Issue,
-  SourceLocation,
-} from "@traceability/protocol";
+import type { Issue, SourceLocation } from "@traceability/protocol";
+
+import type { ParsedEnvelope, EnvelopeHeader, EnvelopeItem, SentryEventPayload } from "./types.js";
 
 /**
  * Sentry envelope v7 wire format: a newline-delimited JSON array.
