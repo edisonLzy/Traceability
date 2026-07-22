@@ -5,6 +5,10 @@ import type { BrowserWindow, Session, WebContents } from "electron";
 
 const BROWSER_GUEST_PARTITION = "traceability-explorer";
 
+export function resolveBrowserGuestPreload(mainBundleDirectory: string): string {
+  return join(mainBundleDirectory, "../preload/browser-guest.cjs");
+}
+
 type MutableWebPreferences = Record<string, unknown>;
 
 export class BrowserGuestSession {
@@ -29,7 +33,7 @@ export class BrowserGuestSession {
     }
 
     Object.assign(webPreferences, {
-      preload: join(__dirname, "../../preload/browser-guest.cjs"),
+      preload: resolveBrowserGuestPreload(__dirname),
       partition: BROWSER_GUEST_PARTITION,
       session: this.session,
       nodeIntegration: false,

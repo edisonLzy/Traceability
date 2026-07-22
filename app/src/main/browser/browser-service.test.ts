@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resolveBrowserGuestPreload } from "./browser-guest-session.js";
+
 const electron = vi.hoisted(() => ({
   ipcMain: { handle: vi.fn(), removeHandler: vi.fn() },
   session: { fromPartition: vi.fn() },
@@ -123,6 +125,7 @@ describe("BrowserService", () => {
 
     expect(event.preventDefault).not.toHaveBeenCalled();
     expect(preferences).toMatchObject({
+      preload: resolveBrowserGuestPreload(__dirname),
       partition: "traceability-explorer",
       session: fakeSession,
       nodeIntegration: false,
@@ -130,6 +133,12 @@ describe("BrowserService", () => {
       sandbox: true,
       webSecurity: true,
     });
+  });
+
+  it("resolves the guest preload beside the bundled main directory", () => {
+    expect(resolveBrowserGuestPreload("/workspace/app/out/main")).toBe(
+      "/workspace/app/out/preload/browser-guest.cjs",
+    );
   });
 
   it("denies permissions, downloads, and disallowed webview sources", () => {
