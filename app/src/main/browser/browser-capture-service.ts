@@ -17,6 +17,7 @@ interface CapturedRequest {
 
 interface CaptureState {
   recording: BrowserRecording;
+  guest: WebContents;
   attached: boolean;
   timer: ReturnType<typeof setInterval> | null;
   requests: Map<string, CapturedRequest>;
@@ -44,6 +45,7 @@ export class BrowserCaptureService {
   ) => this.handleDebuggerMessage(method, params);
 
   public setGuest(webContents: WebContents) {
+    if (this.active) throw new Error("Cannot replace the browser guest while capture is active");
     this.guest = webContents;
   }
 
@@ -53,7 +55,8 @@ export class BrowserCaptureService {
   }
 
   public async start(): Promise<{ recordingId: string }> {
-    if (!this.guest || this.guest.isDestroyed()) throw new Error("Browser guest is not available");
+    const guest = this.guest;
+    if (!guest || guest.isDestroyed()) throw new Error("Browser guest is not available");
     if (this.active) throw new Error("Browser capture is already active");
 
     const startedAt = timestamp();
@@ -76,6 +79,7 @@ export class BrowserCaptureService {
         },
         captureErrors: [],
       },
+      guest,
       attached: false,
       timer: null,
       requests: new Map(),
@@ -86,9 +90,9 @@ export class BrowserCaptureService {
     this.active = state;
 
     try {
-      this.guest.debugger.attach("1.3");
+      guest.debugger.attach("1.3");
       state.attached = true;
-      this.guest.debugger.on("message", this.onDebuggerMessage);
+      guest.debugger.on("message", this.onDebuggerMessage);
     } catch (error) {
       this.captureError(state, error);
       return { recordingId: state.recording.id };
@@ -119,20 +123,26 @@ export class BrowserCaptureService {
     }
 
     await this.sampleHeap(state, true);
-    if (state.attached && this.guest && !this.guest.isDestroyed()) {
-      await this.safeCommand(state, "Log.disable");
-      await this.safeCommand(state, "Runtime.disable");
-      await this.safeCommand(state, "Network.disable");
-      this.guest.debugger.removeListener("message", this.onDebuggerMessage);
+    if (state.attached) {
+      if (!state.guest.isDestroyed()) {
+        await this.safeCommand(state, "Log.disable");
+        await this.safeCommand(state, "Runtime.disable");
+        await this.safeCommand(state, "Network.disable");
+      }
       try {
-        this.guest.debugger.detach();
+        state.guest.debugger.removeListener("message", this.onDebuggerMessage);
+      } catch (error) {
+        this.captureError(state, error);
+      }
+      try {
+        state.guest.debugger.detach();
       } catch (error) {
         this.captureError(state, error);
       }
     }
 
     state.recording.endedAt = timestamp();
-    state.recording.url = this.guest && !this.guest.isDestroyed() ? this.guest.getURL() : "";
+    state.recording.url = state.guest.isDestroyed() ? "" : state.guest.getURL();
     const recording = structuredClone(state.recording);
     this.active = null;
     state.requests.clear();
@@ -239,6 +249,9 @@ export class BrowserCaptureService {
     if (!captured) return;
     captured.finished = true;
     const { request } = captured;
+    const finalBytes = numberOrNull(params.encodedDataLength);
+    if (finalBytes !== null && finalBytes > 0)
+      request.encodedBytes = Math.max(request.encodedBytes, finalBytes);
     if (request.resourceType !== "Fetch" && request.resourceType !== "XHR") {
       request.response = { state: "skipped", reason: "not-fetch-xhr" };
       return;
@@ -335,8 +348,8 @@ export class BrowserCaptureService {
   }
 
   private async command(state: CaptureState, method: string, params?: Record<string, unknown>) {
-    if (!this.guest || this.guest.isDestroyed()) return null;
-    return this.guest.debugger.sendCommand(method, params);
+    if (state.guest.isDestroyed()) return null;
+    return state.guest.debugger.sendCommand(method, params);
   }
 
   private async safeCommand(state: CaptureState, method: string, params?: Record<string, unknown>) {

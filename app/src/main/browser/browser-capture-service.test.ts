@@ -28,11 +28,14 @@ class FakeDebugger extends EventEmitter {
   }
 }
 
-function createGuest(debuggerInstance = new FakeDebugger()) {
+function createGuest(
+  debuggerInstance = new FakeDebugger(),
+  isDestroyed: () => boolean = () => false,
+) {
   return {
     debugger: debuggerInstance,
     getURL: () => "https://example.test/current",
-    isDestroyed: () => false,
+    isDestroyed,
   } as never;
 }
 
@@ -51,7 +54,13 @@ async function settle() {
 function response(
   debuggerInstance: FakeDebugger,
   requestId: string,
-  options: { type?: string; mimeType?: string; status?: number; bytes?: number } = {},
+  options: {
+    type?: string;
+    mimeType?: string;
+    status?: number;
+    bytes?: number;
+    finalBytes?: number;
+  } = {},
 ) {
   debuggerInstance.emitMessage("Network.requestWillBeSent", {
     requestId,
@@ -69,7 +78,10 @@ function response(
       encodedDataLength: options.bytes,
     });
   }
-  debuggerInstance.emitMessage("Network.loadingFinished", { requestId });
+  debuggerInstance.emitMessage("Network.loadingFinished", {
+    requestId,
+    ...(options.finalBytes === undefined ? {} : { encodedDataLength: options.finalBytes }),
+  });
 }
 
 describe("BrowserCaptureService", () => {
@@ -145,6 +157,32 @@ describe("BrowserCaptureService", () => {
     ).toHaveLength(20);
   });
 
+  it("enforces body limits from loadingFinished bytes when data events are absent", async () => {
+    const { service, debuggerInstance } = await createService();
+    debuggerInstance.handlers.set("Network.getResponseBody", () => ({
+      body: '{"ok":true}',
+      base64Encoded: false,
+    }));
+    await service.start();
+    response(debuggerInstance, "too-large-final", { finalBytes: 256 * 1024 + 1 });
+    for (let index = 0; index < 21; index += 1)
+      response(debuggerInstance, `aggregate-final-${index}`, { finalBytes: 256 * 1024 });
+    await settle();
+
+    const recording = await service.stop();
+    expect(recording.network.find(({ id }) => id === "too-large-final")?.response).toEqual({
+      state: "skipped",
+      reason: "resource-limit",
+    });
+    expect(recording.network.find(({ id }) => id === "aggregate-final-20")?.response).toEqual({
+      state: "skipped",
+      reason: "resource-limit",
+    });
+    expect(
+      debuggerInstance.commands.filter(({ method }) => method === "Network.getResponseBody"),
+    ).toHaveLength(20);
+  });
+
   it("marks unfinished requests as pending when capture stops", async () => {
     const { service, debuggerInstance } = await createService();
     await service.start();
@@ -158,6 +196,22 @@ describe("BrowserCaptureService", () => {
     expect(recording.network).toMatchObject([
       { id: "pending", response: { state: "pending-at-stop" } },
     ]);
+  });
+
+  it("removes the debugger listener and detaches when the active guest is destroyed", async () => {
+    const debuggerInstance = new FakeDebugger();
+    let destroyed = false;
+    const { BrowserCaptureService } = await import("./browser-capture-service.js");
+    const service = new BrowserCaptureService();
+    service.setGuest(createGuest(debuggerInstance, () => destroyed));
+    await service.start();
+    destroyed = true;
+
+    await service.stop();
+
+    expect(debuggerInstance.listenerCount("message")).toBe(0);
+    expect(debuggerInstance.detached).toBe(true);
+    expect(debuggerInstance.commands.map(({ method }) => method)).not.toContain("Network.disable");
   });
 
   it("records console, exception, and heap samples", async () => {
@@ -195,6 +249,23 @@ describe("BrowserCaptureService", () => {
 
     await expect(service.start()).rejects.toThrow("already active");
     expect(debuggerInstance.attachedProtocols).toEqual(["1.3"]);
+    await service.stop();
+  });
+
+  it("rejects guest replacement until the active capture has stopped", async () => {
+    const { service, debuggerInstance } = await createService();
+    const replacementDebugger = new FakeDebugger();
+    await service.start();
+
+    expect(() => service.setGuest(createGuest(replacementDebugger))).toThrow(
+      "Cannot replace the browser guest while capture is active",
+    );
+
+    await service.stop();
+    service.setGuest(createGuest(replacementDebugger));
+    await service.start();
+    expect(debuggerInstance.detached).toBe(true);
+    expect(replacementDebugger.attachedProtocols).toEqual(["1.3"]);
     await service.stop();
   });
 
