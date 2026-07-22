@@ -283,15 +283,15 @@ importers:
 
   packages/electron:
     dependencies:
-      '@sentry/core':
-        specifier: ^8.55.2
-        version: 8.55.2
       '@sentry/electron':
         specifier: ^5.0.0
         version: 5.12.0
       '@traceability/browser':
         specifier: workspace:*
         version: link:../browser
+      '@traceability/shared':
+        specifier: workspace:*
+        version: link:../shared
       electron:
         specifier: '>=30'
         version: 43.1.0
