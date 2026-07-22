@@ -30,6 +30,8 @@ export class BrowserGuestSession {
 
     Object.assign(webPreferences, {
       preload: join(__dirname, "../../preload/browser-guest.cjs"),
+      partition: BROWSER_GUEST_PARTITION,
+      session: this.session,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -38,6 +40,12 @@ export class BrowserGuestSession {
   };
 
   private readonly onWillNavigate = (...args: unknown[]) => {
+    const event = args[0] as { preventDefault(): void } | undefined;
+    const url = typeof args[1] === "string" ? args[1] : (args[0] as { url?: unknown })?.url;
+    if (!isAllowedBrowserUrl(String(url))) event?.preventDefault();
+  };
+
+  private readonly onWillRedirect = (...args: unknown[]) => {
     const event = args[0] as { preventDefault(): void } | undefined;
     const url = typeof args[1] === "string" ? args[1] : (args[0] as { url?: unknown })?.url;
     if (!isAllowedBrowserUrl(String(url))) event?.preventDefault();
@@ -79,6 +87,7 @@ export class BrowserGuestSession {
     if (this.protectedGuests.has(webContents)) return;
     this.protectedGuests.add(webContents);
     webContents.on("will-navigate", this.onWillNavigate as never);
+    webContents.on("will-redirect", this.onWillRedirect as never);
     webContents.setWindowOpenHandler((details) => {
       if (isAllowedBrowserUrl(details.url) && !webContents.isDestroyed()) {
         void Promise.resolve(webContents.loadURL(details.url)).catch(() => undefined);
@@ -103,6 +112,7 @@ export class BrowserGuestSession {
   private releaseGuestPolicies() {
     for (const guest of this.protectedGuests) {
       if (!guest.isDestroyed()) guest.removeListener("will-navigate", this.onWillNavigate as never);
+      if (!guest.isDestroyed()) guest.removeListener("will-redirect", this.onWillRedirect as never);
     }
     this.protectedGuests.clear();
   }

@@ -53,9 +53,9 @@ function createFakeBrowserWindow() {
   return { isDestroyed: () => false, webContents: hostWebContents };
 }
 
-function createGuest(hostWebContents: unknown, type = "webview") {
+function createGuest(hostWebContents: unknown, type = "webview", destroyed = false) {
   return {
-    isDestroyed: () => false,
+    isDestroyed: () => destroyed,
     getType: () => type,
     hostWebContents,
     on: vi.fn(),
@@ -105,6 +105,55 @@ describe("BrowserService", () => {
     expect(guest.on).toHaveBeenCalledWith("will-navigate", expect.any(Function));
   });
 
+  it("forces every allowed attachment into the protected guest session", () => {
+    const attachWebview = browserWindow.webContents.on.mock.calls.find(
+      ([event]) => event === "will-attach-webview",
+    )?.[1];
+    const event = { preventDefault: vi.fn() };
+    const preferences = {
+      partition: "persist:untrusted",
+      session: {},
+      nodeIntegration: true,
+      contextIsolation: false,
+      sandbox: false,
+      webSecurity: false,
+    };
+
+    attachWebview(event, preferences, { src: "https://example.com" });
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(preferences).toMatchObject({
+      partition: "traceability-explorer",
+      session: fakeSession,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+    });
+  });
+
+  it("denies permissions, downloads, and disallowed webview sources", () => {
+    const permissionRequest = fakeSession.setPermissionRequestHandler.mock.calls[0]?.[0];
+    const permissionCheck = fakeSession.setPermissionCheckHandler.mock.calls[0]?.[0];
+    const willDownload = fakeSession.on.mock.calls.find(
+      ([event]) => event === "will-download",
+    )?.[1];
+    const attachWebview = browserWindow.webContents.on.mock.calls.find(
+      ([event]) => event === "will-attach-webview",
+    )?.[1];
+    const permissionCallback = vi.fn();
+    const downloadEvent = { preventDefault: vi.fn() };
+    const attachEvent = { preventDefault: vi.fn() };
+
+    permissionRequest({}, "camera", permissionCallback);
+    expect(permissionCallback).toHaveBeenCalledWith(false);
+    expect(permissionCheck({}, "camera", "https://example.com")).toBe(false);
+    willDownload(downloadEvent);
+    expect(downloadEvent.preventDefault).toHaveBeenCalledOnce();
+    attachWebview(attachEvent, {}, { src: "file:///etc/passwd" });
+    expect(attachEvent.preventDefault).toHaveBeenCalledOnce();
+  });
+
   it("rejects a non-webview guest", async () => {
     electron.webContents.fromId.mockReturnValue(createGuest(browserWindow.webContents, "window"));
 
@@ -123,6 +172,47 @@ describe("BrowserService", () => {
     expect(capture.instances[0]?.setGuest).not.toHaveBeenCalled();
   });
 
+  it("rejects a destroyed webview", async () => {
+    electron.webContents.fromId.mockReturnValue(
+      createGuest(browserWindow.webContents, "webview", true),
+    );
+
+    await expect(service.registerBrowserGuest({ webContentsId: 9 })).rejects.toThrow(
+      "Browser guest must be a live webview hosted by the current window",
+    );
+    expect(capture.instances[0]?.setGuest).not.toHaveBeenCalled();
+  });
+
+  it("rejects a disallowed server redirect after a safe popup is loaded in the guest", async () => {
+    const guest = createGuest(browserWindow.webContents);
+    electron.webContents.fromId.mockReturnValue(guest);
+    await service.registerBrowserGuest({ webContentsId: 10 });
+    const popupHandler = guest.setWindowOpenHandler.mock.calls[0]?.[0];
+    const redirectHandler = guest.on.mock.calls.find(([event]) => event === "will-redirect")?.[1];
+    const redirectEvent = { preventDefault: vi.fn() };
+
+    expect(popupHandler({ url: "https://example.com/new-window" })).toEqual({ action: "deny" });
+    expect(guest.loadURL).toHaveBeenCalledWith("https://example.com/new-window");
+    expect(redirectHandler).toEqual(expect.any(Function));
+    redirectHandler(redirectEvent, "file:///etc/passwd");
+
+    expect(redirectEvent.preventDefault).toHaveBeenCalledOnce();
+  });
+
+  it("forwards start and stop handlers to the capture service", async () => {
+    const start = electron.ipcMain.handle.mock.calls.find(
+      ([channel]) => channel === "startBrowserRecording",
+    )?.[1];
+    const stop = electron.ipcMain.handle.mock.calls.find(
+      ([channel]) => channel === "stopBrowserRecording",
+    )?.[1];
+
+    await expect(start({})).resolves.toEqual({ recordingId: "recording-1" });
+    await expect(stop({})).resolves.toEqual({ id: "recording-1" });
+    expect(capture.instances[0]?.start).toHaveBeenCalledOnce();
+    expect(capture.instances[0]?.stop).toHaveBeenCalledOnce();
+  });
+
   it("tears down capture when unregistering or destroying a guest", async () => {
     electron.webContents.fromId.mockReturnValue(createGuest(browserWindow.webContents));
     await service.registerBrowserGuest({ webContentsId: 11 });
@@ -134,9 +224,12 @@ describe("BrowserService", () => {
     expect(capture.instances[0]?.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it("accepts a hosted webview after the BrowserWindow is recreated", async () => {
+  it("releases the active capture before accepting a guest from a recreated BrowserWindow", async () => {
+    electron.webContents.fromId.mockReturnValue(createGuest(browserWindow.webContents));
+    await service.registerBrowserGuest({ webContentsId: 12 });
     const recreatedWindow = createFakeBrowserWindow();
-    service.updateBrowserWindow(recreatedWindow as never);
+    await service.updateBrowserWindow(recreatedWindow as never);
+    expect(capture.instances[0]?.clearGuest).toHaveBeenCalledOnce();
     const guest = createGuest(recreatedWindow.webContents);
     electron.webContents.fromId.mockReturnValue(guest);
 

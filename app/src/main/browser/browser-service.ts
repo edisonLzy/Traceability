@@ -15,11 +15,6 @@ export class BrowserService extends AbstractAgentIPCHandler<BrowserIPC> implemen
     super(browserWindow);
     this.captureService = new BrowserCaptureService();
     this.guestSession = new BrowserGuestSession(browserWindow);
-    const updateBrowserWindow = this.updateBrowserWindow;
-    this.updateBrowserWindow = (updatedBrowserWindow) => {
-      updateBrowserWindow(updatedBrowserWindow);
-      this.guestSession.updateBrowserWindow(updatedBrowserWindow);
-    };
     this.unbind = this.bind();
   }
 
@@ -75,6 +70,12 @@ export class BrowserService extends AbstractAgentIPCHandler<BrowserIPC> implemen
 
   public stopBrowserRecording: BrowserIPC["stopBrowserRecording"] = async () => {
     return this.captureService.stop();
+  };
+
+  public override updateBrowserWindow = async (browserWindow: BrowserWindow) => {
+    await this.unregisterBrowserGuest();
+    this.guestSession.updateBrowserWindow(browserWindow);
+    this.setBrowserWindow(browserWindow);
   };
 
   public async destroyAll() {

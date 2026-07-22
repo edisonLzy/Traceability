@@ -18,8 +18,12 @@ export abstract class AbstractAgentIPCHandler<AgentIPC> {
     return this.browserWindow;
   }
 
-  public updateBrowserWindow = (browserWindow: BrowserWindow) => {
+  protected setBrowserWindow(browserWindow: BrowserWindow) {
     this.browserWindow = browserWindow;
+  }
+
+  public updateBrowserWindow = (browserWindow: BrowserWindow) => {
+    this.setBrowserWindow(browserWindow);
   };
 
   public sendMessageToRenderer(name: string, data: unknown) {

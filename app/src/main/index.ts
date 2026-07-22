@@ -14,13 +14,16 @@ void app
     const agentPool = new AgentPool(browserWindow);
     const browserService = new BrowserService(browserWindow);
     const sessionPersistence = new SessionPersistence(browserWindow);
+    loadWindow(browserWindow);
 
-    app.on("activate", () => {
+    app.on("activate", async () => {
       if (!browserWindow || browserWindow.isDestroyed()) {
-        browserWindow = createWindow();
-        agentPool.updateBrowserWindow(browserWindow);
-        browserService.updateBrowserWindow(browserWindow);
-        sessionPersistence.updateBrowserWindow(browserWindow);
+        const recreatedWindow = createWindow();
+        await browserService.updateBrowserWindow(recreatedWindow);
+        browserWindow = recreatedWindow;
+        agentPool.updateBrowserWindow(recreatedWindow);
+        sessionPersistence.updateBrowserWindow(recreatedWindow);
+        loadWindow(recreatedWindow);
       }
     });
 
@@ -71,11 +74,13 @@ function createWindow() {
     },
   });
 
-  if (process.env.ELECTRON_RENDERER_URL) {
-    void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
-  } else {
-    void mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
-  }
-
   return mainWindow;
+}
+
+function loadWindow(browserWindow: BrowserWindow) {
+  if (process.env.ELECTRON_RENDERER_URL) {
+    void browserWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    void browserWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  }
 }
