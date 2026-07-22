@@ -8,7 +8,7 @@ import {
   addBreadcrumb,
   withScope,
 } from "@sentry/browser";
-import type { BrowserOptions } from "@sentry/browser";
+import type { BrowserOptions, SeverityLevel, User, Breadcrumb, Scope } from "@sentry/browser";
 import type { Transport } from "@sentry/core";
 
 import { corsDiagnosticIntegration } from "../integrations/corsDiagnostic.js";
@@ -28,8 +28,6 @@ export function init(options: BrowserOptions): void {
   });
 }
 
-export type InitOptions = BrowserOptions;
-export type { SeverityLevel, User, Breadcrumb, Scope } from "@sentry/browser";
-export type { Transport };
+export type { BrowserOptions as InitOptions, SeverityLevel, User, Breadcrumb, Scope, Transport };
 
 export { captureException, captureMessage, setUser, setTag, setContext, addBreadcrumb, withScope };
