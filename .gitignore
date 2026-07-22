@@ -154,5 +154,8 @@ server/data/*.db-shm
 # macOS
 .DS_Store
 
+# Local multi-agent task briefs, reports, and recovery ledger
+.superpowers/
+
 # nested server/server data dir (mistakenly created, use server/data instead)
 server/server/
