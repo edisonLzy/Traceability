@@ -199,6 +199,19 @@ describe("BrowserService", () => {
     expect(redirectEvent.preventDefault).toHaveBeenCalledOnce();
   });
 
+  it("prevents direct navigation to a forbidden URL", async () => {
+    const guest = createGuest(browserWindow.webContents);
+    electron.webContents.fromId.mockReturnValue(guest);
+    await service.registerBrowserGuest({ webContentsId: 14 });
+    const navigateHandler = guest.on.mock.calls.find(([event]) => event === "will-navigate")?.[1];
+    const navigateEvent = { preventDefault: vi.fn() };
+
+    expect(navigateHandler).toEqual(expect.any(Function));
+    navigateHandler(navigateEvent, "file:///etc/passwd");
+
+    expect(navigateEvent.preventDefault).toHaveBeenCalledOnce();
+  });
+
   it("forwards start and stop handlers to the capture service", async () => {
     const start = electron.ipcMain.handle.mock.calls.find(
       ([channel]) => channel === "startBrowserRecording",
@@ -236,5 +249,35 @@ describe("BrowserService", () => {
     await service.registerBrowserGuest({ webContentsId: 13 });
 
     expect(capture.instances[0]?.setGuest).toHaveBeenCalledWith(guest);
+  });
+
+  it("cleans active capture before changing guest-session or base-window ownership", async () => {
+    const captureService = capture.instances[0]!;
+    const internals = service as unknown as {
+      guestSession: { updateBrowserWindow(browserWindow: unknown): void };
+      setBrowserWindow(browserWindow: unknown): void;
+    };
+    const calls: string[] = [];
+    captureService.clearGuest.mockImplementation(async () => {
+      calls.push("clearGuest");
+    });
+    const updateGuestSession = vi
+      .spyOn(internals.guestSession, "updateBrowserWindow")
+      .mockImplementation((_window) => {
+        calls.push("updateGuestSession");
+        return undefined;
+      });
+    const setBrowserWindow = vi
+      .spyOn(internals, "setBrowserWindow")
+      .mockImplementation((_window) => {
+        calls.push("setBrowserWindow");
+        return undefined;
+      });
+
+    await service.updateBrowserWindow(createFakeBrowserWindow() as never);
+
+    expect(calls).toEqual(["clearGuest", "updateGuestSession", "setBrowserWindow"]);
+    updateGuestSession.mockRestore();
+    setBrowserWindow.mockRestore();
   });
 });
