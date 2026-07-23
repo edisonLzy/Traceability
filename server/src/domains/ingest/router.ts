@@ -7,7 +7,12 @@ import { ingestEnvelope } from "./service.js";
 
 export const router = Router();
 
-router.use(express.text({ type: ["application/octet-stream", "text/plain"], limit: "2mb" }));
+router.use(
+  express.raw({
+    type: ["application/x-sentry-envelope", "application/octet-stream", "text/plain"],
+    limit: "10mb",
+  }),
+);
 
 /**
  * @openapi

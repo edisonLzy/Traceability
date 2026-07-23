@@ -36,18 +36,22 @@ const DDL = `
     UNIQUE(app_id, release, file)
   );
   CREATE INDEX IF NOT EXISTS idx_source_maps_lookup ON source_maps(app_id, release, file);
-  CREATE TABLE IF NOT EXISTS rrweb_replays (
-    id TEXT PRIMARY KEY, app_id TEXT NOT NULL, issue_id TEXT,
-    sentry_event_id TEXT, received_at TEXT NOT NULL, captured_at TEXT,
-    start_at INTEGER, end_at INTEGER, event_count INTEGER NOT NULL DEFAULT 0,
-    size_bytes INTEGER NOT NULL DEFAULT 0, payload TEXT NOT NULL DEFAULT '[]',
-    metadata TEXT NOT NULL DEFAULT '{}',
+  CREATE TABLE IF NOT EXISTS replays (
+    replay_id TEXT PRIMARY KEY, app_id TEXT NOT NULL, issue_id TEXT,
+    first_seen_at TEXT, last_seen_at TEXT, start_at INTEGER, end_at INTEGER,
+    segment_count INTEGER NOT NULL DEFAULT 0, size_bytes INTEGER NOT NULL DEFAULT 0,
+    metadata TEXT,
     FOREIGN KEY (app_id) REFERENCES applications(id) ON DELETE CASCADE,
     FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
   );
-  CREATE INDEX IF NOT EXISTS idx_rrweb_replays_issue_id ON rrweb_replays(issue_id);
-  CREATE INDEX IF NOT EXISTS idx_rrweb_replays_app_id ON rrweb_replays(app_id);
-  CREATE INDEX IF NOT EXISTS idx_rrweb_replays_sentry_event_id ON rrweb_replays(sentry_event_id);
+  CREATE INDEX IF NOT EXISTS idx_replays_issue_id ON replays(issue_id);
+  CREATE INDEX IF NOT EXISTS idx_replays_app_id ON replays(app_id);
+  CREATE TABLE IF NOT EXISTS replay_segments (
+    replay_id TEXT NOT NULL, segment_id INTEGER NOT NULL,
+    payload BLOB NOT NULL, size_bytes INTEGER NOT NULL, received_at TEXT NOT NULL,
+    PRIMARY KEY (replay_id, segment_id),
+    FOREIGN KEY (replay_id) REFERENCES replays(replay_id) ON DELETE CASCADE
+  );
   CREATE TABLE IF NOT EXISTS patches (
     id TEXT PRIMARY KEY, issue_id TEXT NOT NULL, branch TEXT NOT NULL,
     file_path TEXT NOT NULL, attached_at TEXT NOT NULL,
@@ -63,4 +67,5 @@ const DDL = `
  */
 process.env.TRACEABILITY_DB_PATH = ":memory:";
 const { sqlite } = createDbClient({}, ":memory:");
+sqlite.exec("PRAGMA foreign_keys = OFF");
 sqlite.exec(DDL);

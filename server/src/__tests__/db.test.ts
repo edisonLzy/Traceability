@@ -13,7 +13,8 @@ describe("schema", () => {
     expect(names).toContain("applications");
     expect(names).toContain("issues");
     expect(names).toContain("events");
-    expect(names).toContain("rrweb_replays");
+    expect(names).toContain("replays");
+    expect(names).toContain("replay_segments");
     expect(names).toContain("performance_samples");
     expect(names).toContain("source_maps");
     expect(names).toContain("patches");
