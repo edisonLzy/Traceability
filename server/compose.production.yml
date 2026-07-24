@@ -2,8 +2,8 @@ services:
   migrate:
     image: ${TRACEABILITY_SERVER_IMAGE:-traceability-server:local}
     build:
-      context: ../..
-      dockerfile: server/docker/Dockerfile
+      context: ..
+      dockerfile: server/Dockerfile
     command: ["node", "dist/db/migrate.js"]
     environment: &server-environment
       NODE_ENV: production
@@ -25,8 +25,8 @@ services:
   api:
     image: ${TRACEABILITY_SERVER_IMAGE:-traceability-server:local}
     build:
-      context: ../..
-      dockerfile: server/docker/Dockerfile
+      context: ..
+      dockerfile: server/Dockerfile
     command: ["node", "dist/index.js"]
     environment:
       <<: *server-environment
